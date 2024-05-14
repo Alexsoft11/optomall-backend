@@ -3,7 +3,7 @@
 $curl = curl_init();
 
 curl_setopt_array($curl, [
-	CURLOPT_URL => "https://taobao-advanced.p.rapidapi.com/api?num_iid=610980984514&api=item_detail&area_id=110100",
+	CURLOPT_URL => "https://taobao-advanced.p.rapidapi.com/api?api=shop_item&shop_id=66832262&sort=default&page=1",
 	CURLOPT_RETURNTRANSFER => true,
 	CURLOPT_ENCODING => "",
 	CURLOPT_MAXREDIRS => 10,
