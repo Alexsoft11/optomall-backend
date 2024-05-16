@@ -10,8 +10,10 @@
     "require": {
         "php": "^8.2",
         "filament/filament": "^3.2",
+        "guzzlehttp/guzzle": "^7.8",
         "laravel/framework": "^11.0",
-        "laravel/tinker": "^2.9"
+        "laravel/tinker": "^2.9",
+        "nategood/httpful": "^0.3.2"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
