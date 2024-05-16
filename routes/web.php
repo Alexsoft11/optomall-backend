@@ -17,3 +17,8 @@ Route::get('/taobao', function() {
 Route::get('/1688', function() { 
     return view('products');
 });
+
+
+Route::get('/socials', function() { 
+    return view('socials');
+});

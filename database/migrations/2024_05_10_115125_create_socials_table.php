@@ -13,13 +13,16 @@ return new class extends Migration
     {
         Schema::create('socials', function (Blueprint $table) {
             $table->id();
+            $table->string('name');
+            $table->string('icon')->nullable();
+            $table->string('path');  
             $table->timestamps();
         });
     }
 
     /**
      * Reverse the migrations.
-     */
+     */    
     public function down(): void
     {
         Schema::dropIfExists('socials');
