@@ -15,11 +15,13 @@ use Filament\Tables\Actions\ViewAction;
 use Filament\Tables\Actions\EditAction;
 use Filament\Tables\Actions\BulkActionGroup;
 use Filament\Tables\Actions\DeleteBulkAction;
+use Filament\Tables\Filters\Filter;
+use Filament\Forms\Components\DatePicker;
+use Illuminate\Database\Eloquent\Builder;
 
 class SocialsResource extends Resource
 {
     protected static ?string $model = Socials::class;
-
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
     public static function form(Forms\Form $form): Forms\Form
@@ -35,12 +37,12 @@ class SocialsResource extends Resource
                     ->required()
                     ->disk('public')
                     ->directory('social-images')
-                    // ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/jpg'])
-                    ->maxSize(2048), // size in KB (2MB)
+                    ->maxSize(2048),
+
                 TextInput::make('path')
                     ->required()
                     ->maxLength(255)
-                    ->url(), // Adds URL validation
+                    ->url(),
             ]);
     }
 
@@ -50,26 +52,60 @@ class SocialsResource extends Resource
             ->columns([
                 TextColumn::make('name')
                     ->searchable(),
+
                 ImageColumn::make('icon')
                     ->disk('public')
                     ->searchable(),
+
                 TextColumn::make('path')
                     ->searchable(),
+
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
+
                 TextColumn::make('updated_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                // Add any filters if needed
+                Filter::make('name')
+                    ->label('Name')
+                    ->query(fn (Builder $query, array $data): Builder => $query->where('name', 'like', "%{$data['name']}%"))
+                    ->form([
+                        TextInput::make('name')
+                            ->label('Name')
+                            ->placeholder('Enter name')
+                    ]),
+            
+                Filter::make('created_at')
+                    ->label('Created Date')
+                    ->query(function (Builder $query, array $data): Builder {
+                        if (!empty($data['from'])) {
+                            $query->whereDate('created_at', '>=', $data['from']);
+                        }
+                        if (!empty($data['until'])) {
+                            $query->whereDate('created_at', '<=', $data['until']);
+                        }
+                        return $query;
+                    })
+                    ->form([
+                        DatePicker::make('from')
+                            ->label('From')
+                            ->placeholder('Select start date'),
+            
+                        DatePicker::make('until')
+                            ->label('Until')
+                            ->placeholder('Select end date'),
+                    ]),
             ])
+            
             ->actions([
                 ViewAction::make(),
                 EditAction::make(),
+                Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
                 BulkActionGroup::make([
@@ -80,9 +116,7 @@ class SocialsResource extends Resource
 
     public static function getRelations(): array
     {
-        return [
-            // Add any relations if needed
-        ];
+        return [];
     }
 
     public static function getPages(): array
