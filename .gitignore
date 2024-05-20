@@ -5,6 +5,7 @@ public
 /public/hot
 /public/storage
 /storage/*.key
+/storage
 /vendor
 .env
 .env.backup
@@ -18,3 +19,4 @@ yarn-error.log
 /.fleet
 /.idea
 /.vscode
+/laravel.log
