@@ -2943,6 +2943,8 @@
 #96 D:\\Media Files\\Desktop\\taobao\\TaoBao\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\resources\\server.php(16): require_once('D:\\\\Media Files\\\\...')
 #97 {main}
 "} 
+
+[2024-05-20 12:01:40] local.ERROR: Unable to detect application namespace. {"exception":"[object] (RuntimeException(code: 0): Unable to detect application namespace. at C:\\Users\\user\\Desktop\\TaoBao\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Application.php:1634)
 [2024-05-17 14:54:16] local.ERROR: Uncaught RuntimeException: Unable to detect application namespace. in C:\Users\user\Desktop\TaoBao\vendor\laravel\framework\src\Illuminate\Foundation\Application.php:1634
 Stack trace:
 #0 Command line code(1): Illuminate\Foundation\Application->getNamespace()
@@ -3225,6 +3227,7 @@ Stack trace:
 #0 {main}
 "} 
 [2024-05-17 14:55:16] local.ERROR: Unable to detect application namespace. {"exception":"[object] (RuntimeException(code: 0): Unable to detect application namespace. at C:\\Users\\user\\Desktop\\TaoBao\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Application.php:1634)
+
 [stacktrace]
 #0 C:\\Users\\user\\Desktop\\TaoBao\\vendor\\laravel\\framework\\src\\Illuminate\\View\\Compilers\\ComponentTagCompiler.php(413): Illuminate\\Foundation\\Application->getNamespace()
 #1 C:\\Users\\user\\Desktop\\TaoBao\\vendor\\laravel\\framework\\src\\Illuminate\\View\\Compilers\\ComponentTagCompiler.php(298): Illuminate\\View\\Compilers\\ComponentTagCompiler->guessClassName('filament-panels...')
@@ -3307,6 +3310,8 @@ Stack trace:
 #78 C:\\Users\\user\\Desktop\\TaoBao\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\resources\\server.php(16): require_once('C:\\\\Users\\\\user\\\\D...')
 #79 {main}
 "} 
+
+[2024-05-20 12:01:42] local.ERROR: Unable to detect application namespace. {"exception":"[object] (RuntimeException(code: 0): Unable to detect application namespace. at C:\\Users\\user\\Desktop\\TaoBao\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Application.php:1634)
 [2024-05-17 14:56:16] local.ERROR: Uncaught RuntimeException: Unable to detect application namespace. in C:\Users\user\Desktop\TaoBao\vendor\laravel\framework\src\Illuminate\Foundation\Application.php:1634
 Stack trace:
 #0 Command line code(1): Illuminate\Foundation\Application->getNamespace()
@@ -3324,6 +3329,7 @@ Stack trace:
 #0 {main}
 "} 
 [2024-05-17 14:57:11] local.ERROR: Unable to detect application namespace. {"exception":"[object] (RuntimeException(code: 0): Unable to detect application namespace. at C:\\Users\\user\\Desktop\\TaoBao\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Application.php:1634)
+
 [stacktrace]
 #0 C:\\Users\\user\\Desktop\\TaoBao\\vendor\\laravel\\framework\\src\\Illuminate\\View\\Compilers\\ComponentTagCompiler.php(413): Illuminate\\Foundation\\Application->getNamespace()
 #1 C:\\Users\\user\\Desktop\\TaoBao\\vendor\\laravel\\framework\\src\\Illuminate\\View\\Compilers\\ComponentTagCompiler.php(298): Illuminate\\View\\Compilers\\ComponentTagCompiler->guessClassName('filament-panels...')
@@ -3406,6 +3412,7 @@ Stack trace:
 #78 C:\\Users\\user\\Desktop\\TaoBao\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\resources\\server.php(16): require_once('C:\\\\Users\\\\user\\\\D...')
 #79 {main}
 "} 
+
 [2024-05-17 14:57:13] local.ERROR: Unable to detect application namespace. {"exception":"[object] (RuntimeException(code: 0): Unable to detect application namespace. at C:\\Users\\user\\Desktop\\TaoBao\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Application.php:1634)
 [stacktrace]
 #0 C:\\Users\\user\\Desktop\\TaoBao\\vendor\\laravel\\framework\\src\\Illuminate\\View\\Compilers\\ComponentTagCompiler.php(413): Illuminate\\Foundation\\Application->getNamespace()
@@ -3553,3 +3560,4 @@ Stack trace:
 [stacktrace]
 #0 {main}
 "} 
+
