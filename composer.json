@@ -12,6 +12,7 @@
         "darkaonline/l5-swagger": "*",
         "filament/filament": "^3.2",
         "guzzlehttp/guzzle": "^7.8",
+        "ichtrojan/laravel-otp": "^2.0",
         "laravel/framework": "^11.0",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.9",
