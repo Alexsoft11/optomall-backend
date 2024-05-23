@@ -1,8 +1,10 @@
 <?php
 
 use App\Http\Resources\ProductResource;
+use GuzzleHttp\Psr7\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Storage;
 
 Route::get('/', function () {
     return view('welcome');
@@ -29,3 +31,4 @@ Route::get('/products', function() {
     $products = $response->json();
     return ProductResource::collection($products);
 });
+
