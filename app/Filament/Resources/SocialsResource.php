@@ -36,7 +36,7 @@ class SocialsResource extends Resource
                     ->image()
                     ->required()
                     ->disk('public')
-                    ->directory('icons')
+                    ->directory('social-images')
                     ->maxSize(2048),
 
                 TextInput::make('path')
