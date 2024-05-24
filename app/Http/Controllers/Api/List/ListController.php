@@ -2,16 +2,14 @@
 
 namespace App\Http\Controllers\Api\List;
 
-use App\Models\Social;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 use App\Http\Controllers\Controller;
 use App\Models\Socials;
 use OpenApi\Annotations as OA;
 
 class ListController extends Controller
 {
-  /**
+    /**
      * @OA\Get(
      *     path="/api/socials",
      *     summary="Get a list of socials",
@@ -19,14 +17,19 @@ class ListController extends Controller
      *     @OA\Response(response="200", description="List of socials"),
      * )
      */
-
-
-    
     public function socials(Request $request)
-{
+    {
+        $socials = Socials::select('id', 'name', 'icon', 'path')->get();
 
-    $socials = Socials::all();
-    return response()->json(['socials' => $socials], 200);
-}
+        $items = $socials->map(function ($social) {
+            return [
+                'id' => $social->id,
+                'name' => $social->name,
+                'path' => $social->path,
+                'icon' => $social->icon_url,
+            ];
+        });
 
+        return response()->json(['socials' => $items], 200);
     }
+}
