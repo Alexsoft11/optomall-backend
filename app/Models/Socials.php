@@ -11,10 +11,5 @@ class Socials extends Model
 
     protected $table = 'socials';
 
-    protected $fillable = ['name', 'icon', 'path', 'file'];
-
-    // public function getFileUrlAttribute()
-    // {
-    //     return Socials::url($this->file);
-    // }
+    protected $fillable = ['name', 'icon', 'path'];
 }
