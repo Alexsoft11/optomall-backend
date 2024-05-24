@@ -5,16 +5,19 @@ namespace App\Http;
 use OpenApi\Annotations as OA;
 
 /**
- * @OA\OpenApi(
- *     @OA\Info(
- *         title="TaoBao Api",
- *         version="1.0.0",
- *     ),
- *     @OA\PathItem(
- *         path="/api"
- *     )
+ * @OA\Info(
+ *     title="API Documentation",
+ *     version="1.0.0",
+ * )
+ *
+ * @OA\SecurityScheme(
+ *     securityScheme="bearerAuth",
+ *     type="http",
+ *     scheme="bearer",
+ *     bearerFormat="JWT"
  * )
  */
+
 class SwaggerDocumentation
 {
 }
