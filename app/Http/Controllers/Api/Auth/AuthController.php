@@ -22,10 +22,10 @@ class AuthController extends Controller
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
-     *             required={"name","email","password"},
-     *             @OA\Property(property="name", type="string", example="John Doe"),
-     *             @OA\Property(property="email", type="string", format="email", example="john@example.com"),
-     *             @OA\Property(property="password", type="string", format="password", example="password")
+     *             required={"email","password", "confirm_password"},
+     *             @OA\Property(property="email", type="string", format="email", example="khamidovsherzod003@gmail.com"),
+     *             @OA\Property(property="password", type="string", format="password", example="12345678"),
+     *             @OA\Property(property="confirm_password", type="string", format="password", example="12345678")
      *         ),
      *     ),
      *     @OA\Response(response="201", description="User registered successfully"),
@@ -35,17 +35,17 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
             'email' => 'required|string|email|unique:users|max:255',
-            'password' => 'required|string|min:8',
+            'password' => 'required|string|min:8|same:confirm_password',
+            'confirm_password' => 'required|string|min:8',
         ]);
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
         }
         $user = User::create([
-            'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            'confirm_password' => Hash::make($request->confirm_password),
         ]);
         $user->notify(new VerifyEmailNotification($user));
         return response()->json(['message' => 'User registered successfully. Please check your email for verification.'], 201);
@@ -60,8 +60,8 @@ class AuthController extends Controller
      *         required=true,
      *         @OA\JsonContent(
      *             required={"email","password"},
-     *             @OA\Property(property="email", type="string", format="email", example="john@example.com"),
-     *             @OA\Property(property="password", type="string", format="password", example="password")
+     *             @OA\Property(property="email", type="string", format="email", example="khamidovsherzod003@gmail.com"),
+     *             @OA\Property(property="password", type="string", format="password", example="12345678")
      *         ),
      *     ),
      *     @OA\Response(response="200", description="User logged in successfully"),

@@ -26,6 +26,10 @@ Route::get('/socials', function() {
     return view('socials');
 });
 
+Route::get('/users', function() { 
+    return view('users');
+});
+
 Route::get('/products', function() {
     $response = Http::get('https://fakestoreapi.com/products');
     $products = $response->json();
