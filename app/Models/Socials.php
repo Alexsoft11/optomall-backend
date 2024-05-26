@@ -12,4 +12,9 @@ class Socials extends Model
     protected $table = 'socials';
 
     protected $fillable = ['name', 'icon', 'path'];
+
+    public function getIconUrlAttribute()
+    {
+        return $this->icon ? url('storage/' . $this->icon) : null;
+    }
 }
