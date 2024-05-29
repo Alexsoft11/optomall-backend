@@ -29,3 +29,11 @@ Route::get('/socials', function () {
 Route::get('/users', function () {
     return view('users');
 });
+
+Route::get('/questions', function() {
+    return view('questions');
+});
+
+Route::get('/answers', function() {
+    return view('answers');
+});
