@@ -20,7 +20,7 @@ class ProductController extends Controller
 
     public function __construct()
     {
-        $this->apiKey = env('API_KEY');
+        $this->apiKey = "8e6d9b54-88a7-4dcc-9f2b-add4d68dbbb8";
     }
 
     /**
