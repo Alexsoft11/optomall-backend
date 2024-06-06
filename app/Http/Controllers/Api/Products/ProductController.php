@@ -136,4 +136,41 @@ class ProductController extends Controller
             'detail' => new ProductDetailResource($productDetail['Result']['Item'])
         ]);
     }
+
+    /**
+     * @OA\Get(
+     *     path="/api/search-products-from-taobao",
+     *     summary="Search products by title.",
+     *     tags={"Products"},
+     *     @OA\Parameter(
+     *         name="searchQuery",
+     *         in="query",
+     *         required=true,
+     *         @OA\Schema(type="string"),
+     *         description="Search products by title."
+     *     ),
+     *     @OA\Parameter(
+     *         name="productsCount",
+     *         in="query",
+     *         required=false,
+     *         @OA\Schema(type="string"),
+     *         description="The count of products"
+     *     ),
+     *     @OA\Response(response="200", description="Products from taobao"),
+     * )
+     */
+    public function searchProductsFromTaobao(Request $request)
+    {
+        $searchQuery = $request->searchQuery;
+        $productsCount = $request->productsCount ? $request->productsCount : 20;
+
+        $url = "http://otapi.net/service-json/BatchSearchItemsFrame?instanceKey={$this->apiKey}&language=uz&signature=f577361a7599024bbbf86517fc0f5ed3b9938c76c60fdb75a3fb66e350b702cd&timestamp=20240606182926&sessionId=&xmlParameters=%3CSearchItemsParameters%3E%3CItemTitle%3E$searchQuery%3C%2FItemTitle%3E%3C%2FSearchItemsParameters%3E&framePosition=0&frameSize=$productsCount&blockList=";
+
+        $response = Http::get($url);
+        $products = $response->json();
+
+        return $this->respondWithSuccess([
+            'products' => ProductResource::collection($products['Result']['Items']['Items']['Content'])
+        ]);
+    }
 }

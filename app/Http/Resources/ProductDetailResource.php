@@ -28,18 +28,35 @@ class ProductDetailResource extends JsonResource
                     'is_main' => $attribute['IsMain'] ?? null,
                 ];
             }, $this['Pictures']) : [],
-            'location' => $this['Location']['State'] ?? null,
+            'location' => $this['Location']['State'], $this['Location']['City'] ?? null,
             'product_url' => $this['ExternalItemUrl'] ?? null,
             'videos' => $this['Videos'] ?? [],
-            'attributes' => isset($this['Attributes']) ? array_map(function ($attribute) {
+            'colors' => isset($this['Attributes']) ? array_values(array_filter(array_map(function ($attribute) {
                 return [
                     'propertyName' => $attribute['PropertyName'] ?? null,
                     'value' => $attribute['Value'] ?? null,
                     'imageUrl' => $attribute['ImageUrl'] ?? null,
                     'miniImageUrl' => $attribute['MiniImageUrl'] ?? null,
-                    'is_active' => $attribute['IsActive'] ?? null,
                 ];
-            }, $this['Attributes']) : [],
+            }, $this['Attributes']), function ($color) {
+                return $color['propertyName'] === 'rang' && $color['imageUrl'] !== null;
+            })) : [],
+            'sizes' => isset($this['Attributes']) ? array_values(array_filter(array_map(function ($attribute) {
+                return [
+                    'propertyName' => $attribute['PropertyName'] ?? null,
+                    'value' => $attribute['Value'] ?? null,
+                ];
+            }, $this['Attributes']), function ($size) {
+                return $size['propertyName'] === "o'lcham";
+            })) : [],
+            'composition' => isset($this['Attributes']) ? array_values(array_filter(array_map(function ($attribute) {
+                return [
+                    'propertyName' => $attribute['PropertyName'] ?? null,
+                    'value' => $attribute['Value'] ?? null,
+                ];
+            }, $this['Attributes']), function ($composition) {
+                return $composition['propertyName'] === "Moddiy tarkibiy qism";
+            })) : [],
         ];
     }
 }

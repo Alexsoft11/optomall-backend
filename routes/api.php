@@ -20,3 +20,4 @@ Route::get('/products-from-taobao', [ProductController::class, 'productsFromTaob
 Route::get('/product-detail-from-taobao', [ProductController::class, 'productDetailFromTaoBao']);
 Route::get('/categories-from-taobao', [ProductController::class, 'categoriesFromTaoBao']);
 Route::get('/sub-categories-from-taobao', [ProductController::class, 'subCategoriesFromTaoBao']);
+Route::get('/search-products-from-taobao', [ProductController::class, 'searchProductsFromTaobao']);
