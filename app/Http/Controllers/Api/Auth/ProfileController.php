@@ -14,15 +14,17 @@ class ProfileController extends Controller
      * @OA\Post(
      *     path="/api/profile/update",
      *     summary="Update user profile",
-     *     tags={"Auth"},
+     *     tags={"User"},
      *     security={{"bearerAuth":{}}},
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
-     *             required={"name", "last_name", "phone"},
+     *             required={"name", "last_name", "phone" , "password" , "confirm_password"},
      *             @OA\Property(property="name", type="string", example="John"),
      *             @OA\Property(property="last_name", type="string", example="Doe"),
-     *             @OA\Property(property="phone", type="string", example="+1234567890")
+     *             @OA\Property(property="phone", type="string", example="+1234567890"),
+     *             @OA\Property(property="password", type="string", example="12345678"),
+     *             @OA\Property(property="confirm_password", type="string", example="12345678")
      *         ),
      *     ),
      *     @OA\Response(response="200", description="Profile updated successfully"),
@@ -36,6 +38,8 @@ class ProfileController extends Controller
             'name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
             'phone' => 'required|string|max:15',
+            'password' => 'required|string|min:8|same:confirm_password',
+            'confirm_password' => 'required|string|min:8',
         ]);
 
         if ($validator->fails()) {
@@ -46,6 +50,8 @@ class ProfileController extends Controller
             'name' => $request->name,
             'last_name' => $request->last_name,
             'phone' => $request->phone,
+            'password' => $request->password,
+            'confirm_password' => $request->confirm_password,
         ]);
 
         return response()->json(['message' => 'Profile updated successfully'], 200);
