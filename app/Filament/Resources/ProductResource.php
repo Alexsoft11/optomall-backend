@@ -7,9 +7,16 @@ use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductCategory;
 use Filament\Forms;
+use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Columns\ImageColumn;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -17,61 +24,74 @@ class ProductResource extends Resource
 {
     protected static ?string $model = Product::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-shopping-cart';
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('name')
+                Select::make('product_category_id')
+                    ->label('Mahsulot kategoriyasi')
+                    ->relationship('category', 'name')
                     ->required(),
-                Forms\Components\Select::make('product_category_id')
-                    ->label('Product Category')
-                    ->options(ProductCategory::all()->pluck('name', 'id'))
-                    ->searchable()
-                    ->required(),
-                Forms\Components\FileUpload::make('image')
-                    ->label('Image')
-                    ->image()
-                    ->directory('product-images'),
-                Forms\Components\TextInput::make('sell_count')
-                    ->label('Sell Count')
-                    ->numeric()
-                    ->default(0),
-                Forms\Components\Textarea::make('description')
-                    ->label('Description')
-                    ->nullable(),
+                Forms\Components\TextInput::make('title')
+                    ->label('Sarlavha')
+                    ->required()
+                    ->maxLength(255),
                 Forms\Components\TextInput::make('price')
-                    ->numeric()
+                    ->label('Narx')
+                    ->integer()
                     ->required(),
-                Forms\Components\TextInput::make('discount')
-                    ->numeric()
-                    ->default(0),
-                Forms\Components\TextInput::make('new_price')
-                    ->numeric()
-                    ->nullable(),
-                Forms\Components\Repeater::make('rating')
+                FileUpload::make('image')
+                    ->label('Rasm')
+                    ->directory('product-images')
+                    ->image(),
+                Forms\Components\TextInput::make('location')
+                    ->label('Hudud')
+                    ->required()
+                    ->maxLength(255),
+                Forms\Components\TextInput::make('product_url')
+                    ->label('Mahsulot linki')
+                    ->required()
+                    ->url()
+                    ->maxLength(255),
+                Repeater::make('pictures')
+                    ->label('Rasmlar')
+                    ->relationship('pictures')
                     ->schema([
-                        Forms\Components\TextInput::make('key'),
-                        Forms\Components\TextInput::make('value'),
-                    ])
-                    ->nullable(),
-                Forms\Components\Repeater::make('features')
+                        Forms\Components\FileUpload::make('image_url'),
+                        Forms\Components\Toggle::make('is_main')->label('Main Picture'),
+                    ]),
+                Repeater::make('videos')
+                    ->label('Videolar')
+                    ->relationship('videos')
                     ->schema([
-                        Forms\Components\TextInput::make('key')
-                            ->label('Key'),
-                        Forms\Components\FileUpload::make('image')
-                            ->label('Image')
-                            ->image()
-                            ->directory('feature-images'),
-                    ])
-                    ->nullable(),
-                Forms\Components\Repeater::make('comments')
+                        Forms\Components\FileUpload::make('preview_url'),
+                        Forms\Components\TextInput::make('url'),
+                    ]),
+                Repeater::make('colors')
+                    ->label('Ranglar')
+                    ->relationship('colors')
                     ->schema([
-                        Forms\Components\TextInput::make('author'),
-                        Forms\Components\Textarea::make('content'),
-                    ])
-                    ->nullable(),
+                        Hidden::make('property_name')->default('rang'),
+                        Forms\Components\TextInput::make('value')->required(),
+                        Forms\Components\FileUpload::make('image_url'),
+                        Forms\Components\FileUpload::make('mini_image_url'),
+                    ]),
+                Repeater::make('sizes')
+                    ->label("O'lchamlar")
+                    ->relationship('sizes')
+                    ->schema([
+                        Hidden::make('property_name')->default("o'lcham"),
+                        Forms\Components\TextInput::make('value')->required(),
+                    ]),
+                Repeater::make('compositions')
+                    ->label("Tarkibiy qismlar")
+                    ->relationship('compositions')
+                    ->schema([
+                        Hidden::make('property_name')->default('Moddiy tarkibiy qism'),
+                        Forms\Components\TextInput::make('value')->required(),
+                    ]),
             ]);
     }
 
@@ -79,35 +99,19 @@ class ProductResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('name')
-                    ->sortable()
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('productCategory.name')
-                    ->label('Category')
-                    ->sortable()
-                    ->searchable(),
-                Tables\Columns\ImageColumn::make('image')
-                    ->label('Image')
-                    ->sortable()
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('price')
-                    ->sortable()
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('sell_count')
-                    ->sortable()
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('discount')
-                    ->sortable()
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('new_price')
-                    ->sortable()
-                    ->searchable(),
+                TextColumn::make('category.name')->label('Category')->sortable()->searchable(),
+                TextColumn::make('title')->sortable()->searchable(),
+                TextColumn::make('price')->sortable()->searchable(),
+                ImageColumn::make('image')->sortable(),
+                TextColumn::make('location')->sortable()->searchable(),
+                TextColumn::make('product_url')->sortable(),
             ])
             ->filters([
-                // Define your filters here
+                //
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\ViewAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\DeleteBulkAction::make(),
@@ -127,6 +131,7 @@ class ProductResource extends Resource
             'index' => Pages\ListProducts::route('/'),
             'create' => Pages\CreateProduct::route('/create'),
             'edit' => Pages\EditProduct::route('/{record}/edit'),
+            'view' => Pages\ShowProduct::route('/{record}'),
         ];
     }
 }

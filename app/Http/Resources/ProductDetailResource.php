@@ -15,7 +15,9 @@ class ProductDetailResource extends JsonResource
      */
     public function toArray($request)
     {
-        $amount = Exchanges::where('currency', 'usd')->first()->amount;
+        $amount = Exchanges::where('currency', 'usd')->first()->amount ?? 12000;
+
+        $counter = 0;
 
         return [
             'id' => $this['Id'] ?? null,
@@ -28,11 +30,12 @@ class ProductDetailResource extends JsonResource
                     'is_main' => $attribute['IsMain'] ?? null,
                 ];
             }, $this['Pictures']) : [],
-            'location' => $this['Location']['State'], $this['Location']['City'] ?? null,
+            'location' => $this['Location']['State'] ?? null,
             'product_url' => $this['ExternalItemUrl'] ?? null,
             'videos' => $this['Videos'] ?? [],
-            'colors' => isset($this['Attributes']) ? array_values(array_filter(array_map(function ($attribute) {
+            'colors' => isset($this['Attributes']) ? array_values(array_filter(array_map(function ($attribute) use (&$counter) {
                 return [
+                    'id' => $counter++,
                     'propertyName' => $attribute['PropertyName'] ?? null,
                     'value' => $attribute['Value'] ?? null,
                     'imageUrl' => $attribute['ImageUrl'] ?? null,
@@ -41,16 +44,18 @@ class ProductDetailResource extends JsonResource
             }, $this['Attributes']), function ($color) {
                 return $color['propertyName'] === 'rang' && $color['imageUrl'] !== null;
             })) : [],
-            'sizes' => isset($this['Attributes']) ? array_values(array_filter(array_map(function ($attribute) {
+            'sizes' => isset($this['Attributes']) ? array_values(array_filter(array_map(function ($attribute) use (&$counter) {
                 return [
+                    'id' => $counter++,
                     'propertyName' => $attribute['PropertyName'] ?? null,
                     'value' => $attribute['Value'] ?? null,
                 ];
             }, $this['Attributes']), function ($size) {
                 return $size['propertyName'] === "o'lcham";
             })) : [],
-            'composition' => isset($this['Attributes']) ? array_values(array_filter(array_map(function ($attribute) {
+            'composition' => isset($this['Attributes']) ? array_values(array_filter(array_map(function ($attribute) use (&$counter) {
                 return [
+                    'id' => $counter++,
                     'propertyName' => $attribute['PropertyName'] ?? null,
                     'value' => $attribute['Value'] ?? null,
                 ];
