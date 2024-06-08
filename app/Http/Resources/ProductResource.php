@@ -16,7 +16,7 @@ class ProductResource extends JsonResource
     public function toArray($request)
     {
 
-        $amount = Exchanges::where('currency', 'usd')->first()->amount;
+        $amount = Exchanges::where('currency', 'usd')->first()->amount ?? 12000;
 
         return [
             'id' => $this['Id'],

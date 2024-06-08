@@ -4,34 +4,74 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
+return new class extends Migration
+{
     /**
      * Run the migrations.
      */
-    public function up(): void
+    public function up()
     {
         Schema::create('products', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('product_category_id')->constrained()->cascadeOnDelete()->cascadeOnUpdate();
-            $table->string('name');
-            $table->string('image')->nullable();
-            $table->integer('sell_count')->default(0);
-            $table->text('description')->nullable();
-            $table->integer('price');
-            $table->integer('discount')->default(0);
-            $table->integer('new_price')->nullable();
-            $table->json('rating')->nullable();
-            $table->json('features')->nullable();
-            $table->json('comments')->nullable();
+            $table->foreignId('product_category_id')->constrained()->onDelete('cascade');
+            $table->string('title');
+            $table->string('price');
+            $table->string('image');
+            $table->string('location');
+            $table->string('product_url');
+            $table->timestamps();
+        });
+
+        Schema::create('product_pictures', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('product_id')->constrained()->onDelete('cascade');
+            $table->string('image_url')->nullable();
+            $table->boolean('is_main')->default(false);
+            $table->timestamps();
+        });
+
+        Schema::create('product_videos', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('product_id')->constrained()->onDelete('cascade');
+            $table->string('preview_url')->nullable();
+            $table->string('url');
+            $table->timestamps();
+        });
+
+        Schema::create('product_colors', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('product_id')->constrained()->onDelete('cascade');
+            $table->string('property_name');
+            $table->string('value');
+            $table->string('image_url')->nullable();
+            $table->string('mini_image_url')->nullable();
+            $table->timestamps();
+        });
+
+        Schema::create('product_sizes', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('product_id')->constrained()->onDelete('cascade');
+            $table->string('property_name');
+            $table->string('value');
+            $table->timestamps();
+        });
+
+        Schema::create('product_compositions', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('product_id')->constrained()->onDelete('cascade');
+            $table->string('property_name');
+            $table->string('value');
             $table->timestamps();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
+    public function down()
     {
+        Schema::dropIfExists('product_compositions');
+        Schema::dropIfExists('product_sizes');
+        Schema::dropIfExists('product_colors');
+        Schema::dropIfExists('product_videos');
+        Schema::dropIfExists('product_pictures');
         Schema::dropIfExists('products');
     }
 };
