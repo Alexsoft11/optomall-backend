@@ -22,7 +22,10 @@ use Illuminate\Database\Eloquent\Builder;
 class SocialsResource extends Resource
 {
     protected static ?string $model = Socials::class;
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+
+    protected static ?string $navigationLabel = "Ijtimoiy tarmoqlar";
+
+    protected static ?string $navigationIcon = 'heroicon-o-heart';
 
     public static function form(Forms\Form $form): Forms\Form
     {
