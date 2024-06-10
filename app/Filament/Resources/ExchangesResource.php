@@ -15,9 +15,14 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class ExchangesResource extends Resource
 {
+
+    protected static ?string $navigationGroup = "Mahsulotlar";
+
+    protected static ?string $navigationLabel = "Birjalar";
+
     protected static ?string $model = Exchanges::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-currency-dollar';
 
     public static function form(Form $form): Form
     {

@@ -15,9 +15,14 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class QuestionsResource extends Resource
 {
+
+    protected static ?string $navigationGroup = "Savol-javoblar";
+
+    protected static ?string $navigationLabel = "Savollar";
+
     protected static ?string $model = Questions::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-question-mark-circle';
 
     public static function form(Form $form): Form
     {

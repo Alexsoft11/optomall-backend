@@ -1,5 +1,4 @@
 <?php
-
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -13,7 +12,7 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
-            $table->string('unique_id')->nullable();
+            $table->unsignedInteger('unique_id')->unique()->nullable();
             $table->string('name', 100)->nullable();
             $table->string('last_name', 100)->nullable();
             $table->string('phone')->nullable();

@@ -22,6 +22,11 @@ use Illuminate\Database\Eloquent\Builder;
 
 class ProductResource extends Resource
 {
+
+    protected static ?string $navigationGroup = "Mahsulotlar";
+
+    protected static ?string $navigationLabel = "Mahsulotlar";
+
     protected static ?string $model = Product::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-shopping-cart';
