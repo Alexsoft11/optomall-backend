@@ -21,6 +21,7 @@ class CategorySeeder extends Seeder
 
         foreach ($categories['CategoryInfoList']['Content'] as $item) {
             Category::create([
+                'catalog_id' => $item['Id'],
                 'name' => $item['Name'],
             ]);
         }
