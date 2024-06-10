@@ -98,8 +98,7 @@ class ProductController extends Controller
     {
         $subCategoryId = $request->subCategoryId;
         $productsCount = $request->productsCount ? $request->productsCount : 20;
-
-        $url = "http://otapi.net/service-json/BatchSearchItemsFrame?instanceKey={$this->apiKey}&language=uz&signature=ede6e796a3f325d3d0a7743c7c4e7d93648c74d7c41744f1671714e327b5d52b&timestamp=20240526085107&sessionId=&xmlParameters=%3CSearchItemsParameters%3E%3CCategoryId%3E$subCategoryId%3C%2FCategoryId%3E&framePosition=0&frameSize=$productsCount&blockList=";
+        $url = "http://otapi.net/service-json/BatchSearchItemsFrame?instanceKey={$this->apiKey}&language=uz&signature=ede6e796a3f325d3d0a7743c7c4e7d93648c74d7c41744f1671714e327b5d52b&timestamp=20240526085107&sessionId=&xmlParameters=%3CSearchItemsParameters%3E%3CCategoryId%3E$subCategoryId%3C%2FCategoryId%3E%3C%2FSearchItemsParameters%3E&framePosition=0&frameSize=$productsCount&blockList=";
 
         $response = Http::get($url);
         $products = $response->json();
