@@ -9,6 +9,7 @@ use App\Http\Resources\ProductDetailResource;
 use OpenApi\Annotations as OA;
 use App\Http\Resources\ProductResource;
 use App\Http\Resources\SubCategoryResource;
+use App\Models\Category;
 use App\Traits\ApiResponseHelpers;
 use Illuminate\Support\Facades\Http;
 
@@ -33,13 +34,10 @@ class ProductController extends Controller
      */
     public function categoriesFromTaoBao()
     {
-        $url = "http://otapi.net/service-json/GetRootCategoryInfoList?instanceKey={$this->apiKey}&language=uz&signature=71c80f0af3ef204bfac0ea7479c0e80f5bd27328d8a6a3c9b417eb488e9dac85&timestamp=20240526160409";
-
-        $response = Http::get($url);
-        $categories = $response->json();
+        $categories = Category::all();
 
         return $this->respondWithSuccess([
-            'categories' => CategoryResource::collection($categories['CategoryInfoList']['Content'])
+            'categories' => CategoryResource::collection($categories)
         ]);
     }
 
