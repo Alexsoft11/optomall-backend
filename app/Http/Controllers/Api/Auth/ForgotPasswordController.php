@@ -7,6 +7,7 @@ use App\Http\Requests\auth\ForgotPasswordRequest;
 use App\Models\User;
 use App\Notifications\ResetPasswordNotification;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 use OpenApi\Annotations as OA;
 
 
@@ -24,12 +25,21 @@ class ForgotPasswordController extends Controller
  *             @OA\Property(property="email", type="string", format="email", example="khamidovsherzod003@gmail.com")
  *         ),
  *     ),
- *     @OA\Response(response="200", description="Password reset initiated"),
+ *     @OA\Response(response="200", description="Success"),
  *     @OA\Response(response="422", description="Validation errors"),
  *     @OA\Response(response="404", description="User not found")
  * )
  */
-public function forgotPassword(ForgotPasswordRequest $request){
+public function forgotPassword(Request $request)
+{
+    $validator = Validator::make($request->all(), [
+        'email' => 'required|string|email|max:255',
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json(['message' => 'Invalid email format'], 422);
+    }
+
     $user = User::where('email', $request->email)->first();
 
     if (!$user) {
@@ -37,8 +47,8 @@ public function forgotPassword(ForgotPasswordRequest $request){
     }
 
     $user->notify(new ResetPasswordNotification());
-    $success['success'] = true;
-    return response()->json($success, 200);
+
+    return response()->json(['success' => true], 200);
 }
 
 

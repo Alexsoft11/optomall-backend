@@ -40,7 +40,7 @@ class AuthController extends Controller
             'confirm_password' => 'required|string|min:8',
         ]);
         if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+            return response()->json(['message' => 'User already registrated'], 422);
         }
         $user = User::create([
             'email' => $request->email,
@@ -65,7 +65,7 @@ class AuthController extends Controller
      *         ),
      *     ),
      *     @OA\Response(response="200", description="User logged in successfully"),
-     *     @OA\Response(response="401", description="Unauthorized")
+     *     @OA\Response(response="401", description="Incorrect login or password")
      * )
      */
     public function login(Request $request)
@@ -79,7 +79,49 @@ class AuthController extends Controller
             return response()->json(['token' => $token], 200);
         }
 
-        return response()->json(['error' => 'Unauthorized'], 401);
+        return response()->json(['error' => 'Incorrect login or password'], 401);
+    }
+
+
+     /**
+     * @OA\Post(
+     *     path="/api/personal-data",
+     *     summary="Add personal data",
+     *     tags={"Auth"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"name", "last_name", "phone"},
+     *             @OA\Property(property="name", type="string", example="John"),
+     *             @OA\Property(property="last_name", type="string", example="Doe"),
+     *             @OA\Property(property="phone", type="string", example="+1234567890"),
+     *         ),
+     *     ),
+     *     @OA\Response(response="200", description="Profile updated successfully"),
+     *     @OA\Response(response="422", description="Validation errors"),
+     *     @OA\Response(response="401", description="Unauthorized")
+     * )
+     */
+    public function personalData(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'phone' => 'required|string|max:15',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+        $user = Auth::user();
+        $user->update([
+            'name' => $request->name,
+            'last_name' => $request->last_name,
+            'phone' => $request->phone,
+        ]);
+
+        return response()->json(['message' => 'success'], 200);
     }
 
 }
