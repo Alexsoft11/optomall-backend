@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\List\ListController;
 use App\Http\Controllers\Api\Auth\ProfileController;
 use App\Http\Controllers\Api\Auth\ResetPasswordController;
 use App\Http\Controllers\Api\Auth\UserController;
+use App\Http\Controllers\Api\Slider\SliderController;
 use App\Http\Controllers\Api\Products\OrderController;
 use App\Http\Controllers\Api\Products\ProductController;
 use Illuminate\Http\Request;
@@ -24,6 +25,8 @@ Route::get('/categories-from-taobao', [ProductController::class, 'categoriesFrom
 Route::get('/sub-categories-from-taobao', [ProductController::class, 'subCategoriesFromTaoBao']);
 Route::get('/search-products-from-taobao', [ProductController::class, 'searchProductsFromTaobao']);
 Route::post('/orders', [OrderController::class, 'create']);
+
+Route::get('/sliders', [SliderController::class, 'index']);
 
 Route::middleware('auth:sanctum')->get('/user-get-data', [UserController::class, 'user']);
 Route::middleware('auth:sanctum')->post('/profile/update', [ProfileController::class, 'update']);
