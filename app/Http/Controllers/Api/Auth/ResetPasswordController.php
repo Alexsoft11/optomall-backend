@@ -31,7 +31,7 @@ class ResetPasswordController extends Controller
  *         ),
  *     ),
  *     @OA\Response(response="200", description="Password reset successful"),
- *     @OA\Response(response="401", description="Unauthorized"),
+ *     @OA\Response(response="401", description="User not found"),
  *     @OA\Response(response="422", description="Validation errors")
  * )
  */

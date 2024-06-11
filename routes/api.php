@@ -16,7 +16,7 @@ Route::post('login', [AuthController::class, 'login']);
 
 Route::post('password/forgot', [ForgotPasswordController::class, 'forgotPassword']);
 Route::post('password/reset', [ResetPasswordController::class, 'resetPassword']);
-Route::middleware('auth:api')->post('/profile/update', [ProfileController::class, 'update']);
+Route::middleware('auth:api')->post('/personal-data', [AuthController::class, 'personalData']);
 Route::get('socials', [ListController::class, 'socials']);
 Route::get('/products-from-taobao', [ProductController::class, 'productsFromTaobao']);
 Route::get('/product-detail-from-taobao', [ProductController::class, 'productDetailFromTaoBao']);
@@ -26,3 +26,4 @@ Route::get('/search-products-from-taobao', [ProductController::class, 'searchPro
 Route::post('/orders', [OrderController::class, 'create']);
 
 Route::middleware('auth:sanctum')->get('/user-get-data', [UserController::class, 'user']);
+Route::middleware('auth:sanctum')->post('/profile/update', [ProfileController::class, 'update']);
