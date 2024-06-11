@@ -43,12 +43,12 @@ public function forgotPassword(Request $request)
     $user = User::where('email', $request->email)->first();
 
     if (!$user) {
-        return response()->json(['error' => 'User not found'], 404);
+        return response()->json(['message' => 'User not found'], 404);
     }
 
     $user->notify(new ResetPasswordNotification());
 
-    return response()->json(['success' => true], 200);
+    return response()->json(['message' => "success"], 200);
 }
 
 

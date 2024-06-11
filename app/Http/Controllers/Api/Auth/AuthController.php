@@ -79,7 +79,7 @@ class AuthController extends Controller
             return response()->json(['token' => $token], 200);
         }
 
-        return response()->json(['error' => 'Incorrect login or password'], 401);
+        return response()->json(['message' => 'Incorrect login or password'], 401);
     }
 
 
@@ -112,7 +112,7 @@ class AuthController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+            return response()->json(['error' => $validator->errors()], 422);
         }
         $user = Auth::user();
         $user->update([
