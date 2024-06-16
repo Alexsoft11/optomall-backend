@@ -170,4 +170,72 @@ class ProductController extends Controller
             'products' => ProductResource::collection($products['Result']['Items']['Items']['Content'])
         ]);
     }
+
+    /**
+     * @OA\Get(
+     *     path="/api/top-products",
+     *     summary="Top products",
+     *     tags={"Products"},
+     *     @OA\Response(response="200", description="Products from taobao"),
+     * )
+     */
+    public function topProducts()
+    {
+
+        $productCount = rand(1, 20);
+
+        $url = "http://otapi.net/service-json/BatchSearchItemsFrame?instanceKey={$this->apiKey}&language=uz&signature=e2082ad9248214795914d5f72e7a8ee835428149d23223eb00d97a67c2f9d1f6&timestamp=20240613130232&sessionId=&xmlParameters=%3CSearchItemsParameters%3E%0D%0A%0D%0A%3CCategoryId%3E121392004%3C%2FCategoryId%3E%0D%0A%3C%2FSearchItemsParameters%3E&framePosition=0&frameSize=$productCount&blockList=";
+        $url1 = "http://otapi.net/service-json/BatchSearchItemsFrame?instanceKey={$this->apiKey}&language=uz&signature=e2082ad9248214795914d5f72e7a8ee835428149d23223eb00d97a67c2f9d1f6&timestamp=20240613130232&sessionId=&xmlParameters=%3CSearchItemsParameters%3E%0D%0A%0D%0A%3CCategoryId%3E50000852%3C%2FCategoryId%3E%0D%0A%3C%2FSearchItemsParameters%3E&framePosition=0&frameSize=$productCount&blockList=";
+        $url2 = "http://otapi.net/service-json/BatchSearchItemsFrame?instanceKey={$this->apiKey}&language=uz&signature=e2082ad9248214795914d5f72e7a8ee835428149d23223eb00d97a67c2f9d1f6&timestamp=20240613130232&sessionId=&xmlParameters=%3CSearchItemsParameters%3E%0D%0A%0D%0A%3CCategoryId%3E50013189%3C%2FCategoryId%3E%0D%0A%3C%2FSearchItemsParameters%3E&framePosition=0&frameSize=$productCount&blockList=";
+
+        $response = Http::get($url);
+        $products = $response->json();
+        $productsList = $products['Result']['Items']['Items']['Content'];
+
+        $response1 = Http::get($url1);
+        $products1 = $response1->json();
+        $productsList1 = $products1['Result']['Items']['Items']['Content'];
+
+        $response2 = Http::get($url2);
+        $products2 = $response2->json();
+        $productsList2 = $products2['Result']['Items']['Items']['Content'];
+
+        $mergedProducts = array_merge($productsList, $productsList1, $productsList2);
+        shuffle($mergedProducts);
+
+        return $this->respondWithSuccess([
+            'products' => ProductResource::collection($mergedProducts)
+        ]);
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/recommend-products",
+     *     summary="Top products",
+     *     tags={"Products"},
+     *     @OA\Response(response="200", description="Products from taobao"),
+     * )
+     */
+    public function recommendedProducts()
+    {
+        $productCount = rand(1, 30);
+
+        $url = "http://otapi.net/service-json/BatchSearchItemsFrame?instanceKey={$this->apiKey}&language=uz&signature=e2082ad9248214795914d5f72e7a8ee835428149d23223eb00d97a67c2f9d1f6&timestamp=20240613130232&sessionId=&xmlParameters=%3CSearchItemsParameters%3E%0D%0A%0D%0A%3CCategoryId%3E50010167%3C%2FCategoryId%3E%0D%0A%3C%2FSearchItemsParameters%3E&framePosition=0&frameSize=$productCount&blockList=";
+        $url1 = "http://otapi.net/service-json/BatchSearchItemsFrame?instanceKey={$this->apiKey}&language=uz&signature=e2082ad9248214795914d5f72e7a8ee835428149d23223eb00d97a67c2f9d1f6&timestamp=20240613130232&sessionId=&xmlParameters=%3CSearchItemsParameters%3E%0D%0A%0D%0A%3CCategoryId%3E50000852%3C%2FCategoryId%3E%0D%0A%3C%2FSearchItemsParameters%3E&framePosition=0&frameSize=$productCount&blockList=";
+
+        $response = Http::get($url);
+        $products = $response->json();
+        $productsList = $products['Result']['Items']['Items']['Content'];
+
+        $response1 = Http::get($url1);
+        $products1 = $response1->json();
+        $productsList1 = $products1['Result']['Items']['Items']['Content'];
+
+        $mergedProducts = array_merge($productsList, $productsList1);
+        shuffle($mergedProducts);
+
+        return $this->respondWithSuccess([
+            'products' => ProductResource::collection($mergedProducts)
+        ]);
+    }
 }
