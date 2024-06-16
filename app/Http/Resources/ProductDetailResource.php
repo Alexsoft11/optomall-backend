@@ -24,6 +24,7 @@ class ProductDetailResource extends JsonResource
             'title' => $this['Title'] ?? null,
             'price' => isset($this['Price']['ConvertedPriceWithoutSign']) ? $this['Price']['ConvertedPriceWithoutSign'] * $amount : null,
             'image' => $this['MainPictureUrl'] ?? null,
+            'description' => $this['Description'] ?? null,
             'pictures' => isset($this['Pictures']) ? array_map(function ($attribute) {
                 return [
                     'image_url' => $attribute['Url'] ?? null,
