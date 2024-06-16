@@ -128,7 +128,6 @@ class ProductController extends Controller
 
         $response = Http::get($url);
         $productDetail = $response->json();
-        return $productDetail;
 
         return $this->respondWithSuccess([
             'detail' => new ProductDetailResource($productDetail['Result']['Item'])
