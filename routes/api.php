@@ -27,7 +27,7 @@ Route::get('/search-products-from-taobao', [ProductController::class, 'searchPro
 Route::get('/top-products', [ProductController::class, 'topProducts']);
 Route::get('/recommend-products', [ProductController::class, 'recommendedProducts']);
 Route::get('/discounted-products', [ProductController::class, 'discountedProducts']);
-Route::post('/orders', [OrderController::class, 'create']);
+Route::middleware('auth:sanctum')->post('/orders', [OrderController::class, 'create']);
 
 Route::get('/sliders', [SliderController::class, 'index']);
 

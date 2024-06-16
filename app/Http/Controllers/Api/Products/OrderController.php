@@ -25,12 +25,12 @@ class OrderController extends Controller
      *     summary="Create a new order",
      *     description="Create a new order with items",
      *     operationId="createOrder",
+     *     security={{ "bearerAuth":{} }},
      *     @OA\RequestBody(
      *         required=true,
      *         description="Order details",
      *         @OA\JsonContent(
-     *             required={"user_id", "items"},
-     *             @OA\Property(property="user_id", type="integer", example="1"),
+     *             required={"items"},
      *             @OA\Property(property="items", type="array", @OA\Items(
      *                 @OA\Property(property="product_id", type="integer", example="1"),
      *                 @OA\Property(property="quantity", type="integer", example="2"),
@@ -62,7 +62,6 @@ class OrderController extends Controller
     public function create(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'user_id' => 'required|exists:users,id',
             'items' => 'required|array',
             'items.*.product_id' => 'required',
             'items.*.quantity' => 'required|integer|min:1',
@@ -87,7 +86,7 @@ class OrderController extends Controller
             }
 
             $order = Order::create([
-                'user_id' => $request->user_id,
+                'user_id' => auth()->user()->id,
                 'total_price' => $totalPrice,
                 'status' => 'pending',
             ]);
