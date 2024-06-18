@@ -30,3 +30,4 @@ Route::get('/sliders', [SliderController::class, 'index']);
 
 Route::middleware('auth:sanctum')->get('/user-get-data', [UserController::class, 'user']);
 Route::middleware('auth:sanctum')->post('/profile/update', [ProfileController::class, 'update']);
+Route::middleware('auth:sanctum')->post('/post-comment', [ListController::class, 'postComment']);
