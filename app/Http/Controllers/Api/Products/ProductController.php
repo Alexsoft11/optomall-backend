@@ -264,4 +264,56 @@ class ProductController extends Controller
             ]);
         }
     }
+
+    /**
+     * @OA\Get(
+     *     path="/api/get-prices",
+     *     summary="Get prices.",
+     *     tags={"Products"},
+     *     @OA\Parameter(
+     *         name="productId",
+     *         in="query",
+     *         required=true,
+     *         example="766876725459",
+     *         @OA\Schema(type="string"),
+     *     ),
+     *     @OA\Parameter(
+     *         name="propertyId",
+     *         in="query",
+     *         required=true,
+     *         example="12304035",
+     *         @OA\Schema(type="string"),
+     *     ),
+     *     @OA\Parameter(
+     *         name="valueId",
+     *         in="query",
+     *         required=true,
+     *         example="25484125",
+     *         @OA\Schema(type="string"),
+     *     ),
+     *     @OA\Response(response="200", description="Get prices"),
+     * )
+     */
+
+    public function getPrices(Request $request)
+    {
+        $productId = $request->productId;
+        $propertyId = $request->propertyId;
+        $valueId = $request->valueId;
+
+        $url = "http://otapi.net/service-json/BatchGetSimplifiedItemConfigurationInfo?instanceKey={$this->apiKey}&language=uz&signature=6fa06217364cb1b7343ed4cfefec0f4a93ae41cbdfdd3304e93d387543af88a5&timestamp=20240620095346&sessionId=&itemParameters=&itemId=$productId&xmlRequest=%3CRequest%3E%3CCurrent%3E%3CProperty+Id%3D%22$propertyId%22+ValueId%3D%22$valueId%22+%2F%3E%3C%2FCurrent%3E%3C%2FRequest%3E&blockList=AdditionalPrices";
+
+        $response = Http::get($url);
+        $prices = $response->json();
+
+        if (isset($prices['Result']['Configuration']['Current'])) {
+            $quantity = $prices['Result']['Configuration']['Current']['AvailableQuantity'];
+            $price = $prices['Result']['Configuration']['Current']['Price']['Min'];
+
+            return $this->respondWithSuccess([
+                'price' => $price,
+                'quantity' => $quantity,
+            ]);
+        }
+    }
 }
