@@ -27,7 +27,6 @@ return new class extends Migration
             $table->string('price');
             $table->string('color_id');
             $table->string('size_id');
-            $table->string('composition_id');
             $table->timestamps();
         });
     }

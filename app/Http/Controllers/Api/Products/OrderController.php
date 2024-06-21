@@ -25,18 +25,17 @@ class OrderController extends Controller
      *     summary="Create a new order",
      *     description="Create a new order with items",
      *     operationId="createOrder",
+     *     security={{ "bearerAuth":{} }},
      *     @OA\RequestBody(
      *         required=true,
      *         description="Order details",
      *         @OA\JsonContent(
-     *             required={"user_id", "items"},
-     *             @OA\Property(property="user_id", type="integer", example="1"),
+     *             required={"items"},
      *             @OA\Property(property="items", type="array", @OA\Items(
      *                 @OA\Property(property="product_id", type="integer", example="1"),
      *                 @OA\Property(property="quantity", type="integer", example="2"),
      *                 @OA\Property(property="color_id", type="integer", example="3"),
      *                 @OA\Property(property="size_id", type="integer", example="4"),
-     *                 @OA\Property(property="composition_id", type="integer", example="5"),
      *             )),
      *         ),
      *     ),
@@ -62,13 +61,12 @@ class OrderController extends Controller
     public function create(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'user_id' => 'required|exists:users,id',
             'items' => 'required|array',
             'items.*.product_id' => 'required',
             'items.*.quantity' => 'required|integer|min:1',
             'items.*.color_id' => 'required|integer|min:1',
             'items.*.size_id' => 'required|integer|min:1',
-            'items.*.composition_id' => 'required|integer|min:1',
+            'items.*.composition_id' => 'nullable',
         ]);
 
         if ($validator->fails()) {
@@ -87,7 +85,7 @@ class OrderController extends Controller
             }
 
             $order = Order::create([
-                'user_id' => $request->user_id,
+                'user_id' => auth()->user()->id,
                 'total_price' => $totalPrice,
                 'status' => 'pending',
             ]);
@@ -104,7 +102,6 @@ class OrderController extends Controller
                     'price' => $productDetail['price'],
                     'color_id' => $item['color_id'],
                     'size_id' => $item['size_id'],
-                    'composition_id' => $item['composition_id'],
                 ]);
             }
 
@@ -112,5 +109,56 @@ class OrderController extends Controller
         });
 
         return response()->json(['message' => 'order_created_successfully', 'order' => $order], 201);
+    }
+
+
+
+
+    /**
+     * @OA\Get(
+     *     path="/api/get-orders",
+     *     tags={"Order"},
+     *     summary="Get orders for authenticated user",
+     *     description="Retrieve orders created by the authenticated user",
+     *     security={{ "bearerAuth":{} }},
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthorized",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Unauthorized"),
+     *         ),
+     *     ),
+     * )
+     */
+    public function getOrders(Request $request)
+    {
+        $user = $request->user();
+        $orders = Order::where('user_id', $user->id)->get();
+        return response()->json(['orders' => $orders], 200);
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/success-orders",
+     *     tags={"Order"},
+     *     summary="Get orders for authenticated user",
+     *     description="Retrieve orders created by the authenticated user",
+     *     security={{ "bearerAuth":{} }},
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthorized",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Unauthorized"),
+     *         ),
+     *     ),
+     * )
+     */
+    public function getSuccessOrders(Request $request)
+    {
+        $user = $request->user();
+        $orders = Order::where('user_id', $user->id)->where('status', 'delivered')->get();
+        return response()->json(['orders' => $orders], 200);
     }
 }

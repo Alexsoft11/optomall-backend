@@ -57,7 +57,9 @@ class OrderResource extends Resource
                                 Repeater::make('items')->label('item')->relationship('items')->schema([
                                     TextInput::make('quantity'),
                                     TextInput::make('price'),
-                                    TextInput::make('product.colors.value')
+                                    TextInput::make('color_id'),
+                                    TextInput::make('size_id'),
+                                    TextInput::make('composition_id'),
                                 ])
                             ]),
                     ])
