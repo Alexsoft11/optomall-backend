@@ -124,4 +124,40 @@ class AuthController extends Controller
         return response()->json(['message' => 'success'], 200);
     }
 
+
+
+    /**
+ * @OA\Post(
+ *     path="/api/check-email",
+ *     summary="Check if email exists",
+ *     tags={"Auth"},
+ *     @OA\RequestBody(
+ *         required=true,
+ *         @OA\JsonContent(
+ *             required={"email"},
+ *             @OA\Property(property="email", type="string", format="email", example="admin@mail.ru")
+ *         ),
+ *     ),
+ *     @OA\Response(response="200", description="Email exists"),
+ *     @OA\Response(response="404", description="Email does not exist")
+ * )
+ */
+public function checkEmail(Request $request)
+{
+    $validator = Validator::make($request->all(), [
+        'email' => 'required|string|email|max:255',
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json(['error' => $validator->errors()], 422);
+    }
+    $emailExists = User::where('email', $request->email)->exists();
+    if ($emailExists) {
+        return response()->json(['message' => 'true'], 200);
+    } else {
+        return response()->json(['message' => 'false'], 404);
+    }
+}
+
+
 }
