@@ -112,4 +112,55 @@ class OrderController extends Controller
 
         return response()->json(['message' => 'Order created successfully', 'order' => $order], 201);
     }
+
+
+
+
+    /**
+     * @OA\Get(
+     *     path="/api/get-orders",
+     *     tags={"Order"},
+     *     summary="Get orders for authenticated user",
+     *     description="Retrieve orders created by the authenticated user",
+     *     security={{ "bearerAuth":{} }},
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthorized",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Unauthorized"),
+     *         ),
+     *     ),
+     * )
+     */
+    public function getOrders(Request $request)
+    {
+        $user = $request->user();
+        $orders = Order::where('user_id', $user->id)->get();
+        return response()->json(['orders' => $orders], 200);
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/success-orders",
+     *     tags={"Order"},
+     *     summary="Get orders for authenticated user",
+     *     description="Retrieve orders created by the authenticated user",
+     *     security={{ "bearerAuth":{} }},
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthorized",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Unauthorized"),
+     *         ),
+     *     ),
+     * )
+     */
+    public function getSuccessOrders(Request $request)
+    {
+        $user = $request->user();
+        $orders = Order::where('user_id', $user->id)->where('status', 'delivered')->get();
+        return response()->json(['orders' => $orders], 200);
+    }
 }
