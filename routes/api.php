@@ -24,11 +24,24 @@ Route::get('/product-detail-from-taobao', [ProductController::class, 'productDet
 Route::get('/categories-from-taobao', [ProductController::class, 'categoriesFromTaoBao']);
 Route::get('/sub-categories-from-taobao', [ProductController::class, 'subCategoriesFromTaoBao']);
 Route::get('/search-products-from-taobao', [ProductController::class, 'searchProductsFromTaobao']);
+
+Route::get('/top-products', [ProductController::class, 'topProducts']);
+Route::get('/recommend-products', [ProductController::class, 'recommendedProducts']);
+Route::get('/discounted-products', [ProductController::class, 'discountedProducts']);
+
+
 Route::get('/products', [ProductController::class, 'products']);
 Route::get('/get-prices', [ProductController::class, 'getPrices']);
 Route::middleware('auth:sanctum')->post('/orders', [OrderController::class, 'create']);
+
 Route::get('/sliders', [SliderController::class, 'index']);
 
+
+Route::middleware('auth:sanctum')->post('/orders', [OrderController::class, 'create']);
 Route::middleware('auth:sanctum')->get('/user-get-data', [UserController::class, 'user']);
 Route::middleware('auth:sanctum')->post('/profile/update', [ProfileController::class, 'update']);
 Route::middleware('auth:sanctum')->post('/post-comment', [ListController::class, 'postComment']);
+Route::middleware('auth:sanctum')->get('/orders', [OrderController::class, 'getUserOrders']);
+Route::middleware('auth:sanctum')->get('/get-orders', [OrderController::class, 'getOrders']);
+Route::middleware('auth:sanctum')->get('/success-orders', [OrderController::class, 'getSuccessOrders']);
+
