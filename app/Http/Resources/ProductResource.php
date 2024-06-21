@@ -18,24 +18,16 @@ class ProductResource extends JsonResource
         $amount = Exchanges::where('currency', 'usd')->first()->amount ?? 12000;
 
         $promotionPriceExists = isset($this->resource['PromotionPrice']);
-        $promotionPricePercent = null;
-
-        if ($promotionPriceExists) {
-            foreach ($this->resource['PromotionPricePercent'] as $percent) {
-                if ($percent['CurrencyCode'] == 'USD') {
-                    $promotionPricePercent = $percent['Percent'];
-                    break;
-                }
-            }
-        }
+        $promotionPercentExists = isset($this->resource['PromotionPricePercent']);
+        // return $promotionPercentExists;
 
         return [
             'id' => $this->resource['Id'],
             'title' => $this->resource['Title'],
-            'price' => $this->resource['Price']['ConvertedPriceWithoutSign'] * $amount,
+            'price' => round($this->resource['Price']['ConvertedPriceWithoutSign']) * $amount,
             'image' => $this->resource['MainPictureUrl'],
-            'discounted_price' => $promotionPriceExists ? $this->resource['PromotionPrice']['ConvertedPriceList']['Internal']['Price'] * $amount : null,
-            'discount_percent' => $promotionPricePercent,
+            'discounted_price' => $promotionPriceExists ? round($this->resource['PromotionPrice']['ConvertedPriceList']['Internal']['Price']) * $amount : null,
+            'discount_percent' => $promotionPercentExists ? $this->resource['PromotionPricePercent'][0]['Percent'] : null,
         ];
     }
 }

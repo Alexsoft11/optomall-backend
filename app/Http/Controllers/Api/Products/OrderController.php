@@ -36,7 +36,6 @@ class OrderController extends Controller
      *                 @OA\Property(property="quantity", type="integer", example="2"),
      *                 @OA\Property(property="color_id", type="integer", example="3"),
      *                 @OA\Property(property="size_id", type="integer", example="4"),
-     *                 @OA\Property(property="composition_id", type="integer", example="5"),
      *             )),
      *         ),
      *     ),
@@ -67,7 +66,7 @@ class OrderController extends Controller
             'items.*.quantity' => 'required|integer|min:1',
             'items.*.color_id' => 'required|integer|min:1',
             'items.*.size_id' => 'required|integer|min:1',
-            'items.*.composition_id' => 'required|integer|min:1',
+            'items.*.composition_id' => 'nullable',
         ]);
 
         if ($validator->fails()) {
@@ -103,7 +102,6 @@ class OrderController extends Controller
                     'price' => $productDetail['price'],
                     'color_id' => $item['color_id'],
                     'size_id' => $item['size_id'],
-                    'composition_id' => $item['composition_id'],
                 ]);
             }
 
