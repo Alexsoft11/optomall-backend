@@ -40,7 +40,7 @@ class AuthController extends Controller
             'confirm_password' => 'required|string|min:8',
         ]);
         if ($validator->fails()) {
-            return response()->json(['message' => 'User already registrated'], 422);
+            return response()->json(['message' => 'user_already_registrated'], 422);
         }
         $user = User::create([
             'email' => $request->email,
@@ -48,7 +48,7 @@ class AuthController extends Controller
             'confirm_password' => Hash::make($request->confirm_password),
         ]);
         $user->notify(new VerifyEmailNotification($user));
-        return response()->json(['message' => 'User registered successfully. Please check your email for verification.'], 201);
+        return response()->json(['message' => 'user_registered_successfully'], 201);
     }
 
     /**
@@ -79,7 +79,7 @@ class AuthController extends Controller
             return response()->json(['token' => $token], 200);
         }
 
-        return response()->json(['message' => 'Incorrect login or password'], 401);
+        return response()->json(['message' => 'incorrect_login_or_password', 'error' => true], 401);
     }
 
 
@@ -121,7 +121,7 @@ class AuthController extends Controller
             'phone' => $request->phone,
         ]);
 
-        return response()->json(['message' => 'success'], 200);
+        return response()->json(['message' => 'data_added_successfully'], 200);
     }
 
 }

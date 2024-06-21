@@ -54,7 +54,7 @@ class ProfileController extends Controller
             'confirm_password' => $request->confirm_password,
         ]);
 
-        return response()->json(['message' => 'Profile updated successfully'], 200);
+        return response()->json(['message' => 'profile_updated_successfully'], 200);
     }
 }
 

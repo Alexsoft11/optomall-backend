@@ -22,7 +22,7 @@ public function user(Request $request)
     $user = $request->user();
 
     if (!$user) {
-        return response()->json(['message' => 'Unauthenticated'], 401);
+        return response()->json(['message' => 'unauthenticated', 'error' => true], 401);
     }
 
     return response()->json([
