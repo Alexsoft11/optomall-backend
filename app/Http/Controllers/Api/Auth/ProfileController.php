@@ -152,5 +152,6 @@ class ProfileController extends Controller
         ]);
 
         return response()->json(['message' => 'Password updated successfully'], 200);
+
     }
 }

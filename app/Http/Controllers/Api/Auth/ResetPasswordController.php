@@ -44,7 +44,7 @@ public function __construct(){
 public function resetPassword(ResetPasswordRequest $request){
     $otp2 = $this->otp->validate($request->email, $request->otp);
     if (!$otp2->status) {
-        return response()->json(['message' => 'Invalid OTP'], 401);
+        return response()->json(['message' => 'invalid_otp', 'error' => true], 401);
     }
 
     $validator = Validator::make($request->all(), [
@@ -60,7 +60,7 @@ public function resetPassword(ResetPasswordRequest $request){
     $user = User::where('email', $request->email)->first();
 
     if (!$user) {
-        return response()->json(['message' => 'User not found'], 404);
+        return response()->json(['message' => 'user_not_found', 'error' => true], 404);
     }
     $user->update(['password' => Hash::make($request->password)]);
     $user->tokens()->delete();
