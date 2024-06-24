@@ -3,46 +3,62 @@
 namespace App\Http\Controllers\Api\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use OpenApi\Annotations as OA;
 
 class ProfileController extends Controller
 {
-    /**
-     * @OA\Post(
-     *     path="/api/profile/update-email",
-     *     summary="Update user email",
-     *     tags={"User"},
-     *     security={{"bearerAuth":{}}},
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\JsonContent(
-     *             required={"email"},
-     *             @OA\Property(property="email", type="string", format="email" , example="admin@mail.com"),
-     *         ),
-     *     ),
-     *     @OA\Response(response="200", description="Profile updated successfully"),
-     *     @OA\Response(response="422", description="Validation errors"),
-     *     @OA\Response(response="401", description="Unauthorized")
-     * )
-     */
+  /**
+ * @OA\Post(
+ *     path="/api/profile/update-email",
+ *     summary="Update user email",
+ *     tags={"User"},
+ *     security={{"bearerAuth":{}}},
+ *     @OA\RequestBody(
+ *         required=true,
+ *         @OA\JsonContent(
+ *             required={"email", "password"},
+ *             @OA\Property(property="email", type="string", format="email" , example="admin@mail.com"),
+ *             @OA\Property(property="password", type="string", format="password" , example="password123"),
+ *         ),
+ *     ),
+ *     @OA\Response(response="200", description="Profile updated successfully"),
+ *     @OA\Response(response="422", description="Validation errors"),
+ *     @OA\Response(response="401", description="Unauthorized")
+ * )
+ */
     public function updateEmail(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'email' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255',
+            'password' => 'required|string',
         ]);
-
+    
         if ($validator->fails()) {
             return response()->json(['error' => $validator->errors()], 422);
         }
+    
         $user = Auth::user();
+    
+        if (!Hash::check($request->password, $user->password)) {
+            return response()->json(['message' => 'incorrect_password'], 422);
+        }
+    
+        $emailExists = User::where('email', $request->email)->exists();
+    
+        if ($emailExists) {
+            return response()->json(['message' => 'email_exists'], 422);
+        }
+    
         $user->update([
             'email' => $request->email,
         ]);
-
-        return response()->json(['message' => 'Email updated successfully'], 200);
+    
+        return response()->json(['message' => 'email_updated_successfully'], 200);
     }
 
     /**
@@ -77,10 +93,10 @@ class ProfileController extends Controller
             'name' => $request->name,
         ]);
 
-        return response()->json(['message' => 'name updated successfully'], 200);
+        return response()->json(['message' => 'name_updated_successfully'], 200);
     }
 
-     /**
+    /**
      * @OA\Post(
      *     path="/api/profile/update-phone",
      *     summary="Update user phone",
@@ -112,46 +128,52 @@ class ProfileController extends Controller
             'phone' => $request->phone,
         ]);
 
-        return response()->json(['message' => 'phone updated successfully'], 200);
+        return response()->json(['message' => 'phone_updated_successfully'], 200);
     }
 
 
-         /**
-     * @OA\Post(
-     *     path="/api/profile/update-password",
-     *     summary="Update user password",
-     *     tags={"User"},
-     *     security={{"bearerAuth":{}}},
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\JsonContent(
-     *             required={"password" , "confirm_password"},
-     *             @OA\Property(property="password", type="string", example="new-password"),
-     *             @OA\Property(property="confirm_password", type="string", example="new-password"),
-     *         ),
-     *     ),
-     *     @OA\Response(response="200", description="Profile updated successfully"),
-     *     @OA\Response(response="422", description="Validation errors"),
-     *     @OA\Response(response="401", description="Unauthorized")
-     * )
-     */
+   /**
+ * @OA\Post(
+ *     path="/api/profile/update-password",
+ *     summary="Update user password",
+ *     tags={"User"},
+ *     security={{"bearerAuth":{}}},
+ *     @OA\RequestBody(
+ *         required=true,
+ *         @OA\JsonContent(
+ *             required={"old_password", "password", "confirm_password"},
+ *             @OA\Property(property="old_password", type="string", example="old-password"),
+ *             @OA\Property(property="password", type="string", example="new-password"),
+ *             @OA\Property(property="confirm_password", type="string", example="new-password"),
+ *         ),
+ *     ),
+ *     @OA\Response(response="200", description="Profile updated successfully"),
+ *     @OA\Response(response="422", description="Validation errors"),
+ *     @OA\Response(response="401", description="Unauthorized")
+ * )
+ */
     public function updatePassword(Request $request)
     {
         $validator = Validator::make($request->all(), [
+            'old_password' => 'required|string|max:255',
             'password' => 'required|string|max:255',
             'confirm_password' => 'required|string|max:255|same:password',
         ]);
-
+    
         if ($validator->fails()) {
             return response()->json(['error' => $validator->errors()], 422);
         }
+    
         $user = Auth::user();
+    
+        if (!Hash::check($request->old_password, $user->password)) {
+            return response()->json(['message' => 'incorrect_old_password'], 422);
+        }
+    
         $user->update([
-            'password' => $request->password,
-            'confirm_password' => $request->confirm_password,
+            'password' => Hash::make($request->password),
         ]);
-
-        return response()->json(['message' => 'Password updated successfully'], 200);
-
+    
+        return response()->json(['message' => 'password_updated_successfully'], 200);
     }
 }

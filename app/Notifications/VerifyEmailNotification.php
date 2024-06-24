@@ -35,8 +35,9 @@ class VerifyEmailNotification extends Notification
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
+                    ->subject('TaoBao')
                     ->line('Iltimos ro\'yxatdan o\'tishni tasdiqlang.')
-                    ->action('Shu yerga bosing', url('/'))
+                    ->action('Shu yerga bosing', 'https://www.apple.com/')
                     ->line('Agar tugma ishlamasa, pastdagi manzilga o\'ting!');
     }
 
