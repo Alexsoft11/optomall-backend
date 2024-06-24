@@ -153,9 +153,9 @@ public function checkEmail(Request $request)
     }
     $emailExists = User::where('email', $request->email)->exists();
     if ($emailExists) {
-        return response()->json(['message' => 'true'], 200);
+        return response()->json(['message' => 'true']);
     } else {
-        return response()->json(['message' => 'false'], 404);
+        return response()->json(['message' => 'false']);
     }
 }
 
