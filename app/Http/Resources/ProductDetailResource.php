@@ -40,7 +40,7 @@ class ProductDetailResource extends JsonResource
                     'is_main' => $attribute['IsMain'] ?? null,
                 ];
             }, $this['Pictures']) : [],
-            'location' => $this['Location']['State'] ?? null,
+            'location' => $this['Location']['State'] ?? 'China',
             'product_url' => $this['ExternalItemUrl'] ?? null,
             'videos' => $this['Videos'] ?? [],
             'colors' => isset($this['Attributes']) ? array_values(array_filter(array_map(function ($attribute) use (&$counter) {
@@ -54,7 +54,7 @@ class ProductDetailResource extends JsonResource
                     'valueId' => $attribute['Vid'] ?? null,
                 ];
             }, $this['Attributes']), function ($color) {
-                return ($color['propertyName'] === 'Rang bilan saralash' || $color['propertyName'] === 'tana rangi') && $color['imageUrl'] !== null;
+                return ($color['propertyName'] === 'Rang bilan saralash' || $color['propertyName'] === 'tana rangi' || $color['propertyName'] === 'rang') && $color['imageUrl'] !== null;
             })) : [],
             'sizes' => isset($this['Attributes']) ? array_values(array_filter(array_map(function ($attribute) use (&$counter) {
                 return [
