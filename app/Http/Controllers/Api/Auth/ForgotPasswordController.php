@@ -37,13 +37,13 @@ public function forgotPassword(Request $request)
     ]);
 
     if ($validator->fails()) {
-        return response()->json(['message' => 'Invalid email format'], 422);
+        return response()->json(['message' => 'invalid_email_format', 'error' => true], 422);
     }
 
     $user = User::where('email', $request->email)->first();
 
     if (!$user) {
-        return response()->json(['message' => 'User not found'], 404);
+        return response()->json(['message' => 'user_not_found', 'error' => true], 404);
     }
 
     $user->notify(new ResetPasswordNotification());

@@ -69,7 +69,7 @@ class OrderController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['message' => 'Invalid data', 'errors' => $validator->errors()], 400);
+            return response()->json(['message' => 'invalid_data', 'errors' => $validator->errors(), 'error' => true], 400);
         }
 
         $order = DB::transaction(function () use ($request) {
@@ -106,7 +106,7 @@ class OrderController extends Controller
             return $order;
         });
 
-        return response()->json(['message' => 'Order created successfully', 'order' => $order], 201);
+        return response()->json(['message' => 'order_created_successfully', 'order' => $order], 201);
     }
 
 
