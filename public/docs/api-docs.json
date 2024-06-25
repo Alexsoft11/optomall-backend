@@ -1,0 +1,916 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "API Documentation",
+        "version": "1.0.0"
+    },
+    "paths": {
+        "/api/register": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Register a new user",
+                "operationId": "58fe5a217ef88ae75e9b530a5e5817d1",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "email",
+                                    "password",
+                                    "confirm_password"
+                                ],
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "khamidovsherzod003@gmail.com"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "12345678"
+                                    },
+                                    "confirm_password": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "12345678"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "User registered successfully"
+                    },
+                    "422": {
+                        "description": "Validation errors"
+                    }
+                }
+            }
+        },
+        "/api/login": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Login a user",
+                "operationId": "ea134134deae11eb974c719450ef8a02",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "email",
+                                    "password"
+                                ],
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "khamidovsherzod003@gmail.com"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "12345678"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "User logged in successfully"
+                    },
+                    "401": {
+                        "description": "Incorrect login or password"
+                    }
+                }
+            }
+        },
+        "/api/personal-data": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Add personal data",
+                "operationId": "233154916a8f99e65c18d4dcefdb8cfe",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "last_name",
+                                    "phone"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "John"
+                                    },
+                                    "last_name": {
+                                        "type": "string",
+                                        "example": "Doe"
+                                    },
+                                    "phone": {
+                                        "type": "string",
+                                        "example": "+1234567890"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Profile updated successfully"
+                    },
+                    "422": {
+                        "description": "Validation errors"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/password/forgot": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Initiate password reset",
+                "operationId": "5ccf414e9c8e866ccacd0b3e6fb64156",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "email"
+                                ],
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "khamidovsherzod003@gmail.com"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    },
+                    "422": {
+                        "description": "Validation errors"
+                    },
+                    "404": {
+                        "description": "User not found"
+                    }
+                }
+            }
+        },
+        "/api/profile/update": {
+            "post": {
+                "tags": [
+                    "User"
+                ],
+                "summary": "Update user profile",
+                "operationId": "b101bf58dd2df01895f55ba5f6b73f34",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "last_name",
+                                    "phone",
+                                    "password",
+                                    "confirm_password"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "John"
+                                    },
+                                    "last_name": {
+                                        "type": "string",
+                                        "example": "Doe"
+                                    },
+                                    "phone": {
+                                        "type": "string",
+                                        "example": "+1234567890"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "example": "12345678"
+                                    },
+                                    "confirm_password": {
+                                        "type": "string",
+                                        "example": "12345678"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Profile updated successfully"
+                    },
+                    "422": {
+                        "description": "Validation errors"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/password/reset": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Reset password",
+                "operationId": "1f497957b041e83a7163706f35729360",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "email",
+                                    "otp",
+                                    "password",
+                                    "confirm_password"
+                                ],
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "khamidovsherzod003@gmail.com"
+                                    },
+                                    "otp": {
+                                        "type": "string",
+                                        "example": "123456"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "new-password"
+                                    },
+                                    "confirm_password": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "new-password"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Password reset successful"
+                    },
+                    "401": {
+                        "description": "User not found"
+                    },
+                    "422": {
+                        "description": "Validation errors"
+                    }
+                }
+            }
+        },
+        "/api/user-get-data": {
+            "get": {
+                "tags": [
+                    "User"
+                ],
+                "summary": "Get authenticated user's data",
+                "operationId": "bd300a21786070480a9b1ba52cf163a5",
+                "responses": {
+                    "200": {
+                        "description": "User's data"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/socials": {
+            "get": {
+                "tags": [
+                    "List"
+                ],
+                "summary": "Get a list of socials",
+                "operationId": "ed914387e6b05d4515df7aa95ab2bece",
+                "responses": {
+                    "200": {
+                        "description": "List of socials"
+                    }
+                }
+            }
+        },
+        "/api/post-comment": {
+            "post": {
+                "tags": [
+                    "Comments"
+                ],
+                "summary": "Post a comment on a product",
+                "operationId": "d01b563e2c639d1b958d13b39e67891b",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "product_id",
+                                    "name"
+                                ],
+                                "properties": {
+                                    "product_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Great product!"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Comment posted successfully"
+                    },
+                    "400": {
+                        "description": "Invalid input"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "404": {
+                        "description": "Product not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/orders": {
+            "post": {
+                "tags": [
+                    "Order"
+                ],
+                "summary": "Create a new order",
+                "description": "Create a new order with items",
+                "operationId": "createOrder",
+                "requestBody": {
+                    "description": "Order details",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "items"
+                                ],
+                                "properties": {
+                                    "items": {
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "product_id": {
+                                                    "type": "integer",
+                                                    "example": "1"
+                                                },
+                                                "quantity": {
+                                                    "type": "integer",
+                                                    "example": "2"
+                                                },
+                                                "color_id": {
+                                                    "type": "integer",
+                                                    "example": "3"
+                                                },
+                                                "size_id": {
+                                                    "type": "integer",
+                                                    "example": "4"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Order created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Order created successfully"
+                                        },
+                                        "order_id": {
+                                            "type": "integer",
+                                            "example": "1"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Invalid data"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/user-basket": {
+            "post": {
+                "tags": [
+                    "Order"
+                ],
+                "summary": "Create a new Basket",
+                "description": "Create a new Basket with items",
+                "operationId": "createBasket",
+                "requestBody": {
+                    "description": "Basket details",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "items"
+                                ],
+                                "properties": {
+                                    "items": {
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "product_id": {
+                                                    "type": "integer",
+                                                    "example": "1"
+                                                },
+                                                "quantity": {
+                                                    "type": "integer",
+                                                    "example": "2"
+                                                },
+                                                "color_id": {
+                                                    "type": "integer",
+                                                    "example": "3"
+                                                },
+                                                "size_id": {
+                                                    "type": "integer",
+                                                    "example": "4"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Basket created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Basket created successfully"
+                                        },
+                                        "order_id": {
+                                            "type": "integer",
+                                            "example": "1"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Invalid data"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/get-orders": {
+            "get": {
+                "tags": [
+                    "Order"
+                ],
+                "summary": "Get orders for authenticated user",
+                "description": "Retrieve orders created by the authenticated user",
+                "operationId": "74ddd3034b6f2da63033cacb59a039de",
+                "responses": {
+                    "401": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unauthorized"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/get-user-basket": {
+            "get": {
+                "tags": [
+                    "Order"
+                ],
+                "summary": "Get basket",
+                "operationId": "0bec46fde6c6ac95ad02c1cfb577a63b",
+                "responses": {
+                    "401": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unauthorized"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/success-orders": {
+            "get": {
+                "tags": [
+                    "Order"
+                ],
+                "summary": "Get orders for authenticated user",
+                "description": "Retrieve orders created by the authenticated user",
+                "operationId": "a306e4d5d19ace48c02e7326a3311e19",
+                "responses": {
+                    "401": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unauthorized"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/categories-from-taobao": {
+            "get": {
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Get categories from taobao",
+                "operationId": "34b6664474227ffb565ac008c1c3fc16",
+                "responses": {
+                    "200": {
+                        "description": "Categories from taobao"
+                    }
+                }
+            }
+        },
+        "/api/sub-categories-from-taobao": {
+            "get": {
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Get subcategories from taobao",
+                "operationId": "df5df0dfe2d21ea70a6cd0ababc494ce",
+                "parameters": [
+                    {
+                        "name": "categoryId",
+                        "in": "query",
+                        "description": "The ID of the category",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "SubCategories from taobao"
+                    }
+                }
+            }
+        },
+        "/api/products-from-taobao": {
+            "get": {
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Get products from taobao",
+                "operationId": "2e46804fd86ef995c0a276a821d54bb3",
+                "parameters": [
+                    {
+                        "name": "subCategoryId",
+                        "in": "query",
+                        "description": "The ID of the subcategory",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "productsCount",
+                        "in": "query",
+                        "description": "The count of products",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Products from taobao"
+                    }
+                }
+            }
+        },
+        "/api/product-detail-from-taobao": {
+            "get": {
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Get product detail from taobao",
+                "operationId": "dec10a626e14466f53a7ba730c63a796",
+                "parameters": [
+                    {
+                        "name": "productId",
+                        "in": "query",
+                        "description": "The ID of the product to retrieve details for",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Product detail from taobao"
+                    }
+                }
+            }
+        },
+        "/api/search-products-from-taobao": {
+            "get": {
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Search products by title.",
+                "operationId": "f6c7008164c9f85ab127d555e1b77e7c",
+                "parameters": [
+                    {
+                        "name": "searchQuery",
+                        "in": "query",
+                        "description": "Search products by title.",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "productsCount",
+                        "in": "query",
+                        "description": "The count of products",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Products from taobao"
+                    }
+                }
+            }
+        },
+        "/api/products": {
+            "get": {
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Products",
+                "operationId": "35bc281354b1c01ea5ce0f87ebbb410a",
+                "parameters": [
+                    {
+                        "name": "query",
+                        "in": "query",
+                        "description": "Top or Recommended or Discount",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "Top",
+                                "Recommended",
+                                "Discount"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Products from taobao"
+                    }
+                }
+            }
+        },
+        "/api/get-prices": {
+            "get": {
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Get prices.",
+                "operationId": "5e51fd648590f3f32e900dfc68ce7f1d",
+                "parameters": [
+                    {
+                        "name": "productId",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "766876725459"
+                    },
+                    {
+                        "name": "propertyId",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "12304035"
+                    },
+                    {
+                        "name": "valueId",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "25484125"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Get prices"
+                    }
+                }
+            }
+        },
+        "/api/sliders": {
+            "get": {
+                "tags": [
+                    "Slider"
+                ],
+                "summary": "Get list of sliders",
+                "operationId": "fbb6522b28214d9b827136bcf6c974b1",
+                "responses": {
+                    "200": {
+                        "description": "Successful operation"
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "securitySchemes": {
+            "bearerAuth": {
+                "type": "http",
+                "bearerFormat": "JWT",
+                "scheme": "bearer"
+            }
+        }
+    }
+}
