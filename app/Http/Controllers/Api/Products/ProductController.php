@@ -8,6 +8,7 @@ use App\Http\Resources\CategoryResource;
 use App\Http\Resources\ProductDetailResource;
 use OpenApi\Annotations as OA;
 use App\Http\Resources\ProductResource;
+use App\Http\Resources\ScoreResource;
 use App\Http\Resources\SubCategoryResource;
 use App\Models\Category;
 use App\Traits\ApiResponseHelpers;
@@ -125,13 +126,37 @@ class ProductController extends Controller
     {
         $productId = $request->productId;
         $url = "http://otapi.net/service-json/BatchGetItemFullInfo?instanceKey={$this->apiKey}&language=uz&signature=a67f4af4c43ea96f880740611d680127cbdf84ddbdaab674d8c3f265df1353e0&timestamp=20240526085023&sessionId=&itemParameters=&itemId=$productId&blockList=OriginalDescription";
+        $score = "http://otapi.net/service-json/BatchGetSimplifiedItemFullInfo?instanceKey={$this->apiKey}&language=uz&signature=a67f4af4c43ea96f880740611d680127cbdf84ddbdaab674d8c3f265df1353e0&timestamp=20240526085023&sessionId=&itemParameters=&itemId=$productId&blockList=Vendor";
+        $url1 = "http://otapi.net/service-json/BatchSearchItemsFrame?instanceKey={$this->apiKey}&language=uz&signature=e2082ad9248214795914d5f72e7a8ee835428149d23223eb00d97a67c2f9d1f6&timestamp=20240613130232&sessionId=&xmlParameters=%3CSearchItemsParameters%3E%0D%0A%0D%0A%3CCategoryId%3E121392004%3C%2FCategoryId%3E%0D%0A%3C%2FSearchItemsParameters%3E&framePosition=0&frameSize=1&blockList=";
+        $url2 = "http://otapi.net/service-json/BatchSearchItemsFrame?instanceKey={$this->apiKey}&language=uz&signature=e2082ad9248214795914d5f72e7a8ee835428149d23223eb00d97a67c2f9d1f6&timestamp=20240613130232&sessionId=&xmlParameters=%3CSearchItemsParameters%3E%0D%0A%0D%0A%3CCategoryId%3E50000852%3C%2FCategoryId%3E%0D%0A%3C%2FSearchItemsParameters%3E&framePosition=0&frameSize=2&blockList=";
+        $url3 = "http://otapi.net/service-json/BatchSearchItemsFrame?instanceKey={$this->apiKey}&language=uz&signature=e2082ad9248214795914d5f72e7a8ee835428149d23223eb00d97a67c2f9d1f6&timestamp=20240613130232&sessionId=&xmlParameters=%3CSearchItemsParameters%3E%0D%0A%0D%0A%3CCategoryId%3E50013189%3C%2FCategoryId%3E%0D%0A%3C%2FSearchItemsParameters%3E&framePosition=0&frameSize=1&blockList=";
+
+        $response1 = Http::get($url1);
+        $products1 = $response1->json();
+        $productsList1 = $products1['Result']['Items']['Items']['Content'];
+
+        $response2 = Http::get($url2);
+        $products2 = $response2->json();
+        $productsList2 = $products2['Result']['Items']['Items']['Content'];
+
+        $response3 = Http::get($url3);
+        $products3 = $response3->json();
+        $productsList3 = $products3['Result']['Items']['Items']['Content'];
+
+        $mergedProducts = array_merge($productsList1, $productsList2, $productsList3);
+        shuffle($mergedProducts);
 
         $response = Http::get($url);
         $productDetail = $response->json();
-        // return $productDetail;
+
+        $score = Http::get($score);
+        $scoreDetail = $score->json();
+        // return $scoreDetail;
 
         return $this->respondWithSuccess([
-            'detail' => new ProductDetailResource($productDetail['Result']['Item'])
+            'detail' => new ProductDetailResource($productDetail['Result']['Item']),
+            'score' => new ScoreResource($scoreDetail['Result']['Vendor']),
+            'recommended' => ProductResource::collection($mergedProducts)
         ]);
     }
 
