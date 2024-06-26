@@ -98,41 +98,46 @@ class AuthController extends Controller
     }
 
     /**
-     * @OA\Post(
-     *     path="/api/login",
-     *     summary="Login a user",
-     *     tags={"Auth"},
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\JsonContent(
-     *             required={"email","password"},
-     *             @OA\Property(property="email", type="string", format="email", example="khamidovsherzod003@gmail.com"),
-     *             @OA\Property(property="password", type="string", format="password", example="12345678")
-     *         ),
-     *     ),
-     *     @OA\Response(response="200", description="User logged in successfully"),
-     *     @OA\Response(response="401", description="Incorrect login or password"),
-     *     @OA\Response(response="403", description="Email not verified")
-     * )
-     */
-    public function login(Request $request)
-    {
-        $credentials = $request->only('email', 'password');
+ * @OA\Post(
+ *     path="/api/login",
+ *     summary="Login a user",
+ *     tags={"Auth"},
+ *     @OA\RequestBody(
+ *         required=true,
+ *         @OA\JsonContent(
+ *             required={"email","password"},
+ *             @OA\Property(property="email", type="string", format="email", example="khamidovsherzod003@gmail.com"),
+ *             @OA\Property(property="password", type="string", format="password", example="12345678")
+ *         ),
+ *     ),
+ *     @OA\Response(response="200", description="User logged in successfully"),
+ *     @OA\Response(response="401", description="Incorrect login or password"),
+ *     @OA\Response(response="403", description="Email not verified")
+ * )
+ */
+public function login(Request $request)
+{
+    $credentials = $request->only('email', 'password');
+    
+    $user = User::where('email', $credentials['email'])->first();
 
-        if (Auth::attempt($credentials)) {
-            $user = Auth::user();
-
-            if (!$user->email_verified) {
-                return response()->json(['message' => 'Please verify your email first', 'error' => true], 403);
-            }
-
-            $token = $user->createToken('AuthToken')->plainTextToken;
-
-            return response()->json(['token' => $token], 200);
-        }
-
-        return response()->json(['message' => 'Incorrect login or password', 'error' => true], 401);
+    if (!$user) {
+        return response()->json(['message' => 'email_doesnt_exist', 'error' => false], 401);
     }
+
+    if (!Hash::check($credentials['password'], $user->password)) {
+        return response()->json(['message' => 'wrong_password', 'error' => false], 401);
+    }
+
+    if (!$user->email_verified) {
+        return response()->json(['message' => 'verify_email', 'error' => false], 403);
+    }
+
+    $token = $user->createToken('AuthToken')->plainTextToken;
+
+    return response()->json(['token' => $token], 200);
+}
+
 
 
     /**
