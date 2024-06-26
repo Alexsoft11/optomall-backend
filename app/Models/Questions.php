@@ -9,6 +9,6 @@ class Questions extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name'];
+    protected $fillable = ['name_uz', 'name_ru', 'name_en'];
 
 }
