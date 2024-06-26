@@ -11,45 +11,35 @@ class VerifyEmailNotification extends Notification
 {
     use Queueable;
 
-    /**
-     * Create a new notification instance.
-     */
-    public function __construct()
+    protected $token;
+
+    public function __construct($token)
     {
-        //
+        $this->token = $token;
     }
 
-    /**
-     * Get the notification's delivery channels.
-     *
-     * @return array<int, string>
-     */
-    public function via(object $notifiable): array
+    public function via($notifiable)
     {
         return ['mail'];
     }
 
-    /**
-     * Get the mail representation of the notification.
-     */
-    public function toMail(object $notifiable): MailMessage
+    public function toMail($notifiable)
     {
+        $url = url('/api/verify-email/' . $this->token);
+
         return (new MailMessage)
-                    ->subject('TaoBao')
-                    ->line('Iltimos ro\'yxatdan o\'tishni tasdiqlang.')
-                    ->action('Shu yerga bosing', 'https://www.apple.com/')
-                    ->line('Agar tugma ishlamasa, pastdagi manzilga o\'ting!');
+            ->subject('TaoBao')
+            ->line('Please verify your email address.')
+            ->action('Click here to verify', $url)
+            ->line('If the button doesn\'t work, please use the following link:')
+            ->line($url);
     }
 
-    /**
-     * Get the array representation of the notification.
-     *
-     * @return array<string, mixed>
-     */
-    public function toArray(object $notifiable): array
+    public function toArray($notifiable)
     {
         return [
             //
         ];
     }
 }
+

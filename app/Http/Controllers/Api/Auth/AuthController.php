@@ -10,6 +10,8 @@ use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use OpenApi\Annotations as OA;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
 
 
 class AuthController extends Controller
@@ -39,16 +41,60 @@ class AuthController extends Controller
             'password' => 'required|string|min:8|same:confirm_password',
             'confirm_password' => 'required|string|min:8',
         ]);
+
         if ($validator->fails()) {
-            return response()->json(['message' => 'user_already_registrated'], 422);
+            return response()->json(['message' => 'Validation errors'], 422);
         }
+
         $user = User::create([
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'confirm_password' => Hash::make($request->confirm_password),
+            'email_verified' => false,
         ]);
-        $user->notify(new VerifyEmailNotification($user));
-        return response()->json(['message' => 'user_registered_successfully'], 201);
+
+        $token = Str::random(60);
+        Cache::put($token, $user->id, now()->addMinutes(60));
+
+        $user->notify(new VerifyEmailNotification($token));
+
+        return response()->json(['message' => 'Verification email sent'], 201);
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/verify-email/{token}",
+     *     summary="Verify email",
+     *     tags={"Auth"},
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="path",
+     *         required=true,
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Response(response="200", description="Email verified"),
+     *     @OA\Response(response="404", description="Invalid or expired token")
+     * )
+     */
+    public function verifyEmail($token)
+    {
+        $userId = Cache::get($token);
+
+        if (!$userId) {
+            return response()->json(['message' => 'Invalid or expired token'], 404);
+        }
+
+        $user = User::find($userId);
+        if ($user) {
+            $user->email_verified = true;
+            $user->email_verified_at = now();
+            $user->save();
+
+            Cache::forget($token);
+
+            return response()->json(['message' => 'Email verified successfully'], 200);
+        }
+
+        return response()->json(['message' => 'User not found'], 404);
     }
 
     /**
@@ -65,7 +111,8 @@ class AuthController extends Controller
      *         ),
      *     ),
      *     @OA\Response(response="200", description="User logged in successfully"),
-     *     @OA\Response(response="401", description="Incorrect login or password")
+     *     @OA\Response(response="401", description="Incorrect login or password"),
+     *     @OA\Response(response="403", description="Email not verified")
      * )
      */
     public function login(Request $request)
@@ -74,16 +121,21 @@ class AuthController extends Controller
 
         if (Auth::attempt($credentials)) {
             $user = Auth::user();
+
+            if (!$user->email_verified) {
+                return response()->json(['message' => 'Please verify your email first', 'error' => true], 403);
+            }
+
             $token = $user->createToken('AuthToken')->plainTextToken;
 
             return response()->json(['token' => $token], 200);
         }
 
-        return response()->json(['message' => 'incorrect_login_or_password', 'error' => true], 401);
+        return response()->json(['message' => 'Incorrect login or password', 'error' => true], 401);
     }
 
 
-     /**
+    /**
      * @OA\Post(
      *     path="/api/personal-data",
      *     summary="Add personal data",
@@ -127,37 +179,35 @@ class AuthController extends Controller
 
 
     /**
- * @OA\Post(
- *     path="/api/check-email",
- *     summary="Check if email exists",
- *     tags={"Auth"},
- *     @OA\RequestBody(
- *         required=true,
- *         @OA\JsonContent(
- *             required={"email"},
- *             @OA\Property(property="email", type="string", format="email", example="admin@mail.ru")
- *         ),
- *     ),
- *     @OA\Response(response="200", description="Email exists"),
- *     @OA\Response(response="404", description="Email does not exist")
- * )
- */
-public function checkEmail(Request $request)
-{
-    $validator = Validator::make($request->all(), [
-        'email' => 'required|string|email|max:255',
-    ]);
+     * @OA\Post(
+     *     path="/api/check-email",
+     *     summary="Check if email exists",
+     *     tags={"Auth"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"email"},
+     *             @OA\Property(property="email", type="string", format="email", example="admin@mail.ru")
+     *         ),
+     *     ),
+     *     @OA\Response(response="200", description="Email exists"),
+     *     @OA\Response(response="404", description="Email does not exist")
+     * )
+     */
+    public function checkEmail(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|string|email|max:255',
+        ]);
 
-    if ($validator->fails()) {
-        return response()->json(['error' => $validator->errors()], 422);
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 422);
+        }
+        $emailExists = User::where('email', $request->email)->exists();
+        if ($emailExists) {
+            return response()->json(['message' => 'true']);
+        } else {
+            return response()->json(['message' => 'false']);
+        }
     }
-    $emailExists = User::where('email', $request->email)->exists();
-    if ($emailExists) {
-        return response()->json(['message' => 'true']);
-    } else {
-        return response()->json(['message' => 'false']);
-    }
-}
-
-
 }
