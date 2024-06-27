@@ -105,7 +105,7 @@ public function verifyEmail($token)
                 $user->save();
             }
 
-            $redirectUrl = "http://localhost:3000/auth?step=info&id={$user->unique_id}";
+            $redirectUrl = "http://134.122.6.96/auth?step=info&id={$user->unique_id}";
 
             return redirect($redirectUrl);
         }
