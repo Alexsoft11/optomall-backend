@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('phone')->nullable();
             $table->string('email')->unique();
             $table->boolean('email_verified')->default(0);
+            $table->boolean('info_filled')->default(0);
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->string('confirm_password')->nullable();
