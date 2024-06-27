@@ -12,10 +12,12 @@ class VerifyEmailNotification extends Notification
     use Queueable;
 
     protected $token;
+    protected $userId;
 
-    public function __construct($token)
+    public function __construct($token, $userId)
     {
         $this->token = $token;
+        $this->userId = $userId;
     }
 
     public function via($notifiable)
@@ -25,14 +27,13 @@ class VerifyEmailNotification extends Notification
 
     public function toMail($notifiable)
     {
-        $url = url('/api/verify-email/' . $this->token);
+        $url = url("/api/verify-email/{$this->token}");
 
         return (new MailMessage)
-            ->subject('TaoBao')
-            ->line('Please verify your email address.')
-            ->action('Click here to verify', $url)
-            ->line('If the button doesn\'t work, please use the following link:')
-            ->line($url);
+            ->subject('Verify your email address')
+            ->line('Please click the button below to verify your email address.')
+            ->action('Verify Email Address', $url)
+            ->line('If you did not create an account, no further action is required.');
     }
 
     public function toArray($notifiable)
@@ -42,4 +43,3 @@ class VerifyEmailNotification extends Notification
         ];
     }
 }
-
