@@ -198,7 +198,7 @@ class OrderController extends Controller
             return $order;
         });
 
-        return response()->json(['message' => 'Product added to basket', 'order' => $order], 201);
+        return response()->json(['message' => 'Product added to basket', 'basket' => $order], 201);
     }
 
 
@@ -245,9 +245,19 @@ class OrderController extends Controller
     public function getUserBasket(Request $request)
     {
         $user = $request->user();
-        $orders = Order::where('user_id', $user->id)->where('type', 'basket')->get();
-        return response()->json(['orders' => $orders], 200);
+        $baskets = Order::where('user_id', $user->id)->where('type', 'basket')->get();
+
+        $basketItems = [];
+        foreach ($baskets as $basket) {
+            $items = OrderItem::where('order_id', $basket->id)->where('type', 'basket')->get();
+            $basketItems = [
+                'items' => $items
+            ];
+        }
+
+        return response()->json($basketItems, 200);
     }
+
 
     /**
      * @OA\Get(

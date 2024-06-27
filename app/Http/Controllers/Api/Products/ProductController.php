@@ -148,7 +148,7 @@ class ProductController extends Controller
 
         $response = Http::get($url);
         $productDetail = $response->json();
-
+        // return $productDetail;
         $score = Http::get($score);
         $scoreDetail = $score->json();
         // return $scoreDetail;

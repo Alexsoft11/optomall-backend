@@ -65,7 +65,7 @@ class ProductDetailResource extends JsonResource
                     'valueId' => $attribute['Vid'] ?? null,
                 ];
             }, $this['Attributes']), function ($size) {
-                return $size['propertyName'] === "o'lcham" || $size['propertyName'] === 'saqlash';
+                return $size['propertyName'] === "o'lcham" || $size['propertyName'] === 'saqlash' || $size['propertyName'] === "Ma'lumot balandligi";
             })) : [],
             'composition' => isset($this['Attributes']) ? array_values(array_filter(array_map(function ($attribute) use (&$counter) {
                 return [

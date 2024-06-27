@@ -2,7 +2,6 @@
 
 namespace App\Http\Resources;
 
-use App\Models\Exchanges;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class ScoreResource extends JsonResource
@@ -24,6 +23,10 @@ class ScoreResource extends JsonResource
                 }
                 if (isset($attribute['Id']) && $attribute['Id'] === 'fans') {
                     $sold = $attribute['Value'] ?? null;
+                    // Check if 'sold' contains '万' and convert it to thousands
+                    if (strpos($sold, '万') !== false) {
+                        $sold = str_replace('万', '000', $sold);
+                    }
                 }
             }
         }
