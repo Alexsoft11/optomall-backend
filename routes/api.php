@@ -24,5 +24,7 @@ Route::get('/categories-from-taobao', [ProductController::class, 'categoriesFrom
 Route::get('/sub-categories-from-taobao', [ProductController::class, 'subCategoriesFromTaoBao']);
 Route::get('/search-products-from-taobao', [ProductController::class, 'searchProductsFromTaobao']);
 Route::post('/orders', [OrderController::class, 'create']);
+Route::get('questions', [ListController::class, 'questions']);
+
 
 Route::middleware('auth:sanctum')->get('/user-get-data', [UserController::class, 'user']);
