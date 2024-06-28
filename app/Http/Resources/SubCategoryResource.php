@@ -15,11 +15,11 @@ class SubCategoryResource extends JsonResource
     public function toArray($request)
     {
         return [
-            'id' => $this['Id'],
-            'name' => $this['Name'],
+            'id' => $this['Id'] ?? $this['id'],
+            'name' => $this['Name'] ?? $this['name'],
+            'parentId' => $this['ParentId'] ?? $this['category_id'],
             'provider' => $this['ProviderType'],
             'externalId' => $this['ExternalId'],
-            'parentId' => $this['ParentId'],
         ];
     }
 }

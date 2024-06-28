@@ -19,6 +19,12 @@ return new class extends Migration
             $table->string('image');
             $table->string('location');
             $table->string('product_url');
+            $table->text('description')->nullable();
+            $table->integer('quantity')->default(0);
+            $table->decimal('discount_percent', 5, 2)->nullable();
+            $table->decimal('discounted_price', 8, 2)->nullable();
+            $table->decimal('rating', 3, 2)->nullable();
+            $table->integer('sold')->default(0);
             $table->timestamps();
         });
 

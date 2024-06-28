@@ -22,12 +22,12 @@ class ProductResource extends JsonResource
         // return $promotionPercentExists;
 
         return [
-            'id' => $this->resource['Id'],
-            'title' => $this->resource['Title'],
-            'price' => round($this->resource['Price']['ConvertedPriceWithoutSign']) * $amount,
-            'image' => $this->resource['MainPictureUrl'],
-            'discounted_price' => $promotionPriceExists ? round($this->resource['PromotionPrice']['ConvertedPriceList']['Internal']['Price']) * $amount : null,
-            'discount_percent' => $promotionPercentExists ? $this->resource['PromotionPricePercent'][0]['Percent'] : null,
+            'id' => $this->resource['Id'] ?? $this['id'],
+            'title' => $this->resource['Title'] ?? $this['title'],
+            'price' => $this['price'],
+            'image' => $this->resource['MainPictureUrl'] ?? $this['image'],
+            'discounted_price' => $promotionPriceExists ? round($this->resource['PromotionPrice']['ConvertedPriceList']['Internal']['Price']) * $amount : null ?? $this['discounted_price'],
+            'discount_percent' => $promotionPercentExists ? $this->resource['PromotionPricePercent'][0]['Percent'] : null ?? $this['discount_percent'],
         ];
     }
 }

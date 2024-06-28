@@ -12,7 +12,7 @@ class Category extends Model
     use HasFactory;
     use HasSlug;
 
-    protected $fillable = ['name', 'image', 'is_active'];
+    protected $fillable = ['name', 'image', 'is_active', 'catalog_id'];
 
     public function getSlugOptions(): SlugOptions
     {

@@ -11,6 +11,8 @@ use App\Http\Resources\ProductResource;
 use App\Http\Resources\ScoreResource;
 use App\Http\Resources\SubCategoryResource;
 use App\Models\Category;
+use App\Models\Product;
+use App\Models\ProductCategory;
 use App\Traits\ApiResponseHelpers;
 use Illuminate\Support\Facades\Http;
 
@@ -65,6 +67,13 @@ class ProductController extends Controller
 
         $response = Http::get($url);
         $categories = $response->json();
+        if ($categories['ErrorCode'] == 'AccessDenied') {
+            $subCategories = ProductCategory::where('category_id', $categoryId)->get();
+
+            return $this->respondWithSuccess([
+                'sub_categories' => SubCategoryResource::collection($subCategories)
+            ]);
+        }
 
         return $this->respondWithSuccess([
             'sub_categories' => SubCategoryResource::collection($categories['CategoryInfoList']['Content'])
@@ -102,6 +111,14 @@ class ProductController extends Controller
         $response = Http::get($url);
         $products = $response->json();
 
+        if ($products['ErrorCode'] == 'AccessDenied') {
+            $productsFromDataBase = Product::where('product_category_id', $subCategoryId)->limit($productsCount)->get();
+
+            return $this->respondWithSuccess([
+                'products' => ProductResource::collection($productsFromDataBase)
+            ]);
+        }
+
         return $this->respondWithSuccess([
             'products' => ProductResource::collection($products['Result']['Items']['Items']['Content'])
         ]);
@@ -133,7 +150,21 @@ class ProductController extends Controller
 
         $response1 = Http::get($url1);
         $products1 = $response1->json();
+        if ($products1['ErrorCode'] == 'AccessDenied') {
+            $productDetailFromDataBase = Product::where('id', $productId)->first();
+            $randomProducts = Product::inRandomOrder()->limit(4)->get();
+
+            return $this->respondWithSuccess([
+                'detail' => new ProductDetailResource($productDetailFromDataBase),
+                'score' => [
+                    'rating' => $productDetailFromDataBase->rating,
+                    'sold' => $productDetailFromDataBase->sold,
+                ],
+                'recommended' => ProductResource::collection($randomProducts)
+            ]);
+        }
         $productsList1 = $products1['Result']['Items']['Items']['Content'];
+
 
         $response2 = Http::get($url2);
         $products2 = $response2->json();
@@ -148,10 +179,9 @@ class ProductController extends Controller
 
         $response = Http::get($url);
         $productDetail = $response->json();
-        // return $productDetail;
+
         $score = Http::get($score);
         $scoreDetail = $score->json();
-        // return $scoreDetail;
 
         return $this->respondWithSuccess([
             'detail' => new ProductDetailResource($productDetail['Result']['Item']),
@@ -191,6 +221,17 @@ class ProductController extends Controller
 
         $response = Http::get($url);
         $products = $response->json();
+
+        if ($products['ErrorCode'] == 'AccessDenied') {
+            $productsFromDatabase = Product::where('title', 'like', '%' . $searchQuery . '%')
+                ->limit($productsCount)
+                ->get();
+
+            return $this->respondWithSuccess([
+                'products' => ProductResource::collection($productsFromDatabase)
+            ]);
+        }
+
 
         return $this->respondWithSuccess([
             'products' => ProductResource::collection($products['Result']['Items']['Items']['Content'])
