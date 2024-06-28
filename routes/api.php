@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::post('register', [AuthController::class, 'register']);
 Route::get('verify-email/{token}', [AuthController::class, 'verifyEmail']);
+Route::post('/personal-data', [AuthController::class, 'personalData']);
 
 Route::post('login', [AuthController::class, 'login']);
 Route::post('check-email', [AuthController::class, 'checkEmail']);
@@ -41,7 +42,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/orders', [OrderController::class, 'create']);
     Route::middleware('auth:sanctum')->post('/user-basket', [OrderController::class, 'userBasket']);
     Route::middleware('auth:sanctum')->get('/get-user-basket', [OrderController::class, 'getUserBasket']);
-    Route::post('/personal-data', [AuthController::class, 'personalData']);
     Route::get('/user-get-data', [UserController::class, 'user']);
     Route::post('/post-comment', [ListController::class, 'postComment']);
     Route::get('/orders', [OrderController::class, 'getUserOrders']);
