@@ -2,9 +2,9 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\QuestionsResource\Pages;
-use App\Filament\Resources\QuestionsResource\RelationManagers;
-use App\Models\Questions;
+use App\Filament\Resources\QuestionResource\Pages;
+use App\Filament\Resources\QuestionResource\RelationManagers;
+use App\Models\Question;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -13,14 +13,14 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
-class QuestionsResource extends Resource
+class QuestionResource extends Resource
 {
 
     protected static ?string $navigationGroup = "Savol-javoblar";
 
     protected static ?string $navigationLabel = "Savollar";
 
-    protected static ?string $model = Questions::class;
+    protected static ?string $model = Question::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-question-mark-circle';
 
@@ -28,7 +28,15 @@ class QuestionsResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('name'),
+                Forms\Components\TextInput::make('name_uz')
+                ->label(__('Name (Uzbek)'))
+                ->required(),
+            Forms\Components\TextInput::make('name_ru')
+                ->label(__('Name (Russian)'))
+                ->required(),
+            Forms\Components\TextInput::make('name_en')
+                ->label(__('Name (English)'))
+                ->required(),
             ]);
     }
 
@@ -36,7 +44,9 @@ class QuestionsResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('name'),
+                Tables\Columns\TextColumn::make('name_uz'),
+                Tables\Columns\TextColumn::make('name_ru'),
+                Tables\Columns\TextColumn::make('name_en'),
             ])
             ->filters([
                 //
@@ -62,9 +72,9 @@ class QuestionsResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListQuestions::route('/'),
-            'create' => Pages\CreateQuestions::route('/create'),
-            'edit' => Pages\EditQuestions::route('/{record}/edit'),
+            'index' => Pages\ListQuestion::route('/'),
+            'create' => Pages\CreateQuestion::route('/create'),
+            'edit' => Pages\EditQuestion::route('/{record}/edit'),
         ];
     }
 }
