@@ -13,7 +13,9 @@ return new class extends Migration
     {
         Schema::create('questions', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
+            $table->string('name_uz');
+            $table->string('name_ru');
+            $table->string('name_en');
             $table->timestamps();
         });
     }
@@ -23,6 +25,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('questions');
+        Schema::dropIfExists('questions', function (Blueprint $table) {
+          $table->dropColumn(['name_uz', 'name_ru', 'name_en']);
+        });
     }
 };

@@ -12,6 +12,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Filament\Tables\Columns\TextColumn;
 
 class AnswersResource extends Resource
 {
@@ -27,28 +28,35 @@ class AnswersResource extends Resource
     public static function form(Form $form): Form
     {
         return $form
-            ->schema([
-                // Forms\Components\TextInput::make('question_id'),
-
-                // Forms\Components\Select::make('question_id')
-                //     ->searchable()
-                //     ->getSearchResultsUsing(fn (string $search): array => User::where('name', 'like', "%{$search}%")->limit(50)->pluck('name', 'id')->toArray())
-                //     ->getOptionLabelUsing(fn ($value): ?string => User::find($value)?->name),
-
-                Forms\Components\Select::make('question_id')
-                    ->label(trans('Question'))
-                    ->relationship('question', 'name'),
-
-                Forms\Components\TextInput::make('name'),
-            ]);
+        ->schema([
+            Forms\Components\Select::make('question_id')
+                ->label(__('Question'))
+                ->relationship('question', 'name_uz') // Bu erda asosiy tilni tanlaysiz
+                ->searchable(),
+            Forms\Components\TextInput::make('name_uz')
+                ->label(__('Name (Uzbek)'))
+                ->required(),
+            Forms\Components\TextInput::make('name_ru')
+                ->label(__('Name (Russian)'))
+                ->required(),
+            Forms\Components\TextInput::make('name_en')
+                ->label(__('Name (English)'))
+                ->required(),
+        ]);
     }
 
     public static function table(Table $table): Table
     {
         return $table
-            ->columns([
-                Tables\Columns\TextColumn::make('question_id'),
-                Tables\Columns\TextColumn::make('name'),
+        ->columns([
+            TextColumn::make('question.name_en')
+                ->label(__('Question (English)')),
+            TextColumn::make('name_uz')
+                ->label(__('Name (Uzbek)')),
+            TextColumn::make('name_ru')
+                ->label(__('Name (Russian)')),
+            TextColumn::make('name_en')
+                ->label(__('Name (English)')),
             ])
             ->filters([
                 //
