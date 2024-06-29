@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Socials;
+use App\Models\TempUser;
 use Illuminate\Http\Request;
 
-class SocialsController extends Controller
+class TempUserController extends Controller
 {
     /**
      * Display a listing of the resource.
@@ -34,7 +34,7 @@ class SocialsController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Socials $socials)
+    public function show(TempUser $tempUser)
     {
         //
     }
@@ -42,7 +42,7 @@ class SocialsController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Socials $socials)
+    public function edit(TempUser $tempUser)
     {
         //
     }
@@ -50,7 +50,7 @@ class SocialsController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Socials $socials)
+    public function update(Request $request, TempUser $tempUser)
     {
         //
     }
@@ -58,7 +58,7 @@ class SocialsController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Socials $socials)
+    public function destroy(TempUser $tempUser)
     {
         //
     }

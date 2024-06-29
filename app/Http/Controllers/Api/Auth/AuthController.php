@@ -7,9 +7,12 @@ use App\Notifications\VerifyEmailNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Controller;
+use App\Models\TempUser;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use OpenApi\Annotations as OA;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
 
 
 class AuthController extends Controller
@@ -35,51 +38,218 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'email' => 'required|string|email|unique:users|max:255',
+            'email' => 'required|string|email|unique:temp_users|unique:users|max:255',
             'password' => 'required|string|min:8|same:confirm_password',
             'confirm_password' => 'required|string|min:8',
         ]);
+
         if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+            return response()->json(['message' => 'validation_errors', 'errors' => $validator->errors()], 422);
         }
-        $user = User::create([
+
+        $tempUser = TempUser::create([
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'confirm_password' => Hash::make($request->confirm_password),
+            'confirm_password' => $request->confirm_password,
         ]);
-        $user->notify(new VerifyEmailNotification($user));
-        return response()->json(['message' => 'User registered successfully. Please check your email for verification.'], 201);
+
+        $token = Str::random(60);
+        Cache::put($token, $tempUser->id, now()->addMinutes(60));
+
+        $tempUser->notify(new VerifyEmailNotification($token, $tempUser->id));
+
+        return response()->json(['message' => 'verification_email_sent'], 201);
     }
+
+   /**
+ * @OA\Get(
+ *     path="/api/verify-email/{token}",
+ *     summary="Verify email and move user to users table if email and password match",
+ *     tags={"Auth"},
+ *     @OA\Parameter(
+ *         name="token",
+ *         in="path",
+ *         required=true,
+ *         @OA\Schema(type="string")
+ *     ),
+ *     @OA\Response(response="200", description="Email verified and user moved to users table"),
+ *     @OA\Response(response="404", description="Invalid or expired token")
+ * )
+ */
+public function verifyEmail($token)
+    {
+        $tempUserId = Cache::get($token);
+
+        if (!$tempUserId) {
+            return response()->json(['message' => 'invalid_or_expired_token'], 404);
+        }
+
+        $tempUser = TempUser::find($tempUserId);
+        if ($tempUser) {
+            $user = User::create([
+                'email' => $tempUser->email,
+                'password' => $tempUser->password, 
+                'email_verified' => true,
+                'email_verified_at' => now(),
+            ]);
+
+            $user->email_verified = true;
+            $user->email_verified_at = now();
+            $user->save();
+
+            $tempUser->delete();
+            Cache::forget($token);
+
+            if (!$user->unique_id) {
+                $user->unique_id = $user->id; 
+                $user->save();
+            }
+
+            $redirectUrl = "http://134.122.6.96/auth?step=info&id={$user->unique_id}";
+
+            return redirect($redirectUrl);
+        }
+
+        return response()->json(['message' => 'user_not_found'], 404);
+    }
+
+
+    /**
+ * @OA\Post(
+ *     path="/api/login",
+ *     summary="Login a user",
+ *     tags={"Auth"},
+ *     @OA\RequestBody(
+ *         required=true,
+ *         @OA\JsonContent(
+ *             required={"email","password"},
+ *             @OA\Property(property="email", type="string", format="email", example="khamidovsherzod003@gmail.com"),
+ *             @OA\Property(property="password", type="string", format="password", example="12345678")
+ *         ),
+ *     ),
+ *     @OA\Response(response="200", description="User logged in successfully"),
+ *     @OA\Response(response="401", description="Incorrect login or password"),
+ *     @OA\Response(response="403", description="Email not verified")
+ * )
+ */
+public function login(Request $request)
+{
+    $validator = Validator::make($request->all(), [
+        'email' => 'required|email',
+        'password' => 'required|string|min:8',
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json(['message' => 'validation_errors', 'errors' => $validator->errors()], 422);
+    }
+
+    $credentials = $request->only('email', 'password');
+
+    $tempUser = TempUser::where('email', $credentials['email'])->first();
+    if ($tempUser && !$tempUser->email_verified) {
+        return response()->json(['message' => 'verify_email', 'error' => false], 403);
+    }
+    $user = User::where('email', $credentials['email'])->first();
+    if (!$user) {
+        return response()->json(['message' => 'email_doesnt_exist', 'error' => false], 401);
+    }
+    if (!Hash::check($credentials['password'], $user->password)) {
+        return response()->json(['message' => 'wrong_password', 'error' => false], 401);
+    }
+    if (!$user->info_filled) {
+        return response()->json(['message' => 'add_personal_data', 'error' => false], 403);
+    }
+    $token = $user->createToken('AuthToken')->plainTextToken;
+
+    return response()->json(['token' => $token], 200);
+}
+
+
+
 
     /**
      * @OA\Post(
-     *     path="/api/login",
-     *     summary="Login a user",
+     *     path="/api/personal-data",
+     *     summary="Add personal data",
      *     tags={"Auth"},
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
-     *             required={"email","password"},
-     *             @OA\Property(property="email", type="string", format="email", example="khamidovsherzod003@gmail.com"),
-     *             @OA\Property(property="password", type="string", format="password", example="12345678")
+     *             required={"name", "last_name", "phone"},
+     *             @OA\Property(property="name", type="string", example="John"),
+     *             @OA\Property(property="last_name", type="string", example="Doe"),
+     *             @OA\Property(property="phone", type="string", example="+1234567890"),
+     *             @OA\Property(property="unique_id", type="string", example="123456"),
      *         ),
      *     ),
-     *     @OA\Response(response="200", description="User logged in successfully"),
+     *     @OA\Response(response="200", description="Profile updated successfully"),
+     *     @OA\Response(response="422", description="Validation errors"),
      *     @OA\Response(response="401", description="Unauthorized")
      * )
      */
-    public function login(Request $request)
+    public function personalData(Request $request)
     {
-        $credentials = $request->only('email', 'password');
-
-        if (Auth::attempt($credentials)) {
-            $user = Auth::user();
-            $token = $user->createToken('AuthToken')->plainTextToken;
-
-            return response()->json(['token' => $token], 200);
+        $validator = Validator::make($request->all(), [
+            'unique_id' => 'required|string',
+            'name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'phone' => 'required|string|max:15',
+        ]);
+    
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 422);
         }
-
-        return response()->json(['error' => 'Unauthorized'], 401);
+    
+        $token = $request->bearerToken();
+        $user = User::where('unique_id', $request->unique_id)->first();
+    
+        if (!$user) {
+            return response()->json(['error' => 'invalid_unique_id'], 401);
+        }
+    
+        $user->info_filled = true;
+        $user->update([
+            'name' => $request->name,
+            'last_name' => $request->last_name,
+            'phone' => $request->phone,
+        ]);
+    
+        return response()->json(['message' => 'data_added_successfully'], 200);
     }
+    
 
+
+
+    /**
+     * @OA\Post(
+     *     path="/api/check-email",
+     *     summary="Check if email exists",
+     *     tags={"Auth"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"email"},
+     *             @OA\Property(property="email", type="string", format="email", example="admin@mail.ru")
+     *         ),
+     *     ),
+     *     @OA\Response(response="200", description="Email exists"),
+     *     @OA\Response(response="404", description="Email does not exist")
+     * )
+     */
+    public function checkEmail(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|string|email|max:255',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 422);
+        }
+        $emailExists = User::where('email', $request->email)->exists();
+        if ($emailExists) {
+            return response()->json(['message' => 'true']);
+        } else {
+            return response()->json(['message' => 'false']);
+        }
+    }
 }

@@ -15,10 +15,10 @@ class CategoryResource extends JsonResource
     public function toArray($request)
     {
         return [
-            'id' => $this['Id'],
-            'name' => $this['Name'],
-            'provider' => $this['ProviderType'],
-            'externalId' => $this['ExternalId'],
+            'id' => $this['catalog_id'] ?? $this['id'],
+            'name' => $this['name'],
+            'image' => is_null($this['image']) ? null : url('storage/' . $this['image']),
+            'is_active' => $this['is_active'],
         ];
     }
 }

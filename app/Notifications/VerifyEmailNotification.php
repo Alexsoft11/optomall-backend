@@ -11,41 +11,32 @@ class VerifyEmailNotification extends Notification
 {
     use Queueable;
 
-    /**
-     * Create a new notification instance.
-     */
-    public function __construct()
+    protected $token;
+    protected $userId;
+
+    public function __construct($token, $userId)
     {
-        //
+        $this->token = $token;
+        $this->userId = $userId;
     }
 
-    /**
-     * Get the notification's delivery channels.
-     *
-     * @return array<int, string>
-     */
-    public function via(object $notifiable): array
+    public function via($notifiable)
     {
         return ['mail'];
     }
 
-    /**
-     * Get the mail representation of the notification.
-     */
-    public function toMail(object $notifiable): MailMessage
+    public function toMail($notifiable)
     {
+        $url = url("/api/verify-email/{$this->token}");
+
         return (new MailMessage)
-                    ->line('Iltimos ro\'yxatdan o\'tishni tasdiqlang.')
-                    ->action('Shu yerga bosing', url('/'))
-                    ->line('Agar tugma ishlamasa, pastdagi manzilga o\'ting!');
+            ->subject('Verify your email address')
+            ->line('Please click the button below to verify your email address.')
+            ->action('Verify Email Address', $url)
+            ->line('If you did not create an account, no further action is required.');
     }
 
-    /**
-     * Get the array representation of the notification.
-     *
-     * @return array<string, mixed>
-     */
-    public function toArray(object $notifiable): array
+    public function toArray($notifiable)
     {
         return [
             //

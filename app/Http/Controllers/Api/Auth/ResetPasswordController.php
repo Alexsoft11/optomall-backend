@@ -31,7 +31,7 @@ class ResetPasswordController extends Controller
  *         ),
  *     ),
  *     @OA\Response(response="200", description="Password reset successful"),
- *     @OA\Response(response="401", description="Unauthorized"),
+ *     @OA\Response(response="401", description="User not found"),
  *     @OA\Response(response="422", description="Validation errors")
  * )
  */
@@ -44,7 +44,7 @@ public function __construct(){
 public function resetPassword(ResetPasswordRequest $request){
     $otp2 = $this->otp->validate($request->email, $request->otp);
     if (!$otp2->status) {
-        return response()->json(['error' => 'Invalid OTP'], 401);
+        return response()->json(['message' => 'invalid_otp', 'error' => true], 401);
     }
 
     $validator = Validator::make($request->all(), [
@@ -55,18 +55,17 @@ public function resetPassword(ResetPasswordRequest $request){
     ]);
 
     if ($validator->fails()) {
-        return response()->json(['errors' => $validator->errors()], 422);
+        return response()->json(['error' => $validator->errors()], 422);
     }
     $user = User::where('email', $request->email)->first();
 
     if (!$user) {
-        return response()->json(['error' => 'User not found'], 404);
+        return response()->json(['message' => 'user_not_found', 'error' => true], 404);
     }
     $user->update(['password' => Hash::make($request->password)]);
     $user->tokens()->delete();
 
-    $success['success'] = true;
-    return response()->json($success, 200);
+    return response()->json(['message' => 'success'], 200);
 }
 
 }

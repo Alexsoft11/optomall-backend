@@ -6,17 +6,21 @@ use App\Http\Controllers\Api\List\ListController;
 use App\Http\Controllers\Api\Auth\ProfileController;
 use App\Http\Controllers\Api\Auth\ResetPasswordController;
 use App\Http\Controllers\Api\Auth\UserController;
+use App\Http\Controllers\Api\Slider\SliderController;
 use App\Http\Controllers\Api\Products\OrderController;
 use App\Http\Controllers\Api\Products\ProductController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::post('register', [AuthController::class, 'register']);
+Route::get('verify-email/{token}', [AuthController::class, 'verifyEmail']);
+Route::post('/personal-data', [AuthController::class, 'personalData']);
+
 Route::post('login', [AuthController::class, 'login']);
+Route::post('check-email', [AuthController::class, 'checkEmail']);
 
 Route::post('password/forgot', [ForgotPasswordController::class, 'forgotPassword']);
 Route::post('password/reset', [ResetPasswordController::class, 'resetPassword']);
-Route::middleware('auth:api')->post('/profile/update', [ProfileController::class, 'update']);
 Route::get('socials', [ListController::class, 'socials']);
 Route::get('/products-from-taobao', [ProductController::class, 'productsFromTaobao']);
 Route::get('/product-detail-from-taobao', [ProductController::class, 'productDetailFromTaoBao']);
@@ -27,4 +31,31 @@ Route::post('/orders', [OrderController::class, 'create']);
 Route::get('questions', [ListController::class, 'questions']);
 
 
-Route::middleware('auth:sanctum')->get('/user-get-data', [UserController::class, 'user']);
+Route::get('/top-products', [ProductController::class, 'topProducts']);
+Route::get('/recommend-products', [ProductController::class, 'recommendedProducts']);
+Route::get('/discounted-products', [ProductController::class, 'discountedProducts']);
+
+
+Route::get('/products', [ProductController::class, 'products']);
+Route::get('/get-prices', [ProductController::class, 'getPrices']);
+Route::get('/sliders', [SliderController::class, 'index']);
+
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/orders', [OrderController::class, 'create']);
+    Route::middleware('auth:sanctum')->post('/user-basket', [OrderController::class, 'userBasket']);
+    Route::middleware('auth:sanctum')->get('/get-user-basket', [OrderController::class, 'getUserBasket']);
+    Route::get('/user-get-data', [UserController::class, 'user']);
+    Route::post('/post-comment', [ListController::class, 'postComment']);
+    Route::get('/orders', [OrderController::class, 'getUserOrders']);
+    Route::get('/get-orders', [OrderController::class, 'getOrders']);
+    Route::get('/success-orders', [OrderController::class, 'getSuccessOrders']);
+});
+
+
+Route::middleware('auth:sanctum')->prefix('profile')->group(function () {
+    Route::post('/update-email', [ProfileController::class, 'updateEmail']);
+    Route::post('/update-name', [ProfileController::class, 'updateName']);
+    Route::post('/update-phone', [ProfileController::class, 'updatePhone']);
+    Route::post('/update-password', [ProfileController::class, 'updatePassword']);
+});
