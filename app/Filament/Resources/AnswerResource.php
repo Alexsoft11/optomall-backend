@@ -2,9 +2,9 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\QuestionsResource\Pages;
-use App\Filament\Resources\QuestionsResource\RelationManagers;
-use App\Models\Questions;
+use App\Filament\Resources\AnswerResource\Pages;
+use App\Filament\Resources\AnswerResource\RelationManagers;
+use App\Models\Answer;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -12,23 +12,27 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Filament\Tables\Columns\TextColumn;
 
-class QuestionsResource extends Resource
+class AnswerResource extends Resource
 {
 
     protected static ?string $navigationGroup = "Savol-javoblar";
 
-    protected static ?string $navigationLabel = "Savollar";
+    protected static ?string $navigationLabel = "Javoblar";
 
-    protected static ?string $model = Questions::class;
+    protected static ?string $model = Answer::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-question-mark-circle';
+    protected static ?string $navigationIcon = 'heroicon-o-pencil-square';
 
     public static function form(Form $form): Form
     {
         return $form
-            ->schema([
-                Forms\Components\TextInput::make('name_uz')
+        ->schema([
+            Forms\Components\Select::make('question_id')
+                ->label(__('Question'))
+                ->relationship('question', 'name_uz'),
+            Forms\Components\TextInput::make('name_uz')
                 ->label(__('Name (Uzbek)'))
                 ->required(),
             Forms\Components\TextInput::make('name_ru')
@@ -37,16 +41,21 @@ class QuestionsResource extends Resource
             Forms\Components\TextInput::make('name_en')
                 ->label(__('Name (English)'))
                 ->required(),
-            ]);
+        ]);
     }
 
     public static function table(Table $table): Table
     {
         return $table
-            ->columns([
-                Tables\Columns\TextColumn::make('name_uz'),
-                Tables\Columns\TextColumn::make('name_ru'),
-                Tables\Columns\TextColumn::make('name_en'),
+        ->columns([
+            TextColumn::make('question.name_en')
+                ->label(__('Question (English)')),
+            TextColumn::make('name_uz')
+                ->label(__('Name (Uzbek)')),
+            TextColumn::make('name_ru')
+                ->label(__('Name (Russian)')),
+            TextColumn::make('name_en')
+                ->label(__('Name (English)')),
             ])
             ->filters([
                 //
@@ -72,9 +81,9 @@ class QuestionsResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListQuestions::route('/'),
-            'create' => Pages\CreateQuestions::route('/create'),
-            'edit' => Pages\EditQuestions::route('/{record}/edit'),
+            'index' => Pages\ListAnswer::route('/'),
+            'create' => Pages\CreateAnswer::route('/create'),
+            'edit' => Pages\EditAnswer::route('/{record}/edit'),
         ];
     }
 }
