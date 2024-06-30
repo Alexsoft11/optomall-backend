@@ -3,6 +3,9 @@
 namespace App\Http\Controllers\Api\Products;
 
 use App\Http\Controllers\Controller;
+use App\Models\Basket;
+use App\Models\BasketItemColor;
+use App\Models\BasketItemSize;
 use App\Models\Order;
 use App\Models\OrderItem;
 use Illuminate\Http\Request;
@@ -83,7 +86,6 @@ class OrderController extends Controller
 
             $order = Order::create([
                 'user_id' => auth()->user()->id,
-                'type' => 'order',
                 'total_price' => $totalPrice,
                 'status' => 'pending',
             ]);
@@ -94,7 +96,6 @@ class OrderController extends Controller
 
                 OrderItem::create([
                     'order_id' => $order->id,
-                    'type' => 'order',
                     'product_id' => $item['product_id'],
                     'quantity' => $item['quantity'],
                     'price' => $productDetail['price'],
@@ -122,13 +123,13 @@ class OrderController extends Controller
      *         required=true,
      *         description="Basket details",
      *         @OA\JsonContent(
-     *             required={"items"},
-     *             @OA\Property(property="items", type="array", @OA\Items(
-     *                 @OA\Property(property="product_id", type="integer", example="1"),
+     *             required={"product_id", "sizes", "colors"},
+     *             @OA\Property(property="product_id", type="integer", example="1"),
+     *             @OA\Property(property="sizes", type="array", @OA\Items(
+     *                 @OA\Property(property="id", type="integer", example="4"),
      *                 @OA\Property(property="quantity", type="integer", example="2"),
-     *                 @OA\Property(property="color_id", type="integer", example="3"),
-     *                 @OA\Property(property="size_id", type="integer", example="4"),
      *             )),
+     *             @OA\Property(property="colors", type="array", @OA\Items(type="integer", example=1)),
      *         ),
      *     ),
      *     @OA\Response(
@@ -153,53 +154,45 @@ class OrderController extends Controller
     public function userBasket(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'items' => 'required|array',
-            'items.*.product_id' => 'required',
-            'items.*.quantity' => 'required|integer|min:1',
-            'items.*.color_id' => 'required|integer|min:1',
-            'items.*.size_id' => 'required|integer|min:1',
+            'product_id' => 'required|integer|min:1',
+            'sizes' => 'required|array',
+            'sizes.*.id' => 'required|integer|min:1',
+            'sizes.*.quantity' => 'required|integer|min:1',
+            'colors' => 'required|array',
+            'colors.*' => 'required|integer|min:1',
         ]);
 
         if ($validator->fails()) {
             return response()->json(['message' => 'Invalid data', 'errors' => $validator->errors()], 400);
         }
 
-        $order = DB::transaction(function () use ($request) {
-            $totalPrice = 0;
 
-            foreach ($request->items as $item) {
-                $productDetailResponse = $this->productController->productDetailFromTaoBao(new Request(['productId' => $item['product_id']]));
-                $productDetail = json_decode($productDetailResponse->getContent(), true)['detail'];
-                $totalPrice += $item['quantity'] * $productDetail['price'];
-            }
+        $basket = Basket::create([
+            'user_id' => auth()->user()->id,
+            'product_id' => $request->product_id,
+        ]);
 
-            $order = Order::create([
-                'user_id' => auth()->user()->id,
-                'type' => 'basket',
-                'total_price' => $totalPrice,
-                'status' => 'pending',
+        // return $basket->id;
+
+        foreach ($request->sizes as $size) {
+            BasketItemSize::create([
+                'basket_id' => $basket['id'],
+                'size_id' => $size['id'],
+                'quantity' => $size['quantity'],
             ]);
+        }
 
-            foreach ($request->items as $item) {
-                $productDetailResponse = $this->productController->productDetailFromTaoBao(new Request(['productId' => $item['product_id']]));
-                $productDetail = json_decode($productDetailResponse->getContent(), true)['detail'];
+        foreach ($request->colors as $color) {
+            BasketItemColor::create([
+                'basket_id' => $basket['id'],
+                'color_id' => $color,
+            ]);
+        }
 
-                OrderItem::create([
-                    'order_id' => $order->id,
-                    'type' => 'basket',
-                    'product_id' => $item['product_id'],
-                    'quantity' => $item['quantity'],
-                    'price' => $productDetail['price'],
-                    'color_id' => $item['color_id'],
-                    'size_id' => $item['size_id'],
-                ]);
-            }
 
-            return $order;
-        });
-
-        return response()->json(['message' => 'Product added to basket', 'basket' => $order], 201);
+        return response()->json(['message' => 'Product added to basket', 'basket' => $basket], 201);
     }
+
 
 
     /**
@@ -222,7 +215,7 @@ class OrderController extends Controller
     public function getOrders(Request $request)
     {
         $user = $request->user();
-        $orders = Order::where('user_id', $user->id)->where('type', 'order')->get();
+        $orders = Order::where('user_id', $user->id)->get();
         return response()->json(['orders' => $orders], 200);
     }
 
@@ -245,18 +238,44 @@ class OrderController extends Controller
     public function getUserBasket(Request $request)
     {
         $user = $request->user();
-        $baskets = Order::where('user_id', $user->id)->where('type', 'basket')->get();
+        $baskets = Basket::where('user_id', $user->id)->with('colors', 'sizes')->get();
 
-        $basketItems = [];
+        $result = [];
+
         foreach ($baskets as $basket) {
-            $items = OrderItem::where('order_id', $basket->id)->where('type', 'basket')->get();
-            $basketItems = [
-                'items' => $items
-            ];
+            // Simulating product details fetch
+            $productDetailResponse = $this->productController->productDetailFromTaoBao(new Request(['productId' => $basket['product_id']]));
+            $productDetail = json_decode($productDetailResponse->getContent(), true)['detail'];
+
+            $basketColorIds = $basket->colors->pluck('color_id')->toArray();
+            $basketSizeIds = $basket->sizes->pluck('size_id')->toArray();
+
+            $productColors = collect($productDetail['colors'])->whereIn('id', $basketColorIds)->values();
+            $productSizes = collect($productDetail['sizes'])->whereIn('id', $basketSizeIds)->values();
+
+            foreach ($basket->sizes as $basketSize) {
+                foreach ($basket->colors as $basketColor) {
+                    $sizeDetail = $productSizes->firstWhere('id', $basketSize->size_id);
+                    $colorDetail = $productColors->firstWhere('id', $basketColor->color_id);
+
+                    $result[] = [
+                        'id' => $productDetail['id'] ?? null,
+                        'title' => $productDetail['title'] ?? null,
+                        'size' => $sizeDetail['value'] ?? null,
+                        'color' => $colorDetail['value'] ?? null,
+                        'quantity' => $basketSize['quantity'] ?? 1,
+                        'image_url' => $colorDetail['image_url'] ?? null,
+                        'price' => $productDetail['price'] ?? null
+                    ];
+                }
+            }
         }
 
-        return response()->json($basketItems, 200);
+        return response()->json($result);
     }
+
+
+
 
 
     /**
