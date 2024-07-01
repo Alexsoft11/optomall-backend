@@ -15,7 +15,7 @@ return new class extends Migration
             $table->unsignedInteger('unique_id')->unique()->nullable();
             $table->string('name', 100)->nullable();
             $table->string('last_name', 100)->nullable();
-            $table->string('phone')->nullable();
+            $table->string('phone')->nullable()->unique();
             $table->string('email')->unique();
             $table->boolean('email_verified')->default(0);
             $table->boolean('info_filled')->default(0);
