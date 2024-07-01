@@ -38,7 +38,7 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'email' => 'required|string|email|unique:temp_users|unique:users|max:255',
+            'email' => 'required|string|email|unique:users|max:255',
             'password' => 'required|string|min:8|same:confirm_password',
             'confirm_password' => 'required|string|min:8',
         ]);
@@ -105,7 +105,7 @@ public function verifyEmail($token)
                 $user->save();
             }
 
-            $redirectUrl = "http://134.122.6.96/auth?step=info&id={$user->unique_id}";
+            $redirectUrl = "https://taobao-optom-uz.vercel.app/auth?step=info&id={$user->unique_id}";
 
             return redirect($redirectUrl);
         }
@@ -193,7 +193,7 @@ public function login(Request $request)
             'unique_id' => 'required|string',
             'name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
-            'phone' => 'required|string|max:15',
+            'phone' => 'required|unique:users|string|max:15',
         ]);
     
         if ($validator->fails()) {

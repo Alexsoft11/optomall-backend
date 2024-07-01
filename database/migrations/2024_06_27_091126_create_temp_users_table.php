@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('temp_users', function (Blueprint $table) {
             $table->id();
-            $table->string('email')->unique();
+            $table->string('email');
             $table->string('password');
             $table->string('confirm_password')->nullable();
             $table->timestamps();
