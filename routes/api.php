@@ -49,6 +49,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/post-comment', [ListController::class, 'postComment']);
     Route::get('/orders', [OrderController::class, 'getUserOrders']);
     Route::get('/get-orders', [OrderController::class, 'getOrders']);
+    Route::put('/add', [OrderController::class, 'updateBasketItemSizeQuantity']);
     Route::get('/success-orders', [OrderController::class, 'getSuccessOrders']);
 });
 

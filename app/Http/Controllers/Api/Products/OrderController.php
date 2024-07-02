@@ -110,7 +110,6 @@ class OrderController extends Controller
         return response()->json(['message' => 'order_created_successfully', 'order' => $order], 201);
     }
 
-
     /**
      * @OA\Post(
      *     path="/api/user-basket",
@@ -166,13 +165,10 @@ class OrderController extends Controller
             return response()->json(['message' => 'Invalid data', 'errors' => $validator->errors()], 400);
         }
 
-
         $basket = Basket::create([
             'user_id' => auth()->user()->id,
             'product_id' => $request->product_id,
         ]);
-
-        // return $basket->id;
 
         foreach ($request->sizes as $size) {
             BasketItemSize::create([
@@ -189,11 +185,8 @@ class OrderController extends Controller
             ]);
         }
 
-
         return response()->json(['message' => 'Product added to basket', 'basket' => $basket], 201);
     }
-
-
 
     /**
      * @OA\Get(
@@ -260,9 +253,12 @@ class OrderController extends Controller
 
                     $result[] = [
                         'id' => $productDetail['id'] ?? null,
+                        'basket_id' => $basket['id'] ?? null,
                         'title' => $productDetail['title'] ?? null,
                         'size' => $sizeDetail['value'] ?? null,
+                        'size_id' => $sizeDetail['id'] ?? null,
                         'color' => $colorDetail['value'] ?? null,
+                        'color_id' => $colorDetail['id'] ?? null,
                         'quantity' => $basketSize['quantity'] ?? 1,
                         'image_url' => $colorDetail['image_url'] ?? null,
                         'price' => $productDetail['price'] ?? null
@@ -273,10 +269,6 @@ class OrderController extends Controller
 
         return response()->json($result);
     }
-
-
-
-
 
     /**
      * @OA\Get(
@@ -300,5 +292,77 @@ class OrderController extends Controller
         $user = $request->user();
         $orders = Order::where('user_id', $user->id)->where('status', 'delivered')->where('type', 'order')->get();
         return response()->json(['orders' => $orders], 200);
+    }
+
+    /**
+     * @OA\Put(
+     *     path="/api/add",
+     *     tags={"Order"},
+     *     summary="Update size quantity in the user's basket",
+     *     description="Update the quantity of a specific size in the user's basket",
+     *     operationId="updateBasketItemSizeQuantity",
+     *     security={{ "bearerAuth":{} }},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         description="Basket item size details",
+     *         @OA\JsonContent(
+     *             required={"basket_id", "size_id", "quantity"},
+     *             @OA\Property(property="basket_id", type="integer", example="1"),
+     *             @OA\Property(property="size_id", type="integer", example="4"),
+     *             @OA\Property(property="quantity", type="integer", example="2"),
+     *         ),
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Size quantity updated successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Size quantity updated successfully"),
+     *             @OA\Property(property="basket_item_size", type="object"),
+     *         ),
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Bad request",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Invalid data"),
+     *         ),
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Not found",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Basket item size not found"),
+     *         ),
+     *     ),
+     * )
+     */
+    public function updateBasketItemSizeQuantity(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'basket_id' => 'required|integer|exists:baskets,id',
+            'size_id' => 'required|integer|exists:basket_item_sizes,size_id',
+            'quantity' => 'required|integer|min:1',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['message' => 'Invalid data', 'errors' => $validator->errors()], 400);
+        }
+
+        $basketItemSize = BasketItemSize::where('basket_id', $request->basket_id)
+            ->where('size_id', $request->size_id)
+            ->first();
+        // return $basketItemSize;
+
+        if (!$basketItemSize) {
+            return response()->json(['message' => 'Basket item size not found'], 404);
+        }
+
+        $basketItemSize->quantity = $request->quantity;
+        $basketItemSize->save();
+
+        return response()->json(['message' => 'Size quantity updated successfully', 'basket_item_size' => $basketItemSize], 200);
     }
 }
