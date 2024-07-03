@@ -15,7 +15,11 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->string('total_price');
-            $table->string('status')->default('pending');
+            $table->string('status')->default('processing');
+            $table->string('user_name');
+            $table->string('user_phone');
+            $table->string('location_url');
+            $table->string('location_name')->nullable();
             $table->timestamps();
         });
 
@@ -36,6 +40,7 @@ return new class extends Migration
      */
     public function down(): void
     {
+        Schema::dropIfExists('order_location');
         Schema::dropIfExists('order_items');
         Schema::dropIfExists('orders');
     }
