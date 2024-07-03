@@ -33,14 +33,24 @@ class OrderController extends Controller
      *         required=true,
      *         description="Order details",
      *         @OA\JsonContent(
-     *             required={"items"},
+     *             required={"items", "userData", "location", "total_price"},
+     *             @OA\Property(property="userData", type="object", 
+     *                 @OA\Property(property="name", type="string", example="John"),
+     *                 @OA\Property(property="phone", type="string", example="+380671234567")
+     *             ),
+     *             @OA\Property(property="location", type="object",
+     *                 @OA\Property(property="name", type="string", example="Uzbekistan"),
+     *                 @OA\Property(property="url", type="string", example="https://google.com")
+     *             ),
      *             @OA\Property(property="items", type="array", @OA\Items(
      *                 @OA\Property(property="product_id", type="integer", example="1"),
      *                 @OA\Property(property="quantity", type="integer", example="2"),
      *                 @OA\Property(property="color_id", type="integer", example="3"),
      *                 @OA\Property(property="size_id", type="integer", example="4"),
+     *                 @OA\Property(property="price", type="number", example="4.99")
      *             )),
-     *         ),
+     *             @OA\Property(property="total_price", type="number", example="50.99")
+     *         )
      *     ),
      *     @OA\Response(
      *         response=201,
@@ -48,27 +58,36 @@ class OrderController extends Controller
      *         @OA\JsonContent(
      *             type="object",
      *             @OA\Property(property="message", type="string", example="Order created successfully"),
-     *             @OA\Property(property="order_id", type="integer", example="1"),
-     *         ),
+     *             @OA\Property(property="order_id", type="integer", example="1")
+     *         )
      *     ),
      *     @OA\Response(
      *         response=400,
      *         description="Bad request",
      *         @OA\JsonContent(
      *             type="object",
-     *             @OA\Property(property="message", type="string", example="Invalid data"),
-     *         ),
-     *     ),
+     *             @OA\Property(property="message", type="string", example="Invalid data")
+     *         )
+     *     )
      * )
      */
+
     public function create(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'items' => 'required|array',
-            'items.*.product_id' => 'required',
+            'userData' => 'required|array',
+            'location' => 'required|array',
+            'userData.name' => 'required|string',
+            'userData.phone' => 'required|string',
+            'location.name' => 'required|string',
+            'location.url' => 'required|string',
+            'items.*.product_id' => 'required|integer',
             'items.*.quantity' => 'required|integer|min:1',
             'items.*.color_id' => 'required|integer|min:1',
             'items.*.size_id' => 'required|integer|min:1',
+            'items.*.price' => 'required|numeric|min:0',
+            'total_price' => 'required|numeric|min:0'
         ]);
 
         if ($validator->fails()) {
@@ -76,18 +95,14 @@ class OrderController extends Controller
         }
 
         $order = DB::transaction(function () use ($request) {
-            $totalPrice = 0;
-
-            foreach ($request->items as $item) {
-                $productDetailResponse = $this->productController->productDetailFromTaoBao(new Request(['productId' => $item['product_id']]));
-                $productDetail = json_decode($productDetailResponse->getContent(), true)['detail'];
-                $totalPrice += $item['quantity'] * $productDetail['price'];
-            }
-
             $order = Order::create([
                 'user_id' => auth()->user()->id,
-                'total_price' => $totalPrice,
-                'status' => 'pending',
+                'total_price' => $request->total_price,
+                'user_name' => $request->userData['name'],
+                'user_phone' => $request->userData['phone'],
+                'location_url' => $request->location['url'],
+                'location_name' => $request->location['name'],
+                'status' => 'pending'
             ]);
 
             foreach ($request->items as $item) {
@@ -98,9 +113,9 @@ class OrderController extends Controller
                     'order_id' => $order->id,
                     'product_id' => $item['product_id'],
                     'quantity' => $item['quantity'],
-                    'price' => $productDetail['price'],
+                    'price' => $item['price'],
                     'color_id' => $item['color_id'],
-                    'size_id' => $item['size_id'],
+                    'size_id' => $item['size_id']
                 ]);
             }
 
@@ -109,6 +124,7 @@ class OrderController extends Controller
 
         return response()->json(['message' => 'order_created_successfully', 'order' => $order], 201);
     }
+
 
     /**
      * @OA\Post(
