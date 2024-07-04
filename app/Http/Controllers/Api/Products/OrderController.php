@@ -7,6 +7,7 @@ use App\Models\Basket;
 use App\Models\BasketItemColor;
 use App\Models\BasketItemSize;
 use App\Models\Order;
+use App\Models\OrderCheck;
 use App\Models\OrderItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -44,9 +45,11 @@ class OrderController extends Controller
      *             ),
      *             @OA\Property(property="items", type="array", @OA\Items(
      *                 @OA\Property(property="product_id", type="integer", example="1"),
+     *                 @OA\Property(property="title", type="string", example="title"),
+     *                 @OA\Property(property="image_url", type="string", example="url"),
      *                 @OA\Property(property="quantity", type="integer", example="2"),
-     *                 @OA\Property(property="color_id", type="integer", example="3"),
-     *                 @OA\Property(property="size_id", type="integer", example="4"),
+     *                 @OA\Property(property="color", type="string", example="black"),
+     *                 @OA\Property(property="size", type="string", example="xl"),
      *                 @OA\Property(property="price", type="number", example="4.99")
      *             )),
      *             @OA\Property(property="total_price", type="number", example="50.99")
@@ -83,9 +86,11 @@ class OrderController extends Controller
             'location.name' => 'required|string',
             'location.url' => 'required|string',
             'items.*.product_id' => 'required|integer',
+            'items.*.title' => 'required|string',
+            'items.*.image_url' => 'required|string',
             'items.*.quantity' => 'required|integer|min:1',
-            'items.*.color_id' => 'required|integer|min:1',
-            'items.*.size_id' => 'required|integer|min:1',
+            'items.*.color' => 'required|string',
+            'items.*.size' => 'required|string',
             'items.*.price' => 'required|numeric|min:0',
             'total_price' => 'required|numeric|min:0'
         ]);
@@ -102,7 +107,8 @@ class OrderController extends Controller
                 'user_phone' => $request->userData['phone'],
                 'location_url' => $request->location['url'],
                 'location_name' => $request->location['name'],
-                'status' => 'pending'
+                'status' => 'pending',
+                'is_checking' => false
             ]);
 
             foreach ($request->items as $item) {
@@ -112,11 +118,18 @@ class OrderController extends Controller
                 OrderItem::create([
                     'order_id' => $order->id,
                     'product_id' => $item['product_id'],
+                    'title' => $item['title'],
+                    'image_url' => $item['image_url'],
                     'quantity' => $item['quantity'],
                     'price' => $item['price'],
-                    'color_id' => $item['color_id'],
-                    'size_id' => $item['size_id']
+                    'color' => $item['color'],
+                    'size' => $item['size']
                 ]);
+            }
+
+            if (OrderCheck::where('order_id', $order->id)->exists()) {
+                $order->is_checking = true;
+                $order->save();
             }
 
             return $order;
@@ -124,6 +137,75 @@ class OrderController extends Controller
 
         return response()->json(['message' => 'order_created_successfully', 'order' => $order], 201);
     }
+
+
+    /**
+     * @OA\Post(
+     *     path="/api/add-check",
+     *     tags={"Order"},
+     *     summary="Create a new order check",
+     *     description="Create a new order check with order_id and image",
+     *     operationId="createOrderCheck",
+     *     security={{ "bearerAuth":{} }},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         description="Order check details",
+     *         @OA\MediaType(
+     *             mediaType="multipart/form-data",
+     *             @OA\Schema(
+     *                 required={"order_id", "image"},
+     *                 @OA\Property(property="order_id", type="integer", example="1"),
+     *                 @OA\Property(property="image", type="string", format="binary")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=201,
+     *         description="Order check created successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Order check created successfully"),
+     *             @OA\Property(property="order_id", type="integer", example="1")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Bad request",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Invalid data")
+     *         )
+     *     )
+     * )
+     */
+
+    public function addCheck(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'order_id' => 'required|integer|exists:orders,id',
+            'image' => 'required|image'
+        ]);
+
+        if (OrderCheck::where('order_id', $request->order_id)->count() > 4) {
+            return response()->json(['message' => 'Order checks limit'], 400);
+        }
+
+        if ($validator->fails()) {
+            return response()->json(['message' => 'Invalid data', 'errors' => $validator->errors()], 400);
+        }
+
+        $order = DB::transaction(function () use ($request) {
+            $order = OrderCheck::create([
+                'order_id' => $request->order_id,
+                'image' => $request->image->store('order_checks', 'public') // Store the image and save the path
+            ]);
+
+            return $order;
+        });
+
+        return response()->json(['message' => 'Order check created successfully', 'order' => $order], 201);
+    }
+
 
 
     /**
@@ -268,13 +350,10 @@ class OrderController extends Controller
                     $colorDetail = $productColors->firstWhere('id', $basketColor->color_id);
 
                     $result[] = [
-                        'id' => $productDetail['id'] ?? null,
-                        'basket_id' => $basket['id'] ?? null,
+                        'product_id' => $productDetail['id'] ?? null,
                         'title' => $productDetail['title'] ?? null,
                         'size' => $sizeDetail['value'] ?? null,
-                        'size_id' => $sizeDetail['id'] ?? null,
                         'color' => $colorDetail['value'] ?? null,
-                        'color_id' => $colorDetail['id'] ?? null,
                         'quantity' => $basketSize['quantity'] ?? 1,
                         'image_url' => $colorDetail['image_url'] ?? null,
                         'price' => $productDetail['price'] ?? null

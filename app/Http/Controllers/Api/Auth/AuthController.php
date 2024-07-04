@@ -105,9 +105,11 @@ public function verifyEmail($token)
                 $user->save();
             }
 
-            $redirectUrl = "https://taobao-optom-uz.vercel.app/auth?step=info&id={$user->unique_id}";
+            // $redirectUrl = "https://taobao-optom-uz.vercel.app/auth?step=info&id={$user->unique_id}";
 
-            return redirect($redirectUrl);
+            // return redirect($redirectUrl);
+
+            return $user->unique_id;
         }
 
         return response()->json(['message' => 'user_not_found'], 404);

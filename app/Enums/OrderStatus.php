@@ -8,6 +8,12 @@ use Filament\Support\Contracts\HasLabel;
 
 enum OrderStatus: string implements HasColor, HasIcon, HasLabel
 {
+    case Ver_underVerification = 'under verification';
+
+    case Ver_verified = 'verified';
+
+    case Ver_failedVerification = 'failed verification';
+
     case Processing = 'processing';
 
     case Shipped = 'shipped';
@@ -23,6 +29,9 @@ enum OrderStatus: string implements HasColor, HasIcon, HasLabel
             self::Shipped => 'Shipped',
             self::Delivered => 'Delivered',
             self::Cancelled => 'Cancelled',
+            self::Ver_underVerification => 'Under Verification',
+            self::Ver_verified => 'Verified',
+            self::Ver_failedVerification => 'Failed Verification',
         };
     }
 
@@ -32,6 +41,9 @@ enum OrderStatus: string implements HasColor, HasIcon, HasLabel
             self::Processing => 'warning',
             self::Shipped, self::Delivered => 'success',
             self::Cancelled => 'danger',
+            self::Ver_underVerification => 'warning',
+            self::Ver_verified => 'success',
+            self::Ver_failedVerification => 'danger',
         };
     }
 
@@ -42,6 +54,9 @@ enum OrderStatus: string implements HasColor, HasIcon, HasLabel
             self::Shipped => 'heroicon-m-truck',
             self::Delivered => 'heroicon-m-check-badge',
             self::Cancelled => 'heroicon-m-x-circle',
+            self::Ver_underVerification => 'heroicon-m-check-circle',
+            self::Ver_verified => 'heroicon-m-check-circle',
+            self::Ver_failedVerification => 'heroicon-m-x-circle',
         };
     }
 }
