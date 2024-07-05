@@ -28,6 +28,9 @@ Route::get('/product-detail-from-taobao', [ProductController::class, 'productDet
 Route::get('/categories-from-taobao', [ProductController::class, 'categoriesFromTaoBao']);
 Route::get('/sub-categories-from-taobao', [ProductController::class, 'subCategoriesFromTaoBao']);
 Route::get('/search-products-from-taobao', [ProductController::class, 'searchProductsFromTaobao']);
+Route::post('/orders', [OrderController::class, 'create']);
+Route::get('questions', [ListController::class, 'questions']);
+
 
 Route::get('/top-products', [ProductController::class, 'topProducts']);
 Route::get('/recommend-products', [ProductController::class, 'recommendedProducts']);
@@ -47,6 +50,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/post-comment', [ListController::class, 'postComment']);
     Route::get('/orders', [OrderController::class, 'getUserOrders']);
     Route::get('/get-orders', [OrderController::class, 'getOrders']);
+    Route::get('/get-order', [OrderController::class, 'getOrder']);
+    Route::put('/add', [OrderController::class, 'updateBasketItemSizeQuantity']);
+    Route::post('/add-check', [OrderController::class, 'addCheck']);
     Route::get('/success-orders', [OrderController::class, 'getSuccessOrders']);
 });
 

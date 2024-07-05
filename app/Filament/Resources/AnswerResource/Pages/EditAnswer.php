@@ -1,14 +1,14 @@
 <?php
 
-namespace App\Filament\Resources\AnswersResource\Pages;
+namespace App\Filament\Resources\AnswerResource\Pages;
 
-use App\Filament\Resources\AnswersResource;
+use App\Filament\Resources\AnswerResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 
-class EditAnswers extends EditRecord
+class EditAnswer extends EditRecord
 {
-    protected static string $resource = AnswersResource::class;
+    protected static string $resource = AnswerResource::class;
 
     protected function getHeaderActions(): array
     {

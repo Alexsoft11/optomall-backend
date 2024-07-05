@@ -3,7 +3,11 @@
 namespace App\Http\Controllers\Api\Products;
 
 use App\Http\Controllers\Controller;
+use App\Models\Basket;
+use App\Models\BasketItemColor;
+use App\Models\BasketItemSize;
 use App\Models\Order;
+use App\Models\OrderCheck;
 use App\Models\OrderItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -30,14 +34,26 @@ class OrderController extends Controller
      *         required=true,
      *         description="Order details",
      *         @OA\JsonContent(
-     *             required={"items"},
+     *             required={"items", "userData", "location", "total_price"},
+     *             @OA\Property(property="userData", type="object", 
+     *                 @OA\Property(property="name", type="string", example="John"),
+     *                 @OA\Property(property="phone", type="string", example="+380671234567")
+     *             ),
+     *             @OA\Property(property="location", type="object",
+     *                 @OA\Property(property="name", type="string", example="Uzbekistan"),
+     *                 @OA\Property(property="url", type="string", example="https://google.com")
+     *             ),
      *             @OA\Property(property="items", type="array", @OA\Items(
      *                 @OA\Property(property="product_id", type="integer", example="1"),
+     *                 @OA\Property(property="title", type="string", example="title"),
+     *                 @OA\Property(property="image_url", type="string", example="url"),
      *                 @OA\Property(property="quantity", type="integer", example="2"),
-     *                 @OA\Property(property="color_id", type="integer", example="3"),
-     *                 @OA\Property(property="size_id", type="integer", example="4"),
+     *                 @OA\Property(property="color", type="string", example="black"),
+     *                 @OA\Property(property="size", type="string", example="xl"),
+     *                 @OA\Property(property="price", type="number", example="4.99")
      *             )),
-     *         ),
+     *             @OA\Property(property="total_price", type="number", example="50.99")
+     *         )
      *     ),
      *     @OA\Response(
      *         response=201,
@@ -45,27 +61,38 @@ class OrderController extends Controller
      *         @OA\JsonContent(
      *             type="object",
      *             @OA\Property(property="message", type="string", example="Order created successfully"),
-     *             @OA\Property(property="order_id", type="integer", example="1"),
-     *         ),
+     *             @OA\Property(property="order_id", type="integer", example="1")
+     *         )
      *     ),
      *     @OA\Response(
      *         response=400,
      *         description="Bad request",
      *         @OA\JsonContent(
      *             type="object",
-     *             @OA\Property(property="message", type="string", example="Invalid data"),
-     *         ),
-     *     ),
+     *             @OA\Property(property="message", type="string", example="Invalid data")
+     *         )
+     *     )
      * )
      */
+
     public function create(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'items' => 'required|array',
-            'items.*.product_id' => 'required',
+            'userData' => 'required|array',
+            'location' => 'required|array',
+            'userData.name' => 'required|string',
+            'userData.phone' => 'required|string',
+            'location.name' => 'required|string',
+            'location.url' => 'required|string',
+            'items.*.product_id' => 'required|integer',
+            'items.*.title' => 'required|string',
+            'items.*.image_url' => 'required|string',
             'items.*.quantity' => 'required|integer|min:1',
-            'items.*.color_id' => 'required|integer|min:1',
-            'items.*.size_id' => 'required|integer|min:1',
+            'items.*.color' => 'required|string',
+            'items.*.size' => 'required|string',
+            'items.*.price' => 'required|numeric|min:0',
+            'total_price' => 'required|numeric|min:0'
         ]);
 
         if ($validator->fails()) {
@@ -73,19 +100,15 @@ class OrderController extends Controller
         }
 
         $order = DB::transaction(function () use ($request) {
-            $totalPrice = 0;
-
-            foreach ($request->items as $item) {
-                $productDetailResponse = $this->productController->productDetailFromTaoBao(new Request(['productId' => $item['product_id']]));
-                $productDetail = json_decode($productDetailResponse->getContent(), true)['detail'];
-                $totalPrice += $item['quantity'] * $productDetail['price'];
-            }
-
             $order = Order::create([
                 'user_id' => auth()->user()->id,
-                'type' => 'order',
-                'total_price' => $totalPrice,
+                'total_price' => $request->total_price,
+                'user_name' => $request->userData['name'],
+                'user_phone' => $request->userData['phone'],
+                'location_url' => $request->location['url'],
+                'location_name' => $request->location['name'],
                 'status' => 'pending',
+                'is_checking' => false
             ]);
 
             foreach ($request->items as $item) {
@@ -94,20 +117,136 @@ class OrderController extends Controller
 
                 OrderItem::create([
                     'order_id' => $order->id,
-                    'type' => 'order',
                     'product_id' => $item['product_id'],
+                    'title' => $item['title'],
+                    'image_url' => $item['image_url'],
                     'quantity' => $item['quantity'],
-                    'price' => $productDetail['price'],
-                    'color_id' => $item['color_id'],
-                    'size_id' => $item['size_id'],
+                    'price' => $item['price'],
+                    'color' => $item['color'],
+                    'size' => $item['size']
                 ]);
+            }
+
+            if (OrderCheck::where('order_id', $order->id)->exists()) {
+                $order->is_checking = true;
+                $order->save();
             }
 
             return $order;
         });
 
-        return response()->json(['message' => 'order_created_successfully', 'order' => $order], 201);
+        return response()->json(['message' => 'order_created_successfully', 'order_id' => $order->id], 201);
     }
+
+    /**
+     * @OA\Get(
+     *     path="/api/get-order",
+     *     tags={"Order"},
+     *     summary="Get order by order_id",
+     *     description="Get order by order_id",
+     *     security={{ "bearerAuth":{} }},
+     *     @OA\Parameter(
+     *         name="order_id",
+     *         in="query",
+     *         required=true,
+     *         @OA\Schema(type="integer", example=1),
+     *         description="ID of the order"
+     *     ),
+     *     @OA\Response(
+     *         response=201,
+     *         description="Get order",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Get order"),
+     *             @OA\Property(property="order_id", type="integer", example="1")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Bad request",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Invalid data")
+     *         )
+     *     )
+     * )
+     */
+
+    public function getOrder(Request $request)
+    {
+        $order = Order::where('id', $request->order_id)->where('user_id', auth()->user()->id)->first();
+
+        return response()->json(['message' => 'successfull', 'order' => ['id' => $order->id, 'total_price' => $order->total_price, 'card_number' => '9860176612846848']], 201);
+    }
+
+
+    /**
+     * @OA\Post(
+     *     path="/api/add-check",
+     *     tags={"Order"},
+     *     summary="Create a new order check",
+     *     description="Create a new order check with order_id and image",
+     *     operationId="createOrderCheck",
+     *     security={{ "bearerAuth":{} }},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         description="Order check details",
+     *         @OA\MediaType(
+     *             mediaType="multipart/form-data",
+     *             @OA\Schema(
+     *                 required={"order_id", "image"},
+     *                 @OA\Property(property="order_id", type="integer", example="1"),
+     *                 @OA\Property(property="image", type="string", format="binary")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=201,
+     *         description="Order check created successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Order check created successfully"),
+     *             @OA\Property(property="order_id", type="integer", example="1")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Bad request",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Invalid data")
+     *         )
+     *     )
+     * )
+     */
+
+    public function addCheck(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'order_id' => 'required|integer|exists:orders,id',
+            'image' => 'required|image'
+        ]);
+
+        if (OrderCheck::where('order_id', $request->order_id)->count() > 4) {
+            return response()->json(['message' => 'Order checks limit'], 400);
+        }
+
+        if ($validator->fails()) {
+            return response()->json(['message' => 'Invalid data', 'errors' => $validator->errors()], 400);
+        }
+
+        $order = DB::transaction(function () use ($request) {
+            $order = OrderCheck::create([
+                'order_id' => $request->order_id,
+                'image' => $request->image->store('order_checks', 'public') // Store the image and save the path
+            ]);
+
+            return $order;
+        });
+
+        return response()->json(['message' => 'Order check created successfully', 'order' => $order], 201);
+    }
+
 
 
     /**
@@ -122,13 +261,13 @@ class OrderController extends Controller
      *         required=true,
      *         description="Basket details",
      *         @OA\JsonContent(
-     *             required={"items"},
-     *             @OA\Property(property="items", type="array", @OA\Items(
-     *                 @OA\Property(property="product_id", type="integer", example="1"),
+     *             required={"product_id", "sizes", "colors"},
+     *             @OA\Property(property="product_id", type="integer", example="1"),
+     *             @OA\Property(property="sizes", type="array", @OA\Items(
+     *                 @OA\Property(property="id", type="integer", example="4"),
      *                 @OA\Property(property="quantity", type="integer", example="2"),
-     *                 @OA\Property(property="color_id", type="integer", example="3"),
-     *                 @OA\Property(property="size_id", type="integer", example="4"),
      *             )),
+     *             @OA\Property(property="colors", type="array", @OA\Items(type="integer", example=1)),
      *         ),
      *     ),
      *     @OA\Response(
@@ -153,54 +292,40 @@ class OrderController extends Controller
     public function userBasket(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'items' => 'required|array',
-            'items.*.product_id' => 'required',
-            'items.*.quantity' => 'required|integer|min:1',
-            'items.*.color_id' => 'required|integer|min:1',
-            'items.*.size_id' => 'required|integer|min:1',
+            'product_id' => 'required|integer|min:1',
+            'sizes' => 'required|array',
+            'sizes.*.id' => 'required|integer|min:1',
+            'sizes.*.quantity' => 'required|integer|min:1',
+            'colors' => 'required|array',
+            'colors.*' => 'required|integer|min:1',
         ]);
 
         if ($validator->fails()) {
             return response()->json(['message' => 'Invalid data', 'errors' => $validator->errors()], 400);
         }
 
-        $order = DB::transaction(function () use ($request) {
-            $totalPrice = 0;
+        $basket = Basket::create([
+            'user_id' => auth()->user()->id,
+            'product_id' => $request->product_id,
+        ]);
 
-            foreach ($request->items as $item) {
-                $productDetailResponse = $this->productController->productDetailFromTaoBao(new Request(['productId' => $item['product_id']]));
-                $productDetail = json_decode($productDetailResponse->getContent(), true)['detail'];
-                $totalPrice += $item['quantity'] * $productDetail['price'];
-            }
-
-            $order = Order::create([
-                'user_id' => auth()->user()->id,
-                'type' => 'basket',
-                'total_price' => $totalPrice,
-                'status' => 'pending',
+        foreach ($request->sizes as $size) {
+            BasketItemSize::create([
+                'basket_id' => $basket['id'],
+                'size_id' => $size['id'],
+                'quantity' => $size['quantity'],
             ]);
+        }
 
-            foreach ($request->items as $item) {
-                $productDetailResponse = $this->productController->productDetailFromTaoBao(new Request(['productId' => $item['product_id']]));
-                $productDetail = json_decode($productDetailResponse->getContent(), true)['detail'];
+        foreach ($request->colors as $color) {
+            BasketItemColor::create([
+                'basket_id' => $basket['id'],
+                'color_id' => $color,
+            ]);
+        }
 
-                OrderItem::create([
-                    'order_id' => $order->id,
-                    'type' => 'basket',
-                    'product_id' => $item['product_id'],
-                    'quantity' => $item['quantity'],
-                    'price' => $productDetail['price'],
-                    'color_id' => $item['color_id'],
-                    'size_id' => $item['size_id'],
-                ]);
-            }
-
-            return $order;
-        });
-
-        return response()->json(['message' => 'Product added to basket', 'basket' => $order], 201);
+        return response()->json(['message' => 'Product added to basket', 'basket' => $basket], 201);
     }
-
 
     /**
      * @OA\Get(
@@ -209,6 +334,38 @@ class OrderController extends Controller
      *     summary="Get orders for authenticated user",
      *     description="Retrieve orders created by the authenticated user",
      *     security={{ "bearerAuth":{} }},
+     *     @OA\Parameter(
+     *         name="filter",
+     *         in="query",
+     *         required=false,
+     *         description="Filter orders by status",
+     *         @OA\Schema(
+     *             type="string",
+     *             enum={"all", "active", "in verification"}
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful operation",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(
+     *                 property="orders",
+     *                 type="array",
+     *                 @OA\Items(
+     *                     type="object",
+     *                     @OA\Property(property="id", type="integer"),
+     *                     @OA\Property(property="status", type="string"),
+     *                     @OA\Property(property="items", type="array", @OA\Items(
+     *                         type="object",
+     *                         @OA\Property(property="title", type="string"),
+     *                         @OA\Property(property="price", type="number"),
+     *                         @OA\Property(property="image_url", type="string"),
+     *                     ))
+     *                 )
+     *             )
+     *         )
+     *     ),
      *     @OA\Response(
      *         response=401,
      *         description="Unauthorized",
@@ -216,13 +373,41 @@ class OrderController extends Controller
      *             type="object",
      *             @OA\Property(property="message", type="string", example="Unauthorized"),
      *         ),
-     *     ),
+     *     )
      * )
      */
     public function getOrders(Request $request)
     {
         $user = $request->user();
-        $orders = Order::where('user_id', $user->id)->where('type', 'order')->get();
+
+        $filter = $request->query('filter', 'all');
+
+        $verificationStatuses = ['under verification', 'verified', 'failed verification'];
+        $activeStatuses = ['processing', 'shipped', 'delivered', 'cancelled'];
+
+        $ordersQuery = Order::where('user_id', $user->id)->select('id', 'status', 'total_price', 'user_name', 'user_phone', 'location_url', 'location_name', 'created_at');
+
+        if ($filter === 'in verification') {
+            $ordersQuery->whereIn('status', $verificationStatuses);
+        } elseif ($filter === 'active') {
+            $ordersQuery->whereIn('status', $activeStatuses);
+        }
+
+        $orders = $ordersQuery->with(['items' => function ($query) {
+            $query->select('id', 'order_id', 'title', 'price', 'image_url');
+        }])->get();
+
+        $orders = $orders->map(function ($order) {
+            $order->items = $order->items->map(function ($item) {
+                return [
+                    'title' => $item->title,
+                    'price' => $item->price,
+                    'image_url' => $item->image_url,
+                ];
+            });
+            return $order;
+        });
+
         return response()->json(['orders' => $orders], 200);
     }
 
@@ -245,19 +430,41 @@ class OrderController extends Controller
     public function getUserBasket(Request $request)
     {
         $user = $request->user();
-        $baskets = Order::where('user_id', $user->id)->where('type', 'basket')->get();
+        $baskets = Basket::where('user_id', $user->id)->with('colors', 'sizes')->get();
 
-        $basketItems = [];
+        $result = [];
+
         foreach ($baskets as $basket) {
-            $items = OrderItem::where('order_id', $basket->id)->where('type', 'basket')->get();
-            $basketItems = [
-                'items' => $items
-            ];
+            // Simulating product details fetch
+            $productDetailResponse = $this->productController->productDetailFromTaoBao(new Request(['productId' => $basket['product_id']]));
+            $productDetail = json_decode($productDetailResponse->getContent(), true)['detail'];
+
+            $basketColorIds = $basket->colors->pluck('color_id')->toArray();
+            $basketSizeIds = $basket->sizes->pluck('size_id')->toArray();
+
+            $productColors = collect($productDetail['colors'])->whereIn('id', $basketColorIds)->values();
+            $productSizes = collect($productDetail['sizes'])->whereIn('id', $basketSizeIds)->values();
+
+            foreach ($basket->sizes as $basketSize) {
+                foreach ($basket->colors as $basketColor) {
+                    $sizeDetail = $productSizes->firstWhere('id', $basketSize->size_id);
+                    $colorDetail = $productColors->firstWhere('id', $basketColor->color_id);
+
+                    $result[] = [
+                        'product_id' => $productDetail['id'] ?? null,
+                        'title' => $productDetail['title'] ?? null,
+                        'size' => $sizeDetail['value'] ?? null,
+                        'color' => $colorDetail['value'] ?? null,
+                        'quantity' => $basketSize['quantity'] ?? 1,
+                        'image_url' => $colorDetail['image_url'] ?? null,
+                        'price' => $productDetail['price'] ?? null
+                    ];
+                }
+            }
         }
 
-        return response()->json($basketItems, 200);
+        return response()->json($result);
     }
-
 
     /**
      * @OA\Get(
@@ -281,5 +488,77 @@ class OrderController extends Controller
         $user = $request->user();
         $orders = Order::where('user_id', $user->id)->where('status', 'delivered')->where('type', 'order')->get();
         return response()->json(['orders' => $orders], 200);
+    }
+
+    /**
+     * @OA\Put(
+     *     path="/api/add",
+     *     tags={"Order"},
+     *     summary="Update size quantity in the user's basket",
+     *     description="Update the quantity of a specific size in the user's basket",
+     *     operationId="updateBasketItemSizeQuantity",
+     *     security={{ "bearerAuth":{} }},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         description="Basket item size details",
+     *         @OA\JsonContent(
+     *             required={"basket_id", "size_id", "quantity"},
+     *             @OA\Property(property="basket_id", type="integer", example="1"),
+     *             @OA\Property(property="size_id", type="integer", example="4"),
+     *             @OA\Property(property="quantity", type="integer", example="2"),
+     *         ),
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Size quantity updated successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Size quantity updated successfully"),
+     *             @OA\Property(property="basket_item_size", type="object"),
+     *         ),
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Bad request",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Invalid data"),
+     *         ),
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Not found",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Basket item size not found"),
+     *         ),
+     *     ),
+     * )
+     */
+    public function updateBasketItemSizeQuantity(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'basket_id' => 'required|integer|exists:baskets,id',
+            'size_id' => 'required|integer|exists:basket_item_sizes,size_id',
+            'quantity' => 'required|integer|min:1',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['message' => 'Invalid data', 'errors' => $validator->errors()], 400);
+        }
+
+        $basketItemSize = BasketItemSize::where('basket_id', $request->basket_id)
+            ->where('size_id', $request->size_id)
+            ->first();
+        // return $basketItemSize;
+
+        if (!$basketItemSize) {
+            return response()->json(['message' => 'Basket item size not found'], 404);
+        }
+
+        $basketItemSize->quantity = $request->quantity;
+        $basketItemSize->save();
+
+        return response()->json(['message' => 'Size quantity updated successfully', 'basket_item_size' => $basketItemSize], 200);
     }
 }
