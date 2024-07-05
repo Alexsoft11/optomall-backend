@@ -121,7 +121,16 @@ class ProductDetailResource extends JsonResource
             'discounted_price' => $this->discounted_price,
             'pictures' => $pictures,
             'videos' => $videos,
-            'colors' => $colors,
+            'colors' => $colors->map(function ($color) {
+                return [
+                    'id' => $color->uuid,
+                    'product_id' => $color->product_id,
+                    'property_name' => $color->property_name,
+                    'value' => $color->value,
+                    'image_url' => $color->image_url,
+                    'mini_image_url' => $color->mini_image_url,
+                ];
+            }),
             'sizes' => $sizes,
             'compositions' => $compositions,
         ];
