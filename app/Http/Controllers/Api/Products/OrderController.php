@@ -397,6 +397,7 @@ class OrderController extends Controller
             $query->select('id', 'order_id', 'title', 'price', 'image_url');
         }])->get();
 
+
         $orders = $orders->map(function ($order) {
             $order->items = $order->items->map(function ($item) {
                 return [
@@ -486,7 +487,7 @@ class OrderController extends Controller
     public function getSuccessOrders(Request $request)
     {
         $user = $request->user();
-        $orders = Order::where('user_id', $user->id)->where('status', 'delivered')->where('type', 'order')->get();
+        $orders = Order::where('user_id', $user->id)->get();
         return response()->json(['orders' => $orders], 200);
     }
 
