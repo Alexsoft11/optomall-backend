@@ -341,7 +341,7 @@ class OrderController extends Controller
      *         description="Filter orders by status",
      *         @OA\Schema(
      *             type="string",
-     *             enum={"all", "active", "in verification"}
+     *             enum={"all", "active", "in_verification"}
      *         )
      *     ),
      *     @OA\Response(
