@@ -135,7 +135,48 @@ class OrderController extends Controller
             return $order;
         });
 
-        return response()->json(['message' => 'order_created_successfully', 'order' => $order], 201);
+        return response()->json(['message' => 'order_created_successfully', 'order_id' => $order->id], 201);
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/get-order",
+     *     tags={"Order"},
+     *     summary="Get order by order_id",
+     *     description="Get order by order_id",
+     *     security={{ "bearerAuth":{} }},
+     *     @OA\Parameter(
+     *         name="order_id",
+     *         in="query",
+     *         required=true,
+     *         @OA\Schema(type="integer", example=1),
+     *         description="ID of the order"
+     *     ),
+     *     @OA\Response(
+     *         response=201,
+     *         description="Get order",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Get order"),
+     *             @OA\Property(property="order_id", type="integer", example="1")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Bad request",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Invalid data")
+     *         )
+     *     )
+     * )
+     */
+
+    public function getOrder(Request $request)
+    {
+        $order = Order::where('id', $request->order_id)->where('user_id', auth()->user()->id)->first();
+
+        return response()->json(['message' => 'successfull', 'order' => ['id' => $order->id, 'total_price' => $order->total_price, 'card_number' => '9860176612846848']], 201);
     }
 
 
@@ -293,6 +334,38 @@ class OrderController extends Controller
      *     summary="Get orders for authenticated user",
      *     description="Retrieve orders created by the authenticated user",
      *     security={{ "bearerAuth":{} }},
+     *     @OA\Parameter(
+     *         name="filter",
+     *         in="query",
+     *         required=false,
+     *         description="Filter orders by status",
+     *         @OA\Schema(
+     *             type="string",
+     *             enum={"all", "active", "in verification"}
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful operation",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(
+     *                 property="orders",
+     *                 type="array",
+     *                 @OA\Items(
+     *                     type="object",
+     *                     @OA\Property(property="id", type="integer"),
+     *                     @OA\Property(property="status", type="string"),
+     *                     @OA\Property(property="items", type="array", @OA\Items(
+     *                         type="object",
+     *                         @OA\Property(property="title", type="string"),
+     *                         @OA\Property(property="price", type="number"),
+     *                         @OA\Property(property="image_url", type="string"),
+     *                     ))
+     *                 )
+     *             )
+     *         )
+     *     ),
      *     @OA\Response(
      *         response=401,
      *         description="Unauthorized",
@@ -300,13 +373,41 @@ class OrderController extends Controller
      *             type="object",
      *             @OA\Property(property="message", type="string", example="Unauthorized"),
      *         ),
-     *     ),
+     *     )
      * )
      */
     public function getOrders(Request $request)
     {
         $user = $request->user();
-        $orders = Order::where('user_id', $user->id)->get();
+
+        $filter = $request->query('filter', 'all');
+
+        $verificationStatuses = ['under verification', 'verified', 'failed verification'];
+        $activeStatuses = ['processing', 'shipped', 'delivered', 'cancelled'];
+
+        $ordersQuery = Order::where('user_id', $user->id)->select('id', 'status', 'total_price', 'user_name', 'user_phone', 'location_url', 'location_name', 'created_at');
+
+        if ($filter === 'in verification') {
+            $ordersQuery->whereIn('status', $verificationStatuses);
+        } elseif ($filter === 'active') {
+            $ordersQuery->whereIn('status', $activeStatuses);
+        }
+
+        $orders = $ordersQuery->with(['items' => function ($query) {
+            $query->select('id', 'order_id', 'title', 'price', 'image_url');
+        }])->get();
+
+        $orders = $orders->map(function ($order) {
+            $order->items = $order->items->map(function ($item) {
+                return [
+                    'title' => $item->title,
+                    'price' => $item->price,
+                    'image_url' => $item->image_url,
+                ];
+            });
+            return $order;
+        });
+
         return response()->json(['orders' => $orders], 200);
     }
 
