@@ -48,6 +48,7 @@ class ResetPasswordNotification extends Notification
         return (new MailMessage)
             ->mailer('smtp')
             ->subject($this->subject)
+            ->view('emails.resetPassword', ['otp' => $otp->token])
             ->line($this->message)
             ->line("code :".$otp->token);
 
