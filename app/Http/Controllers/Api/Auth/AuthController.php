@@ -330,6 +330,7 @@ public function login(Request $request)
                  'id' => $user->id,
              ],
              'unique_id' => $user->unique_id,
+             'token' => $token->plainTextToken,
              "message" => "sent_your_info_to_your_email"
          ]);
      }
