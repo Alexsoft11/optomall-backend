@@ -30,7 +30,8 @@ class VerifyEmailNotification extends Notification
         $url = url("/api/verify-email/{$this->token}");
 
         return (new MailMessage)
-            ->subject('Verify your email address')
+            ->subject('OnWay.uz')
+            ->view('emails.register', ['url' => $url])
             ->line('Please click the button below to verify your email address.')
             ->action('Verify Email Address', $url)
             ->line('If you did not create an account, no further action is required.');

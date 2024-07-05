@@ -18,6 +18,7 @@ Route::post('/personal-data', [AuthController::class, 'personalData']);
 
 Route::post('login', [AuthController::class, 'login']);
 Route::post('check-email', [AuthController::class, 'checkEmail']);
+Route::post('/google-login', [AuthController::class, 'googleLoginViaAccessToken']);
 
 Route::post('password/forgot', [ForgotPasswordController::class, 'forgotPassword']);
 Route::post('password/reset', [ResetPasswordController::class, 'resetPassword']);

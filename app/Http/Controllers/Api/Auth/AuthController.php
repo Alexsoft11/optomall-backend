@@ -12,7 +12,11 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use OpenApi\Annotations as OA;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
+use Laravel\Socialite\Facades\Socialite;
+use App\Mail\GoogleLoginSuccess;
 
 
 class AuthController extends Controller
@@ -105,7 +109,7 @@ public function verifyEmail($token)
                 $user->save();
             }
 
-            $redirectUrl = "http://134.122.6.96/auth?step=info&id={$user->unique_id}";
+            $redirectUrl = "https://onway.uz/auth?step=info&id={$user->unique_id}";
 
             return redirect($redirectUrl);
         }
@@ -252,4 +256,81 @@ public function login(Request $request)
             return response()->json(['message' => 'false']);
         }
     }
+
+
+/**
+     * @OA\Post(
+     *     path="/api/google-login",
+     *     summary="Login or register a user using Google access token",
+     *     tags={"Auth"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"token"},
+     *             @OA\Property(property="token", type="string", example="ya29.a0AfH6SM...")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="User logged in successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(
+     *                 property="user",
+     *                 type="object",
+     *                 @OA\Property(property="id", type="integer", example=1)
+     *             ),
+     *             @OA\Property(property="token", type="string", example="1|eXaMpLeToKeN12345")
+     *         )
+     *     ),
+     *     @OA\Response(response=404, description="User not found")
+     * )
+     */
+
+
+     public function googleLoginViaAccessToken(Request $request)
+     {
+         $request->validate([
+             'token' => ['required', 'string']
+         ]);
+     
+         $token = $request->input('token');
+         Log::info('Google Access Token: ' . $token);
+     
+         try {
+             $googleUser = Socialite::driver('google')->userFromToken($token);
+         } catch (\Exception $e) {
+             return response()->json(['message' => 'Invalid token or unable to fetch Google user data'], 401);
+         }
+     
+         if (empty($googleUser)) {
+             return response()->json(['message' => 'User not found'], 404);
+         }
+     
+         $user = User::where('email', $googleUser->getEmail())->first();
+         $password = Str::random(16);
+     
+         if (!$user) {
+             $user = User::create([
+                 'name' => $googleUser->getName(),
+                 'email' => $googleUser->getEmail(),
+                 'password' => Hash::make($password),
+                 'email_verified_at' => now(),
+             ]);
+             $user->email_verified = true;
+             $user->email_verified_at = now();
+             $user->save();
+     
+             Mail::to($user->email)->send(new GoogleLoginSuccess($user, $password));
+         }
+     
+         $token = $user->createToken('LOGIN');
+     
+         return response()->json([
+             'user' => [
+                 'id' => $user->id,
+             ],
+             'unique_id' => $user->unique_id,
+             "message" => "sent_your_info_to_your_email"
+         ]);
+     }
 }
