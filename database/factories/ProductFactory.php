@@ -28,7 +28,7 @@ class ProductFactory extends Factory
             'discount_percent' => $discountPercent,
             'discounted_price' => $discountedPrice,
             'rating' => $this->faker->optional(0.8, null)->randomFloat(2, 1, 5),
-            'sold' => $this->faker->numberBetween(0, 500),
+            'sold' => $this->faker->numberBetween(10, 500),
         ];
     }
 }
