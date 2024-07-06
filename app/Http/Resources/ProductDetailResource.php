@@ -112,7 +112,7 @@ class ProductDetailResource extends JsonResource
             'product_category_id' => $this->product_category_id,
             'title' => $this->title,
             'price' => $this->price,
-            'image' => $this->image,
+            'image' => isset($this->resource['image']) && strpos($this->resource['image'], 'https') === 0 ? $this->resource['image'] : 'https://backend.cjsaam.site/storage/' . ($this->resource['image'] ?? $this['image']),
             'location' => $this->location,
             'product_url' => $this->product_url,
             'description' => $this->description,

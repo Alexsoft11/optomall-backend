@@ -19,7 +19,7 @@ class SliderResource extends JsonResource
         return [
             'id' => $this['id'],
             'url' => $this['url'],
-            'image' => $this['image'],
+            'image' => isset($this->resource['image']) && strpos($this->resource['image'], 'https') === 0 ? $this->resource['image'] : 'https://backend.cjsaam.site/storage/' . ($this->resource['image'] ?? $this['image']),
         ];
     }
 }
