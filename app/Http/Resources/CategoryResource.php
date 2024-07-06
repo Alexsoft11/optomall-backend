@@ -17,7 +17,7 @@ class CategoryResource extends JsonResource
         return [
             'id' => $this['catalog_id'] ?? $this['id'],
             'name' => $this['name'],
-            'image' => is_null($this['image']) ? null : url('storage/' . $this['image']),
+            'image' => isset($this->resource['image']) && strpos($this->resource['image'], 'https') === 0 ? $this->resource['image'] : 'https://backend.cjsaam.site/storage/' . ($this->resource['image'] ?? $this['image']),
             'is_active' => $this['is_active'],
         ];
     }
