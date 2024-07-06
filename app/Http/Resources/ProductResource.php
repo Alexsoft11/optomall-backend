@@ -25,7 +25,7 @@ class ProductResource extends JsonResource
             'id' => $this->resource['Id'] ?? $this['id'],
             'title' => $this->resource['Title'] ?? $this['title'],
             'price' => $this['price'],
-            'image' => isset($this->resource['MainPictureUrl']) && strpos($this->resource['MainPictureUrl'], 'https') === 0 ? $this->resource['MainPictureUrl'] : 'https://backend.cjsaam.site/storage/' . ($this->resource['MainPictureUrl'] ?? $this['image']),
+            'image' => strpos($this->resource['image'], 'https') === 0 ? $this->resource['image'] : 'https://backend.cjsaam.site/storage/' . ($this->resource['image'] ?? $this['image']),
             'discounted_price' => $promotionPriceExists ? round($this->resource['PromotionPrice']['ConvertedPriceList']['Internal']['Price']) * $amount : null ?? $this['discounted_price'],
             'discount_percent' => $promotionPercentExists ? $this->resource['PromotionPricePercent'][0]['Percent'] : null ?? $this['discount_percent'],
         ];
