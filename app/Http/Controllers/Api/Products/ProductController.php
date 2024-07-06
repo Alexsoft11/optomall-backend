@@ -158,7 +158,7 @@ class ProductController extends Controller
                 'detail' => new ProductDetailResource($productDetailFromDataBase),
                 'score' => [
                     'rating' => $productDetailFromDataBase->rating ?? null,
-                    'sold' => $productDetailFromDataBase->sold,
+                    'sold' => $productDetailFromDataBase->sold ?? null,
                 ],
                 'recommended' => ProductResource::collection($randomProducts)
             ]);
