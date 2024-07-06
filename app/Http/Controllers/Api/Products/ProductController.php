@@ -157,7 +157,7 @@ class ProductController extends Controller
             return $this->respondWithSuccess([
                 'detail' => new ProductDetailResource($productDetailFromDataBase),
                 'score' => [
-                    'rating' => $productDetailFromDataBase->rating,
+                    'rating' => $productDetailFromDataBase->rating ?? null,
                     'sold' => $productDetailFromDataBase->sold,
                 ],
                 'recommended' => ProductResource::collection($randomProducts)

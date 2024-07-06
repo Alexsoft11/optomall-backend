@@ -45,7 +45,7 @@ class ProductResource extends Resource
                     ->maxLength(255),
                 Forms\Components\TextInput::make('price')
                     ->label('Narx')
-                    ->integer()
+                    ->numeric()
                     ->required(),
                 FileUpload::make('image')
                     ->label('Rasm')
