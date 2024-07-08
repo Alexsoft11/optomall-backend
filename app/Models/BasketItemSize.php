@@ -9,8 +9,9 @@ class BasketItemSize extends Model
 {
     protected $fillable = [
         'basket_id',
-        'size_id',
-        'quantity'
+        'name',
+        'quantity',
+        'color_id'
     ];
 
     public function basket(): BelongsTo
