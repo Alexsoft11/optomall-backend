@@ -81,23 +81,23 @@ class ProductColor extends Model
 {
     use HasFactory;
 
-    protected $primaryKey = 'uuid';
-    protected $keyType = 'string';
-    public $incrementing = false;
+    // protected $primaryKey = 'uuid';
+    // protected $keyType = 'string';
+    // public $incrementing = false;
 
-    protected static function boot()
-    {
-        parent::boot();
+    // protected static function boot()
+    // {
+    //     parent::boot();
 
-        static::creating(function ($model) {
-            if (empty($model->uuid)) {
-                $model->uuid = (string) Str::uuid();
-            }
-        });
-    }
+    //     static::creating(function ($model) {
+    //         if (empty($model->uuid)) {
+    //             $model->uuid = (string) Str::uuid();
+    //         }
+    //     });
+    // }
 
     protected $fillable = [
-        'product_id', 'property_name', 'value', 'image_url', 'mini_image_url',
+        'color_id', 'product_id', 'property_name', 'value', 'image_url', 'mini_image_url',
     ];
 
     public function product()
@@ -112,7 +112,7 @@ class ProductSize extends Model
     use HasFactory;
 
     protected $fillable = [
-        'product_id', 'property_name', 'value'
+        'size_id', 'product_id', 'property_name', 'value'
     ];
 
     public function product()

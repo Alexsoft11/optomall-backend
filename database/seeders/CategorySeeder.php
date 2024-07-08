@@ -14,7 +14,7 @@ class CategorySeeder extends Seeder
      */
     public function run(): void
     {
-        $url = "http://otapi.net/service-json/GetRootCategoryInfoList?instanceKey=2071d7f9-2e5d-41ca-b21a-b22c8482d4db&language=uz&signature=71c80f0af3ef204bfac0ea7479c0e80f5bd27328d8a6a3c9b417eb488e9dac85&timestamp=20240526160409";
+        $url = "http://otapi.net/service-json/GetRootCategoryInfoList?instanceKey=06e38b86-e4a7-451e-91b3-2b40d2dd3e24&language=uz&signature=71c80f0af3ef204bfac0ea7479c0e80f5bd27328d8a6a3c9b417eb488e9dac85&timestamp=20240526160409";
 
         $response = Http::get($url);
         $categories = $response->json();

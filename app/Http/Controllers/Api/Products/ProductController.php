@@ -151,14 +151,14 @@ class ProductController extends Controller
         $response1 = Http::get($url1);
         $products1 = $response1->json();
         if ($products1['ErrorCode'] == 'AccessDenied') {
-            $productDetailFromDataBase = Product::where('id', $productId)->first();
+            $productDetailFromDataBase = Product::where('id', '808807124248')->first();
             $randomProducts = Product::inRandomOrder()->limit(5)->get();
 
             return $this->respondWithSuccess([
                 'detail' => new ProductDetailResource($productDetailFromDataBase),
                 'score' => [
-                    'rating' => $productDetailFromDataBase->rating ?? null,
-                    'sold' => $productDetailFromDataBase->sold ?? null,
+                    'rating' => 4.4,
+                    'sold' => 3123,
                 ],
                 'recommended' => ProductResource::collection($randomProducts)
             ]);
@@ -180,7 +180,7 @@ class ProductController extends Controller
         $response = Http::get($url);
         $productDetail = $response->json();
         // return $productDetail;
-        if($productDetail['ErrorCode'] == 'NotFound') {
+        if ($productDetail['ErrorCode'] == 'NotFound') {
             return $this->respondNotFound('Product not found', 404);
         }
         $score = Http::get($score);
@@ -268,70 +268,71 @@ class ProductController extends Controller
         // return $productsFromDatabase;
         if ($query == 'Top') {
 
-            $url = "http://otapi.net/service-json/BatchSearchItemsFrame?instanceKey={$this->apiKey}&language=uz&signature=e2082ad9248214795914d5f72e7a8ee835428149d23223eb00d97a67c2f9d1f6&timestamp=20240613130232&sessionId=&xmlParameters=%3CSearchItemsParameters%3E%0D%0A%0D%0A%3CCategoryId%3E121392004%3C%2FCategoryId%3E%0D%0A%3C%2FSearchItemsParameters%3E&framePosition=0&frameSize=$productCount&blockList=";
-            $url1 = "http://otapi.net/service-json/BatchSearchItemsFrame?instanceKey={$this->apiKey}&language=uz&signature=e2082ad9248214795914d5f72e7a8ee835428149d23223eb00d97a67c2f9d1f6&timestamp=20240613130232&sessionId=&xmlParameters=%3CSearchItemsParameters%3E%0D%0A%0D%0A%3CCategoryId%3E50000852%3C%2FCategoryId%3E%0D%0A%3C%2FSearchItemsParameters%3E&framePosition=0&frameSize=$productCount&blockList=";
-            $url2 = "http://otapi.net/service-json/BatchSearchItemsFrame?instanceKey={$this->apiKey}&language=uz&signature=e2082ad9248214795914d5f72e7a8ee835428149d23223eb00d97a67c2f9d1f6&timestamp=20240613130232&sessionId=&xmlParameters=%3CSearchItemsParameters%3E%0D%0A%0D%0A%3CCategoryId%3E50013189%3C%2FCategoryId%3E%0D%0A%3C%2FSearchItemsParameters%3E&framePosition=0&frameSize=$productCount&blockList=";
+            // $url = "http://otapi.net/service-json/BatchSearchItemsFrame?instanceKey={$this->apiKey}&language=uz&signature=e2082ad9248214795914d5f72e7a8ee835428149d23223eb00d97a67c2f9d1f6&timestamp=20240613130232&sessionId=&xmlParameters=%3CSearchItemsParameters%3E%0D%0A%0D%0A%3CCategoryId%3E121392004%3C%2FCategoryId%3E%0D%0A%3C%2FSearchItemsParameters%3E&framePosition=0&frameSize=10&blockList=";
+            // $url1 = "http://otapi.net/service-json/BatchSearchItemsFrame?instanceKey={$this->apiKey}&language=uz&signature=e2082ad9248214795914d5f72e7a8ee835428149d23223eb00d97a67c2f9d1f6&timestamp=20240613130232&sessionId=&xmlParameters=%3CSearchItemsParameters%3E%0D%0A%0D%0A%3CCategoryId%3E50000852%3C%2FCategoryId%3E%0D%0A%3C%2FSearchItemsParameters%3E&framePosition=0&frameSize=50&blockList=";
+            // $url2 = "http://otapi.net/service-json/BatchSearchItemsFrame?instanceKey={$this->apiKey}&language=uz&signature=e2082ad9248214795914d5f72e7a8ee835428149d23223eb00d97a67c2f9d1f6&timestamp=20240613130232&sessionId=&xmlParameters=%3CSearchItemsParameters%3E%0D%0A%0D%0A%3CCategoryId%3E50013189%3C%2FCategoryId%3E%0D%0A%3C%2FSearchItemsParameters%3E&framePosition=0&frameSize=40&blockList=";
 
-            $response = Http::get($url);
-            $products = $response->json();
-            $productsList = $products['Result']['Items']['Items']['Content'];
+            // $response = Http::get($url);
+            // $products = $response->json();
+            // return $products;
+            // $productsList = $products['Result']['Items']['Items']['Content'];
 
-            $response1 = Http::get($url1);
-            $products1 = $response1->json();
-            $productsList1 = $products1['Result']['Items']['Items']['Content'];
+            // $response1 = Http::get($url1);
+            // $products1 = $response1->json();
+            // $productsList1 = $products1['Result']['Items']['Items']['Content'];
 
-            $response2 = Http::get($url2);
-            $products2 = $response2->json();
-            $productsList2 = $products2['Result']['Items']['Items']['Content'];
+            // $response2 = Http::get($url2);
+            // $products2 = $response2->json();
+            // $productsList2 = $products2['Result']['Items']['Items']['Content'];
 
-            $mergedProducts = array_merge($productsList, $productsList1, $productsList2);
-            shuffle($mergedProducts);
+            // $mergedProducts = array_merge($productsList, $productsList1, $productsList2);
+            // shuffle($mergedProducts);
 
             return $this->respondWithSuccess([
-                'products' => ProductResource::collection($mergedProducts)
+                'products' => ProductResource::collection($productsFromDatabase)
             ]);
         } else if ($query == 'Recommended') {
 
-            $url = "http://otapi.net/service-json/BatchSearchItemsFrame?instanceKey={$this->apiKey}&language=uz&signature=e2082ad9248214795914d5f72e7a8ee835428149d23223eb00d97a67c2f9d1f6&timestamp=20240613130232&sessionId=&xmlParameters=%3CSearchItemsParameters%3E%0D%0A%0D%0A%3CCategoryId%3E50010167%3C%2FCategoryId%3E%0D%0A%3C%2FSearchItemsParameters%3E&framePosition=0&frameSize=$productCount&blockList=";
-            $url1 = "http://otapi.net/service-json/BatchSearchItemsFrame?instanceKey={$this->apiKey}&language=uz&signature=e2082ad9248214795914d5f72e7a8ee835428149d23223eb00d97a67c2f9d1f6&timestamp=20240613130232&sessionId=&xmlParameters=%3CSearchItemsParameters%3E%0D%0A%0D%0A%3CCategoryId%3E50000852%3C%2FCategoryId%3E%0D%0A%3C%2FSearchItemsParameters%3E&framePosition=0&frameSize=$productCount&blockList=";
+            // $url = "http://otapi.net/service-json/BatchSearchItemsFrame?instanceKey={$this->apiKey}&language=uz&signature=e2082ad9248214795914d5f72e7a8ee835428149d23223eb00d97a67c2f9d1f6&timestamp=20240613130232&sessionId=&xmlParameters=%3CSearchItemsParameters%3E%0D%0A%0D%0A%3CCategoryId%3E50010167%3C%2FCategoryId%3E%0D%0A%3C%2FSearchItemsParameters%3E&framePosition=0&frameSize=$productCount&blockList=";
+            // $url1 = "http://otapi.net/service-json/BatchSearchItemsFrame?instanceKey={$this->apiKey}&language=uz&signature=e2082ad9248214795914d5f72e7a8ee835428149d23223eb00d97a67c2f9d1f6&timestamp=20240613130232&sessionId=&xmlParameters=%3CSearchItemsParameters%3E%0D%0A%0D%0A%3CCategoryId%3E50000852%3C%2FCategoryId%3E%0D%0A%3C%2FSearchItemsParameters%3E&framePosition=0&frameSize=$productCount&blockList=";
 
-            $response = Http::get($url);
-            $products = $response->json();
-            $productsList = $products['Result']['Items']['Items']['Content'];
+            // $response = Http::get($url);
+            // $products = $response->json();
+            // $productsList = $products['Result']['Items']['Items']['Content'];
 
-            $response1 = Http::get($url1);
-            $products1 = $response1->json();
-            $productsList1 = $products1['Result']['Items']['Items']['Content'];
+            // $response1 = Http::get($url1);
+            // $products1 = $response1->json();
+            // $productsList1 = $products1['Result']['Items']['Items']['Content'];
 
-            $mergedProducts = array_merge($productsList, $productsList1);
-            shuffle($mergedProducts);
+            // $mergedProducts = array_merge($productsList, $productsList1);
+            // shuffle($mergedProducts);
 
             return $this->respondWithSuccess([
-                'products' => ProductResource::collection($mergedProducts)
+                'products' => ProductResource::collection($productsFromDatabase)
             ]);
         } else {
 
-            $url = "http://otapi.net/service-json/BatchSearchItemsFrame?instanceKey={$this->apiKey}&language=en&signature=85c20a117ee63be63b4690ce3784948afcda244cb4d6c61446424cfe7494ce73&timestamp=20240616064555&sessionId=&xmlParameters=%3CSearchItemsParameters%3E%0D%0A%3CItemTitle%3Eiphone%3C%2FItemTitle%3E%0D%0A%3CFeatures%3E%0D%0A+++++%3CFeature+Name%3D%22Discount%22%3Etrue%3C%2FFeature%3E%0D%0A%3C%2FFeatures%3E%0D%0A%3C%2FSearchItemsParameters%3E&framePosition=0&frameSize=$productCount&blockList=AvailableSearchMethods";
-            $url1 = "http://otapi.net/service-json/BatchSearchItemsFrame?instanceKey={$this->apiKey}&language=en&signature=85c20a117ee63be63b4690ce3784948afcda244cb4d6c61446424cfe7494ce73&timestamp=20240616064555&sessionId=&xmlParameters=%3CSearchItemsParameters%3E%0D%0A%3CItemTitle%3EFutbolka%3C%2FItemTitle%3E%0D%0A%3CFeatures%3E%0D%0A+++++%3CFeature+Name%3D%22Discount%22%3Etrue%3C%2FFeature%3E%0D%0A%3C%2FFeatures%3E%0D%0A%3C%2FSearchItemsParameters%3E&framePosition=0&frameSize=$productCount&blockList=AvailableSearchMethods";
-            $url2 = "http://otapi.net/service-json/BatchSearchItemsFrame?instanceKey={$this->apiKey}&language=en&signature=85c20a117ee63be63b4690ce3784948afcda244cb4d6c61446424cfe7494ce73&timestamp=20240616064555&sessionId=&xmlParameters=%3CSearchItemsParameters%3E%0D%0A%3CItemTitle%3Eoshxona%3C%2FItemTitle%3E%0D%0A%3CFeatures%3E%0D%0A+++++%3CFeature+Name%3D%22Discount%22%3Etrue%3C%2FFeature%3E%0D%0A%3C%2FFeatures%3E%0D%0A%3C%2FSearchItemsParameters%3E&framePosition=0&frameSize=$productCount&blockList=AvailableSearchMethods";
+            // $url = "http://otapi.net/service-json/BatchSearchItemsFrame?instanceKey={$this->apiKey}&language=en&signature=85c20a117ee63be63b4690ce3784948afcda244cb4d6c61446424cfe7494ce73&timestamp=20240616064555&sessionId=&xmlParameters=%3CSearchItemsParameters%3E%0D%0A%3CItemTitle%3Eiphone%3C%2FItemTitle%3E%0D%0A%3CFeatures%3E%0D%0A+++++%3CFeature+Name%3D%22Discount%22%3Etrue%3C%2FFeature%3E%0D%0A%3C%2FFeatures%3E%0D%0A%3C%2FSearchItemsParameters%3E&framePosition=0&frameSize=$productCount&blockList=AvailableSearchMethods";
+            // $url1 = "http://otapi.net/service-json/BatchSearchItemsFrame?instanceKey={$this->apiKey}&language=en&signature=85c20a117ee63be63b4690ce3784948afcda244cb4d6c61446424cfe7494ce73&timestamp=20240616064555&sessionId=&xmlParameters=%3CSearchItemsParameters%3E%0D%0A%3CItemTitle%3EFutbolka%3C%2FItemTitle%3E%0D%0A%3CFeatures%3E%0D%0A+++++%3CFeature+Name%3D%22Discount%22%3Etrue%3C%2FFeature%3E%0D%0A%3C%2FFeatures%3E%0D%0A%3C%2FSearchItemsParameters%3E&framePosition=0&frameSize=$productCount&blockList=AvailableSearchMethods";
+            // $url2 = "http://otapi.net/service-json/BatchSearchItemsFrame?instanceKey={$this->apiKey}&language=en&signature=85c20a117ee63be63b4690ce3784948afcda244cb4d6c61446424cfe7494ce73&timestamp=20240616064555&sessionId=&xmlParameters=%3CSearchItemsParameters%3E%0D%0A%3CItemTitle%3Eoshxona%3C%2FItemTitle%3E%0D%0A%3CFeatures%3E%0D%0A+++++%3CFeature+Name%3D%22Discount%22%3Etrue%3C%2FFeature%3E%0D%0A%3C%2FFeatures%3E%0D%0A%3C%2FSearchItemsParameters%3E&framePosition=0&frameSize=$productCount&blockList=AvailableSearchMethods";
 
-            $response = Http::get($url);
-            $products = $response->json();
-            $productsList = $products['Result']['Items']['Items']['Content'];
+            // $response = Http::get($url);
+            // $products = $response->json();
+            // $productsList = $products['Result']['Items']['Items']['Content'];
 
-            $response1 = Http::get($url1);
-            $products1 = $response1->json();
-            $productsList1 = $products1['Result']['Items']['Items']['Content'];
+            // $response1 = Http::get($url1);
+            // $products1 = $response1->json();
+            // $productsList1 = $products1['Result']['Items']['Items']['Content'];
 
-            $response2 = Http::get($url2);
-            $products2 = $response2->json();
-            $productsList2 = $products2['Result']['Items']['Items']['Content'];
+            // $response2 = Http::get($url2);
+            // $products2 = $response2->json();
+            // $productsList2 = $products2['Result']['Items']['Items']['Content'];
 
-            $mergedProducts = array_merge($productsList, $productsList1, $productsList2);
-            shuffle($mergedProducts);
+            // $mergedProducts = array_merge($productsList, $productsList1, $productsList2);
+            // shuffle($mergedProducts);
 
             return $this->respondWithSuccess([
-                'products' => ProductResource::collection($mergedProducts)
+                'products' => ProductResource::collection($productsFromDatabase)
             ]);
         }
     }
