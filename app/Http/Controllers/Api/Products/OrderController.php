@@ -261,13 +261,13 @@ class OrderController extends Controller
      *         required=true,
      *         description="Basket details",
      *         @OA\JsonContent(
-     *             required={"product_id", "sizes", "colors"},
+     *             required={"product_id", "sizes"},
      *             @OA\Property(property="product_id", type="integer", example="1"),
      *             @OA\Property(property="sizes", type="array", @OA\Items(
-     *                 @OA\Property(property="id", type="integer", example="4"),
+     *                 @OA\Property(property="name", type="string", example="xl"),
      *                 @OA\Property(property="quantity", type="integer", example="2"),
+     *                 @OA\Property(property="color_id", type="string", example="2"),
      *             )),
-     *             @OA\Property(property="colors", type="array", @OA\Items(type="integer", example=1)),
      *         ),
      *     ),
      *     @OA\Response(
@@ -294,10 +294,12 @@ class OrderController extends Controller
         $validator = Validator::make($request->all(), [
             'product_id' => 'required|integer|min:1',
             'sizes' => 'required|array',
-            'sizes.*.id' => 'required|integer|min:1',
+            'sizes.*.name' => 'required|string',
             'sizes.*.quantity' => 'required|integer|min:1',
-            'colors' => 'required|array',
-            'colors.*' => 'required|integer|min:1',
+            'sizes.*.color_id' => 'required|string',
+            // 'colors' => 'required|array',
+            // 'colors.*.name' => 'required|string',
+            // 'colors.*.image' => 'required|string|max:2500',
         ]);
 
         if ($validator->fails()) {
@@ -312,17 +314,19 @@ class OrderController extends Controller
         foreach ($request->sizes as $size) {
             BasketItemSize::create([
                 'basket_id' => $basket['id'],
-                'size_id' => $size['id'],
+                'name' => $size['name'],
                 'quantity' => $size['quantity'],
+                'color_id' => $size['color_id'],
             ]);
         }
 
-        foreach ($request->colors as $color) {
-            BasketItemColor::create([
-                'basket_id' => $basket['id'],
-                'color_id' => $color,
-            ]);
-        }
+        // foreach ($request->colors as $color) {
+        //     BasketItemColor::create([
+        //         'basket_id' => $basket['id'],
+        //         'name' => $color['name'],
+        //         'image' => $color['image'],
+        //     ]);
+        // }
 
         return response()->json(['message' => 'Product added to basket', 'basket' => $basket], 201);
     }
@@ -431,41 +435,43 @@ class OrderController extends Controller
     public function getUserBasket(Request $request)
     {
         $user = $request->user();
-        $baskets = Basket::where('user_id', $user->id)->with('colors', 'sizes')->get();
-
+        $baskets = Basket::where('user_id', $user->id)->with('sizes')->get();
         $result = [];
 
         foreach ($baskets as $basket) {
             // Simulating product details fetch
             $productDetailResponse = $this->productController->productDetailFromTaoBao(new Request(['productId' => $basket['product_id']]));
             $productDetail = json_decode($productDetailResponse->getContent(), true)['detail'];
+            // return $productDetail;
 
-            $basketColorIds = $basket->colors->pluck('color_id')->toArray();
-            $basketSizeIds = $basket->sizes->pluck('size_id')->toArray();
+            $productColors = collect($productDetail['colors']);
+            $productSizes = collect($productDetail['sizes']);
 
-            $productColors = collect($productDetail['colors'])->whereIn('id', $basketColorIds)->values();
-            $productSizes = collect($productDetail['sizes'])->whereIn('id', $basketSizeIds)->values();
+            $groupedSizes = $basket->sizes->groupBy('color_id');
 
-            foreach ($basket->sizes as $basketSize) {
-                foreach ($basket->colors as $basketColor) {
-                    $sizeDetail = $productSizes->firstWhere('id', $basketSize->size_id);
-                    $colorDetail = $productColors->firstWhere('id', $basketColor->color_id);
-
-                    $result[] = [
-                        'product_id' => $productDetail['id'] ?? null,
-                        'title' => $productDetail['title'] ?? null,
-                        'size' => $sizeDetail['value'] ?? null,
-                        'color' => $colorDetail['value'] ?? null,
-                        'quantity' => $basketSize['quantity'] ?? 1,
-                        'image_url' => $colorDetail['image_url'] ?? null,
-                        'price' => $productDetail['price'] ?? null
-                    ];
+            foreach ($groupedSizes as $color_id => $sizes) {
+                // return $color_id;
+                $colorDetail = $productColors->firstWhere('id', $color_id);
+                if ($colorDetail) {
+                    foreach ($sizes as $size) {
+                        $sizeDetail = $productSizes->firstWhere('id', $size->size_id);
+                        $result[] = [
+                            'product_id' => $productDetail['id'] ?? null,
+                            'title' => $productDetail['title'] ?? null,
+                            'size' => $size->name ?? null,
+                            'color' => $colorDetail['value'] ?? null,
+                            'quantity' => $size->quantity ?? 1,
+                            'image_url' => $colorDetail['image_url'] ?? null,
+                            'price' => $productDetail['price'] ?? null,
+                        ];
+                    }
                 }
             }
         }
 
         return response()->json($result);
     }
+
 
     /**
      * @OA\Get(

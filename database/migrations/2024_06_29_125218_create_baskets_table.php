@@ -21,15 +21,17 @@ return new class extends Migration
         Schema::create('basket_item_sizes', function (Blueprint $table) {
             $table->id();
             $table->foreignId('basket_id')->constrained('baskets')->onDelete('cascade');
-            $table->string('size_id');
+            $table->string('name');
             $table->integer('quantity');
+            $table->string('color_id');
             $table->timestamps();
         });
 
         Schema::create('basket_item_colors', function (Blueprint $table) {
             $table->id();
             $table->foreignId('basket_id')->constrained('baskets')->onDelete('cascade');
-            $table->string('color_id');
+            $table->string('name');
+            $table->string('image');
             $table->timestamps();
         });
     }
