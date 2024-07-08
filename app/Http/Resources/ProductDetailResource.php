@@ -123,7 +123,7 @@ class ProductDetailResource extends JsonResource
             'videos' => $videos,
             'colors' => $colors->map(function ($color) {
                 return [
-                    'id' => $color->uuid,
+                    'id' => $color->color_id,
                     'product_id' => $color->product_id,
                     'property_name' => $color->property_name,
                     'value' => $color->value,
@@ -131,7 +131,15 @@ class ProductDetailResource extends JsonResource
                     'mini_image_url' => $color->mini_image_url,
                 ];
             }),
-            'sizes' => $sizes,
+            'sizes' => $sizes->map(function ($size) {
+                return [
+                    'id' => $size->size_id,
+                    'product_id' => $size->product_id,
+                    'property_name' => $size->property_name,
+                    'value' => $size->value,
+                ];
+            }),
+            // 'sizes' => $sizes,
             'compositions' => $compositions,
         ];
     }
