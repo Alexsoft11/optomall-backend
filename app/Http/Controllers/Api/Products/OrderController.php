@@ -314,7 +314,7 @@ class OrderController extends Controller
         foreach ($request->sizes as $size) {
             BasketItemSize::create([
                 'basket_id' => $basket['id'],
-                'value' => $size['name'],
+                'name' => $size['value'],
                 'quantity' => $size['quantity'],
                 'color_id' => $size['color_id'],
             ]);
@@ -441,6 +441,7 @@ class OrderController extends Controller
         foreach ($baskets as $basket) {
             // Simulating product details fetch
             $productDetailResponse = $this->productController->productDetailFromTaoBao(new Request(['productId' => $basket['product_id']]));
+            // return $productDetailResponse;
             $productDetail = json_decode($productDetailResponse->getContent(), true)['detail'];
             // return $productDetail;
 
@@ -456,12 +457,14 @@ class OrderController extends Controller
                     foreach ($sizes as $size) {
                         $sizeDetail = $productSizes->firstWhere('id', $size->size_id);
                         $result[] = [
+                            'id' => $basket['id'],
                             'product_id' => $productDetail['id'] ?? null,
                             'title' => $productDetail['title'] ?? null,
                             'size' => $size->name ?? null,
+                            'size_id' => $size->id ?? null,
                             'color' => $colorDetail['value'] ?? null,
                             'quantity' => $size->quantity ?? 1,
-                            'image_url' => $colorDetail['image_url'] ?? null,
+                            'image_url' => $colorDetail['imageUrl'] ?? null,
                             'price' => $productDetail['price'] ?? null,
                         ];
                     }
@@ -546,7 +549,7 @@ class OrderController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'basket_id' => 'required|integer|exists:baskets,id',
-            'size_id' => 'required|integer|exists:basket_item_sizes,size_id',
+            'size_id' => 'required|integer|exists:basket_item_sizes,id',
             'quantity' => 'required|integer|min:1',
         ]);
 
@@ -555,7 +558,7 @@ class OrderController extends Controller
         }
 
         $basketItemSize = BasketItemSize::where('basket_id', $request->basket_id)
-            ->where('size_id', $request->size_id)
+            ->where('id', $request->size_id)
             ->first();
         // return $basketItemSize;
 

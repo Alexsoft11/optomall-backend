@@ -14,18 +14,18 @@ class CategorySeeder extends Seeder
      */
     public function run(): void
     {
-        // $url = "http://otapi.net/service-json/GetRootCategoryInfoList?instanceKey=8e6d9b54-88a7-4dcc-9f2b-add4d68dbbb8&language=uz&signature=71c80f0af3ef204bfac0ea7479c0e80f5bd27328d8a6a3c9b417eb488e9dac85&timestamp=20240526160409";
+        $url = "http://otapi.net/service-json/GetRootCategoryInfoList?instanceKey=2071d7f9-2e5d-41ca-b21a-b22c8482d4db&language=uz&signature=71c80f0af3ef204bfac0ea7479c0e80f5bd27328d8a6a3c9b417eb488e9dac85&timestamp=20240526160409";
 
-        // $response = Http::get($url);
-        // $categories = $response->json();
+        $response = Http::get($url);
+        $categories = $response->json();
 
-        // foreach ($categories['CategoryInfoList']['Content'] as $item) {
-        //     Category::create([
-        //         'catalog_id' => $item['Id'],
-        //         'name' => $item['Name'],
-        //     ]);
-        // }
+        foreach ($categories['CategoryInfoList']['Content'] as $item) {
+            Category::create([
+                'catalog_id' => $item['Id'],
+                'name' => $item['Name'],
+            ]);
+        }
 
-        Category::factory()->count(20)->create();
+        // Category::factory()->count(20)->create();
     }
 }
