@@ -264,7 +264,7 @@ class OrderController extends Controller
      *             required={"product_id", "sizes"},
      *             @OA\Property(property="product_id", type="integer", example="1"),
      *             @OA\Property(property="sizes", type="array", @OA\Items(
-     *                 @OA\Property(property="name", type="string", example="xl"),
+     *                 @OA\Property(property="value", type="string", example="xl"),
      *                 @OA\Property(property="quantity", type="integer", example="2"),
      *                 @OA\Property(property="color_id", type="string", example="2"),
      *             )),
@@ -294,7 +294,7 @@ class OrderController extends Controller
         $validator = Validator::make($request->all(), [
             'product_id' => 'required|integer|min:1',
             'sizes' => 'required|array',
-            'sizes.*.name' => 'required|string',
+            'sizes.*.value' => 'required|string',
             'sizes.*.quantity' => 'required|integer|min:1',
             'sizes.*.color_id' => 'required|string',
             // 'colors' => 'required|array',
@@ -314,7 +314,7 @@ class OrderController extends Controller
         foreach ($request->sizes as $size) {
             BasketItemSize::create([
                 'basket_id' => $basket['id'],
-                'name' => $size['name'],
+                'value' => $size['name'],
                 'quantity' => $size['quantity'],
                 'color_id' => $size['color_id'],
             ]);
