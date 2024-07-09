@@ -52,6 +52,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/get-orders', [OrderController::class, 'getOrders']);
     Route::get('/get-order', [OrderController::class, 'getOrder']);
     Route::put('/add', [OrderController::class, 'updateBasketItemSizeQuantity']);
+    Route::delete('/remove', [OrderController::class, 'removeBasketItem']);
     Route::post('/add-check', [OrderController::class, 'addCheck']);
     Route::get('/success-orders', [OrderController::class, 'getSuccessOrders']);
 });
