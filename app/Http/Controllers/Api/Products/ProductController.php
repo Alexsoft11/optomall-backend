@@ -63,7 +63,7 @@ class ProductController extends Controller
     {
         $categoryId = $request->categoryId;
 
-        $url = "http://otapi.net/service-json/GetCategorySubcategoryInfoList?instanceKey={$this->apiKey}&language=uz&signature=221bb03db72a7ec4680e84de68f0ec37f158fcac66693ee9cc7083e14adac06c&timestamp=20240526084418&parentCategoryId=$categoryId";
+        $url = "http://otapi.net/service-json/GetCategorySubcategoryInfoList?instanceKey=06e38b86-e4a7-451e-91b3-2b40d2dd3e24&language=uz&signature=221bb03db72a7ec4680e84de68f0ec37f158fcac66693ee9cc7083e14adac06c&timestamp=20240526084418&parentCategoryId=$categoryId";
 
         $response = Http::get($url);
         $categories = $response->json();
@@ -106,7 +106,7 @@ class ProductController extends Controller
     {
         $subCategoryId = $request->subCategoryId;
         $productsCount = $request->productsCount ? $request->productsCount : 20;
-        $url = "http://otapi.net/service-json/BatchSearchItemsFrame?instanceKey={$this->apiKey}&language=uz&signature=ede6e796a3f325d3d0a7743c7c4e7d93648c74d7c41744f1671714e327b5d52b&timestamp=20240526085107&sessionId=&xmlParameters=%3CSearchItemsParameters%3E%3CCategoryId%3E$subCategoryId%3C%2FCategoryId%3E%3C%2FSearchItemsParameters%3E&framePosition=0&frameSize=$productsCount&blockList=";
+        $url = "http://otapi.net/service-json/BatchSearchItemsFrame?instanceKey=06e38b86-e4a7-451e-91b3-2b40d2dd3e24&language=uz&signature=ede6e796a3f325d3d0a7743c7c4e7d93648c74d7c41744f1671714e327b5d52b&timestamp=20240526085107&sessionId=&xmlParameters=%3CSearchItemsParameters%3E%3CCategoryId%3E$subCategoryId%3C%2FCategoryId%3E%3C%2FSearchItemsParameters%3E&framePosition=0&frameSize=$productsCount&blockList=";
 
         $response = Http::get($url);
         $products = $response->json();
