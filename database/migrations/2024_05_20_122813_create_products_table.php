@@ -45,7 +45,8 @@ return new class extends Migration
         });
 
         Schema::create('product_colors', function (Blueprint $table) {
-            $table->uuid('uuid')->primary();
+            $table->id();
+            $table->integer('color_id');
             $table->foreignId('product_id')->constrained()->onDelete('cascade');
             $table->string('property_name');
             $table->string('value');
@@ -56,6 +57,7 @@ return new class extends Migration
 
         Schema::create('product_sizes', function (Blueprint $table) {
             $table->id();
+            $table->integer('size_id');
             $table->foreignId('product_id')->constrained()->onDelete('cascade');
             $table->string('property_name');
             $table->string('value');

@@ -14,7 +14,7 @@ class ProductSizeFactory extends Factory
         return [
             'product_id' => \App\Models\Product::factory(),
             'property_name' => 'size',
-            'value' => $this->faker->randomElement(['S', 'M', 'L', 'XL']),
+            'value' => $this->faker->word,
         ];
     }
 }
