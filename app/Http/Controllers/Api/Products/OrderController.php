@@ -457,14 +457,14 @@ class OrderController extends Controller
                     foreach ($sizes as $size) {
                         $sizeDetail = $productSizes->firstWhere('id', $size->size_id);
                         $result[] = [
-                            // 'id' => $basket['id'],
+                            'id' => $basket['id'],
                             'product_id' => $productDetail['id'] ?? null,
                             'title' => $productDetail['title'] ?? null,
                             'size' => $size->name ?? null,
-                            // 'size_id' => $size->id ?? null,
+                            'size_id' => $size->id ?? null,
                             'color' => $colorDetail['value'] ?? null,
                             'quantity' => $size->quantity ?? 1,
-                            'image_url' => $colorDetail['imageUrl'] ?? null,
+                            'image_url' => $colorDetail['image_url'] ?? null,
                             'price' => $productDetail['price'] ?? null,
                         ];
                     }
@@ -570,5 +570,74 @@ class OrderController extends Controller
         $basketItemSize->save();
 
         return response()->json(['message' => 'Size quantity updated successfully', 'basket_item_size' => $basketItemSize], 200);
+    }
+
+    /**
+     * @OA\Delete(
+     *     path="/api/remove",
+     *     tags={"Order"},
+     *     summary="Remove size and color from the user's basket",
+     *     description="Remove a specific size and associated color by size_id and color_id in the user's basket",
+     *     operationId="removeBasketItem",
+     *     security={{ "bearerAuth":{} }},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         description="Basket item details",
+     *         @OA\JsonContent(
+     *             required={"basket_id", "size_id"},
+     *             @OA\Property(property="basket_id", type="integer", example="1"),
+     *             @OA\Property(property="size_id", type="integer", example="4"),
+     *         ),
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Basket item removed successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Basket item removed successfully"),
+     *         ),
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Bad request",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Invalid data"),
+     *         ),
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Not found",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Basket item size not found"),
+     *         ),
+     *     ),
+     * )
+     */
+    public function removeBasketItem(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'basket_id' => 'required|integer',
+            'size_id' => 'required|integer',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['message' => 'Invalid data', 'errors' => $validator->errors()], 400);
+        }
+
+        // Find the basket item size by basket_id and size_id
+        $basketItemSize = BasketItemSize::where('basket_id', $request->basket_id)
+            ->where('id', $request->size_id)
+            ->first();
+
+        if (!$basketItemSize) {
+            return response()->json(['message' => 'Basket item size not found'], 404);
+        }
+
+        // Remove the size and associated colors from the basket
+        $basketItemSize->delete();
+
+        return response()->json(['message' => 'Basket item removed successfully'], 200);
     }
 }
