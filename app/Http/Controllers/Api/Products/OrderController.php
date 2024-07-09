@@ -457,11 +457,11 @@ class OrderController extends Controller
                     foreach ($sizes as $size) {
                         $sizeDetail = $productSizes->firstWhere('id', $size->size_id);
                         $result[] = [
-                            'id' => $basket['id'],
+                            // 'id' => $basket['id'],
                             'product_id' => $productDetail['id'] ?? null,
                             'title' => $productDetail['title'] ?? null,
                             'size' => $size->name ?? null,
-                            'size_id' => $size->id ?? null,
+                            // 'size_id' => $size->id ?? null,
                             'color' => $colorDetail['value'] ?? null,
                             'quantity' => $size->quantity ?? 1,
                             'image_url' => $colorDetail['imageUrl'] ?? null,
