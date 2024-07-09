@@ -186,7 +186,7 @@ class ProductController extends Controller
         }
         $score = Http::get($score);
         $scoreDetail = $score->json();
-
+        // return $productDetail;
         return $this->respondWithSuccess([
             'detail' => new ProductDetailResource($productDetail['Result']['Item']),
             'score' => new ScoreResource($scoreDetail['Result']['Vendor']),
