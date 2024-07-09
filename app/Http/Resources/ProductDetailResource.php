@@ -58,8 +58,8 @@ class ProductDetailResource extends JsonResource
             'product_url' => $this['ExternalItemUrl'] ?? $this->product_url,
             'videos' => $this['Videos'] ?? $videos,
             'colors' => isset($this['Attributes']) ? $this->transformAttributes($this['Attributes'], ['Rang bilan saralash', 'tana rangi', 'rang']) : $this->transformEloquentAttributes($colors),
-            'sizes' => isset($this['Attributes']) ? $this->transformAttributes($this['Attributes'], ["o'lcham", 'saqlash', "Ma'lumot balandligi"]) : $sizes,
-            'composition' => isset($this['Attributes']) ? $this->transformAttributes($this['Attributes'], ["Moddiy tarkibiy qism"]) : $compositions,
+            'sizes' => isset($this['Attributes']) ? $this->transformSizes($this['Attributes'], ["o'lcham", 'saqlash', "Ma'lumot balandligi"]) : $sizes,
+            'composition' => isset($this['Attributes']) ? $this->transformCompositions($this['Attributes'], ["Moddiy tarkibiy qism"]) : $compositions,
         ];
     }
 
@@ -96,7 +96,37 @@ class ProductDetailResource extends JsonResource
         }));
     }
 
-    public function transformEloquentAttributes($attributes)
+    private function transformSizes($attributes, $propertyNames)
+    {
+        $counter = 0;
+        return array_values(array_filter(array_map(function ($attribute) use (&$counter) {
+            return [
+                'id' => $counter++,
+                'propertyName' => $attribute['PropertyName'] ?? null,
+                'value' => $attribute['Value'] ?? null,
+                'propertyId' => $attribute['Pid'] ?? null,
+                'valueId' => $attribute['Vid'] ?? null,
+            ];
+        }, $attributes), function ($attribute) use ($propertyNames) {
+            return in_array($attribute['propertyName'], $propertyNames);
+        }));
+    }
+
+    private function transformCompositions($attributes, $propertyNames)
+    {
+        $counter = 0;
+        return array_values(array_filter(array_map(function ($attribute) use (&$counter) {
+            return [
+                'id' => $counter++,
+                'propertyName' => $attribute['PropertyName'] ?? null,
+                'value' => $attribute['Value'] ?? null,
+            ];
+        }, $attributes), function ($attribute) use ($propertyNames) {
+            return in_array($attribute['propertyName'], $propertyNames);
+        }));
+    }
+
+    private function transformEloquentAttributes($attributes)
     {
         return $attributes->map(function ($attribute) {
             return [
@@ -110,6 +140,7 @@ class ProductDetailResource extends JsonResource
         })->toArray();
     }
 }
+
 
 // namespace App\Http\Resources;
 
