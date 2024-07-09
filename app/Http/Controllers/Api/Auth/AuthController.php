@@ -65,22 +65,22 @@ class AuthController extends Controller
         return response()->json(['message' => 'verification_email_sent'], 201);
     }
 
-   /**
- * @OA\Get(
- *     path="/api/verify-email/{token}",
- *     summary="Verify email and move user to users table if email and password match",
- *     tags={"Auth"},
- *     @OA\Parameter(
- *         name="token",
- *         in="path",
- *         required=true,
- *         @OA\Schema(type="string")
- *     ),
- *     @OA\Response(response="200", description="Email verified and user moved to users table"),
- *     @OA\Response(response="404", description="Invalid or expired token")
- * )
- */
-public function verifyEmail($token)
+    /**
+     * @OA\Get(
+     *     path="/api/verify-email/{token}",
+     *     summary="Verify email and move user to users table if email and password match",
+     *     tags={"Auth"},
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="path",
+     *         required=true,
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Response(response="200", description="Email verified and user moved to users table"),
+     *     @OA\Response(response="404", description="Invalid or expired token")
+     * )
+     */
+    public function verifyEmail($token)
     {
         $tempUserId = Cache::get($token);
 
@@ -92,7 +92,7 @@ public function verifyEmail($token)
         if ($tempUser) {
             $user = User::create([
                 'email' => $tempUser->email,
-                'password' => $tempUser->password, 
+                'password' => $tempUser->password,
                 'email_verified' => true,
                 'email_verified_at' => now(),
             ]);
@@ -105,14 +105,13 @@ public function verifyEmail($token)
             Cache::forget($token);
 
             if (!$user->unique_id) {
-                $user->unique_id = $user->id; 
+                $user->unique_id = $user->id;
                 $user->save();
             }
 
             $redirectUrl = "https://onway.uz/auth?step=info&id={$user->unique_id}";
 
             return redirect($redirectUrl);
-
         }
 
         return response()->json(['message' => 'user_not_found'], 404);
@@ -120,54 +119,54 @@ public function verifyEmail($token)
 
 
     /**
- * @OA\Post(
- *     path="/api/login",
- *     summary="Login a user",
- *     tags={"Auth"},
- *     @OA\RequestBody(
- *         required=true,
- *         @OA\JsonContent(
- *             required={"email","password"},
- *             @OA\Property(property="email", type="string", format="email", example="khamidovsherzod003@gmail.com"),
- *             @OA\Property(property="password", type="string", format="password", example="12345678")
- *         ),
- *     ),
- *     @OA\Response(response="200", description="User logged in successfully"),
- *     @OA\Response(response="401", description="Incorrect login or password"),
- *     @OA\Response(response="403", description="Email not verified")
- * )
- */
-public function login(Request $request)
-{
-    $validator = Validator::make($request->all(), [
-        'email' => 'required|email',
-        'password' => 'required|string|min:8',
-    ]);
+     * @OA\Post(
+     *     path="/api/login",
+     *     summary="Login a user",
+     *     tags={"Auth"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"email","password"},
+     *             @OA\Property(property="email", type="string", format="email", example="khamidovsherzod003@gmail.com"),
+     *             @OA\Property(property="password", type="string", format="password", example="12345678")
+     *         ),
+     *     ),
+     *     @OA\Response(response="200", description="User logged in successfully"),
+     *     @OA\Response(response="401", description="Incorrect login or password"),
+     *     @OA\Response(response="403", description="Email not verified")
+     * )
+     */
+    public function login(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email',
+            'password' => 'required|string|min:8',
+        ]);
 
-    if ($validator->fails()) {
-        return response()->json(['message' => 'validation_errors', 'errors' => $validator->errors()], 422);
-    }
+        if ($validator->fails()) {
+            return response()->json(['message' => 'validation_errors', 'errors' => $validator->errors()], 422);
+        }
 
-    $credentials = $request->only('email', 'password');
+        $credentials = $request->only('email', 'password');
 
-    $tempUser = TempUser::where('email', $credentials['email'])->first();
-    if ($tempUser && !$tempUser->email_verified) {
-        return response()->json(['message' => 'verify_email', 'error' => false], 403);
-    }
-    $user = User::where('email', $credentials['email'])->first();
-    if (!$user) {
-        return response()->json(['message' => 'email_doesnt_exist', 'error' => false], 401);
-    }
-    if (!Hash::check($credentials['password'], $user->password)) {
-        return response()->json(['message' => 'wrong_password', 'error' => false], 401);
-    }
-    if (!$user->info_filled) {
-        return response()->json(['message' => 'add_personal_data', 'error' => false], 403);
-    }
-    $token = $user->createToken('AuthToken')->plainTextToken;
+        $tempUser = TempUser::where('email', $credentials['email'])->first();
+        if ($tempUser && !$tempUser->email_verified) {
+            return response()->json(['message' => 'verify_email', 'error' => false], 403);
+        }
+        $user = User::where('email', $credentials['email'])->first();
+        if (!$user) {
+            return response()->json(['message' => 'email_doesnt_exist', 'error' => false], 401);
+        }
+        if (!Hash::check($credentials['password'], $user->password)) {
+            return response()->json(['message' => 'wrong_password', 'error' => false], 401);
+        }
+        if (!$user->info_filled) {
+            return response()->json(['message' => 'add_personal_data', 'error' => false], 403);
+        }
+        $token = $user->createToken('AuthToken')->plainTextToken;
 
-    return response()->json(['token' => $token], 200);
-}
+        return response()->json(['token' => $token], 200);
+    }
 
 
 
@@ -200,28 +199,29 @@ public function login(Request $request)
             'last_name' => 'required|string|max:255',
             'phone' => 'required|unique:users|string|max:15',
         ]);
-    
+
         if ($validator->fails()) {
             return response()->json(['error' => $validator->errors()], 422);
         }
-    
+
         $token = $request->bearerToken();
         $user = User::where('unique_id', $request->unique_id)->first();
-    
+
         if (!$user) {
             return response()->json(['error' => 'invalid_unique_id'], 401);
         }
-    
+
         $user->info_filled = true;
         $user->update([
             'name' => $request->name,
             'last_name' => $request->last_name,
             'phone' => $request->phone,
         ]);
-    
-        return response()->json(['message' => 'data_added_successfully'], 200);
+        $token = $user->createToken('AuthToken')->plainTextToken;
+
+        return response()->json(['token' => $token , 'message' => 'data_added_successfully'], 200);
     }
-    
+
 
 
 
@@ -259,7 +259,7 @@ public function login(Request $request)
     }
 
 
-/**
+    /**
      * @OA\Post(
      *     path="/api/google-login",
      *     summary="Login or register a user using Google access token",
@@ -288,51 +288,51 @@ public function login(Request $request)
      */
 
 
-     public function googleLoginViaAccessToken(Request $request)
-     {
-         $request->validate([
-             'token' => ['required', 'string']
-         ]);
-     
-         $token = $request->input('token');
-         Log::info('Google Access Token: ' . $token);
-     
-         try {
-             $googleUser = Socialite::driver('google')->userFromToken($token);
-         } catch (\Exception $e) {
-             return response()->json(['message' => 'Invalid token or unable to fetch Google user data'], 401);
-         }
-     
-         if (empty($googleUser)) {
-             return response()->json(['message' => 'User not found'], 404);
-         }
-     
-         $user = User::where('email', $googleUser->getEmail())->first();
-         $password = Str::random(16);
-     
-         if (!$user) {
-             $user = User::create([
-                 'name' => $googleUser->getName(),
-                 'email' => $googleUser->getEmail(),
-                 'password' => Hash::make($password),
-                 'email_verified_at' => now(),
-             ]);
-             $user->email_verified = true;
-             $user->email_verified_at = now();
-             $user->save();
-     
-             Mail::to($user->email)->send(new GoogleLoginSuccess($user, $password));
-         }
-     
-         $token = $user->createToken('LOGIN');
-     
-         return response()->json([
-             'user' => [
-                 'id' => $user->id,
-             ],
-             'unique_id' => $user->unique_id,
-             'token' => $token->plainTextToken,
-             "message" => "sent_your_info_to_your_email"
-         ]);
-     }
+    public function googleLoginViaAccessToken(Request $request)
+    {
+        $request->validate([
+            'token' => ['required', 'string']
+        ]);
+
+        $token = $request->input('token');
+        Log::info('Google Access Token: ' . $token);
+
+        try {
+            $googleUser = Socialite::driver('google')->userFromToken($token);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Invalid token or unable to fetch Google user data'], 401);
+        }
+
+        if (empty($googleUser)) {
+            return response()->json(['message' => 'User not found'], 404);
+        }
+
+        $user = User::where('email', $googleUser->getEmail())->first();
+        $password = Str::random(16);
+
+        if (!$user) {
+            $user = User::create([
+                'name' => $googleUser->getName(),
+                'email' => $googleUser->getEmail(),
+                'password' => Hash::make($password),
+                'email_verified_at' => now(),
+            ]);
+            $user->email_verified = true;
+            $user->email_verified_at = now();
+            $user->save();
+
+            Mail::to($user->email)->send(new GoogleLoginSuccess($user, $password));
+        }
+
+        $token = $user->createToken('LOGIN');
+
+        return response()->json([
+            'user' => [
+                'id' => $user->id,
+            ],
+            'unique_id' => $user->unique_id,
+            'token' => $token->plainTextToken,
+            "message" => "sent_your_info_to_your_email"
+        ]);
+    }
 }
