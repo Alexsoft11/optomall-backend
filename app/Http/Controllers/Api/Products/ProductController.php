@@ -24,7 +24,7 @@ class ProductController extends Controller
 
     public function __construct()
     {
-        $this->apiKey = "2071d7f9-2e5d-41ca-b21a-b22c8482d4db";
+        $this->apiKey = "8e6d9b54-88a7-4dcc-9f2b-add4d68dbbb8";
     }
 
     /**
