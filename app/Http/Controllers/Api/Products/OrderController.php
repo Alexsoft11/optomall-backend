@@ -44,7 +44,7 @@ class OrderController extends Controller
      *                 @OA\Property(property="url", type="string", example="https://google.com")
      *             ),
      *             @OA\Property(property="items", type="array", @OA\Items(
-     *                 @OA\Property(property="product_id", type="integer", example="1"),
+     *                 @OA\Property(property="product_id", type="string", example="1"),
      *                 @OA\Property(property="title", type="string", example="title"),
      *                 @OA\Property(property="image_url", type="string", example="url"),
      *                 @OA\Property(property="quantity", type="integer", example="2"),
@@ -85,7 +85,7 @@ class OrderController extends Controller
             'userData.phone' => 'required|string',
             'location.name' => 'required|string',
             'location.url' => 'required|string',
-            'items.*.product_id' => 'required|integer',
+            'items.*.product_id' => 'required|string',
             'items.*.title' => 'required|string',
             'items.*.image_url' => 'required|string',
             'items.*.quantity' => 'required|integer|min:1',
@@ -262,7 +262,7 @@ class OrderController extends Controller
      *         description="Basket details",
      *         @OA\JsonContent(
      *             required={"product_id", "sizes"},
-     *             @OA\Property(property="product_id", type="integer", example="1"),
+     *             @OA\Property(property="product_id", type="string", example="1"),
      *             @OA\Property(property="sizes", type="array", @OA\Items(
      *                 @OA\Property(property="value", type="string", example="xl"),
      *                 @OA\Property(property="quantity", type="integer", example="2"),
@@ -292,7 +292,7 @@ class OrderController extends Controller
     public function userBasket(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'product_id' => 'required|integer|min:1',
+            'product_id' => 'required|string',
             'sizes' => 'required|array',
             'sizes.*.value' => 'required|string',
             'sizes.*.quantity' => 'required|integer|min:1',
