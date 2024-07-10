@@ -14,6 +14,7 @@ use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Group;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\ToggleButtons;
 use Filament\Forms\Form;
@@ -55,11 +56,12 @@ class OrderResource extends Resource
                         Section::make('Buyurtma mahsulotlari')
                             ->schema([
                                 Repeater::make('items')->label('Mahsulot')->relationship('items')->schema([
+                                    TextInput::make('title')->label('Nomi'),
                                     TextInput::make('quantity')->label('Miqdori'),
                                     TextInput::make('price')->label('Narxi'),
                                     TextInput::make('color')->label("Rang"),
                                     TextInput::make('size')->label("O'lcham"),
-                                    FileUpload::make('image_url')->label('Rasm')->disk('public'),
+                                    FileUpload::make('image_url')->label('Rasm'),
                                 ])
                             ]),
                     ])
@@ -69,7 +71,7 @@ class OrderResource extends Resource
                         Section::make('Buyurtma checklari')
                             ->schema([
                                 Repeater::make('checks')->label('Cheklar')->relationship('checks')->schema([
-                                    FileUpload::make('image')->label('Chek')->disk('public'),
+                                    FileUpload::make('image')->label('Chek'),
                                 ])
                             ]),
                     ])
@@ -82,8 +84,8 @@ class OrderResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('id')->sortable(),
-                TextColumn::make('user.name')->label('User')->sortable(),
-                TextColumn::make('total_price')->label('Total Price')->sortable(),
+                TextColumn::make('user_name')->label('Ismi')->sortable(),
+                TextColumn::make('total_price')->label('Jami narx')->sortable(),
                 TextColumn::make('status')->sortable(),
                 TextColumn::make('created_at')->label('Created At')->sortable(),
                 TextColumn::make('updated_at')->label('Updated At')->sortable(),
@@ -106,11 +108,36 @@ class OrderResource extends Resource
             ->actions([
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\ViewAction::make(),
+                Tables\Actions\Action::make('changeStatus')
+                    ->label("Statusni o'zgartirish")
+                    ->form([
+                        Select::make('status')
+                            ->options([
+                                'pending' => 'Pending',
+                                'processing' => 'Processing',
+                                'completed' => 'Completed',
+                                'cancelled' => 'Cancelled',
+                                'on_hold' => 'On Hold',
+                                'failed' => 'Failed',
+                                'refunded' => 'Refunded',
+                                'shipped' => 'Shipped',
+                                'delivered' => 'Delivered',
+                                'returned' => 'Returned',
+                            ])
+                            ->required(),
+                    ])
+                    ->action(function ($record, $data) {
+                        $record->update(['status' => $data['status']]);
+                    })
+                    ->modalHeading('Change Status')
+                    ->button(),
             ])
             ->bulkActions([
                 Tables\Actions\DeleteBulkAction::make(),
             ]);
     }
+
+
 
     public static function getRelations(): array
     {
