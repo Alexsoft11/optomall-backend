@@ -86,7 +86,7 @@ class ProductDetailResource extends JsonResource
                 'id' => $counter++,
                 'propertyName' => $attribute['PropertyName'] ?? null,
                 'value' => $attribute['Value'] ?? null,
-                'imageUrl' => $attribute['ImageUrl'] ?? null,
+                'image_url' => $attribute['ImageUrl'] ?? null,
                 'miniImageUrl' => $attribute['MiniImageUrl'] ?? null,
                 'propertyId' => $attribute['Pid'] ?? null,
                 'valueId' => $attribute['Vid'] ?? null,
