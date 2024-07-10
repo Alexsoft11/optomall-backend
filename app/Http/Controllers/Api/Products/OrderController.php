@@ -253,30 +253,32 @@ class OrderController extends Controller
      * @OA\Post(
      *     path="/api/user-basket",
      *     tags={"Order"},
-     *     summary="Create a new Basket",
-     *     description="Create a new Basket with items",
-     *     operationId="createBasket",
+     *     summary="Create Baskets",
+     *     description="Create multiple Baskets with items",
+     *     operationId="createBaskets",
      *     security={{ "bearerAuth":{} }},
      *     @OA\RequestBody(
      *         required=true,
-     *         description="Basket details",
+     *         description="List of Baskets details",
      *         @OA\JsonContent(
-     *             required={"product_id", "sizes"},
-     *             @OA\Property(property="product_id", type="string", example="1"),
-     *             @OA\Property(property="sizes", type="array", @OA\Items(
-     *                 @OA\Property(property="value", type="string", example="xl"),
-     *                 @OA\Property(property="quantity", type="integer", example="2"),
-     *                 @OA\Property(property="color_id", type="string", example="2"),
-     *             )),
+     *             type="array",
+     *             @OA\Items(
+     *                 required={"product_id", "sizes"},
+     *                 @OA\Property(property="product_id", type="string", example="1"),
+     *                 @OA\Property(property="sizes", type="array", @OA\Items(
+     *                     @OA\Property(property="value", type="string", example="xl"),
+     *                     @OA\Property(property="quantity", type="integer", example="2"),
+     *                     @OA\Property(property="color_id", type="string", example="2"),
+     *                 )),
+     *             ),
      *         ),
      *     ),
      *     @OA\Response(
      *         response=201,
-     *         description="Basket created successfully",
+     *         description="Baskets created successfully",
      *         @OA\JsonContent(
      *             type="object",
-     *             @OA\Property(property="message", type="string", example="Basket created successfully"),
-     *             @OA\Property(property="order_id", type="integer", example="1"),
+     *             @OA\Property(property="message", type="string", example="Products added to baskets"),
      *         ),
      *     ),
      *     @OA\Response(
@@ -292,43 +294,38 @@ class OrderController extends Controller
     public function userBasket(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'product_id' => 'required|string',
-            'sizes' => 'required|array',
-            'sizes.*.value' => 'required|string',
-            'sizes.*.quantity' => 'required|integer|min:1',
-            'sizes.*.color_id' => 'required|string',
-            // 'colors' => 'required|array',
-            // 'colors.*.name' => 'required|string',
-            // 'colors.*.image' => 'required|string|max:2500',
+            '*.product_id' => 'required|string',
+            '*.sizes' => 'required|array',
+            '*.sizes.*.value' => 'required|string',
+            '*.sizes.*.quantity' => 'required|integer|min:1',
+            '*.sizes.*.color_id' => 'required|string',
         ]);
 
         if ($validator->fails()) {
             return response()->json(['message' => 'Invalid data', 'errors' => $validator->errors()], 400);
         }
 
-        $basket = Basket::create([
-            'user_id' => auth()->user()->id,
-            'product_id' => $request->product_id,
-        ]);
+        $baskets = [];
 
-        foreach ($request->sizes as $size) {
-            BasketItemSize::create([
-                'basket_id' => $basket['id'],
-                'name' => $size['value'],
-                'quantity' => $size['quantity'],
-                'color_id' => $size['color_id'],
+        foreach ($request->all() as $item) {
+            $basket = Basket::create([
+                'user_id' => auth()->user()->id,
+                'product_id' => $item['product_id'],
             ]);
+
+            foreach ($item['sizes'] as $size) {
+                BasketItemSize::create([
+                    'basket_id' => $basket->id,
+                    'name' => $size['value'],
+                    'quantity' => $size['quantity'],
+                    'color_id' => $size['color_id'],
+                ]);
+            }
+
+            $baskets[] = $basket;
         }
 
-        // foreach ($request->colors as $color) {
-        //     BasketItemColor::create([
-        //         'basket_id' => $basket['id'],
-        //         'name' => $color['name'],
-        //         'image' => $color['image'],
-        //     ]);
-        // }
-
-        return response()->json(['message' => 'Product added to basket', 'basket' => $basket], 201);
+        return response()->json(['message' => 'Products added to baskets', 'baskets' => $baskets], 201);
     }
 
     /**

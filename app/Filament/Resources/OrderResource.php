@@ -44,10 +44,10 @@ class OrderResource extends Resource
                 Fieldset::make('Buyurtma')->schema([
                     TextInput::make('id')->label('Buyurtma IDsi')->disabled(),
                     TextInput::make('total_price')->label('Jami narxi')->disabled(),
-                    ToggleButtons::make('Status')
-                        ->inline()
-                        ->options(OrderStatus::class)
-                        ->required(),
+                    // ToggleButtons::make('Status')
+                    //     ->inline()
+                    //     ->options(OrderStatus::class)
+                    //     ->required(),
                     TextInput::make('created_at')->label('Created At')->disabled(),
                     TextInput::make('updated_at')->label('Updated At')->disabled(),
                 ]),
@@ -61,7 +61,12 @@ class OrderResource extends Resource
                                     TextInput::make('price')->label('Narxi'),
                                     TextInput::make('color')->label("Rang"),
                                     TextInput::make('size')->label("O'lcham"),
-                                    FileUpload::make('image_url')->label('Rasm'),
+                                    FileUpload::make('image_url')
+                                        ->label('Rasm')
+                                        ->multiple()
+                                        ->preview(function ($value) {
+                                            return '<img src="' . $value . '" style="max-width: 100px; max-height: 100px;" />';
+                                        }),
                                 ])
                             ]),
                     ])
@@ -93,16 +98,13 @@ class OrderResource extends Resource
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
                     ->options([
-                        'pending' => 'Pending',
                         'processing' => 'Processing',
-                        'completed' => 'Completed',
-                        'cancelled' => 'Cancelled',
-                        'on_hold' => 'On Hold',
-                        'failed' => 'Failed',
-                        'refunded' => 'Refunded',
                         'shipped' => 'Shipped',
                         'delivered' => 'Delivered',
-                        'returned' => 'Returned',
+                        'cancelled' => 'Cancelled',
+                        'under verification' => 'Under Verification',
+                        'verified' => 'Verified',
+                        'failed verification' => 'Failed Verification',
                     ]),
             ])
             ->actions([
@@ -113,16 +115,13 @@ class OrderResource extends Resource
                     ->form([
                         Select::make('status')
                             ->options([
-                                'pending' => 'Pending',
                                 'processing' => 'Processing',
-                                'completed' => 'Completed',
-                                'cancelled' => 'Cancelled',
-                                'on_hold' => 'On Hold',
-                                'failed' => 'Failed',
-                                'refunded' => 'Refunded',
                                 'shipped' => 'Shipped',
                                 'delivered' => 'Delivered',
-                                'returned' => 'Returned',
+                                'cancelled' => 'Cancelled',
+                                'under verification' => 'Under Verification',
+                                'verified' => 'Verified',
+                                'failed verification' => 'Failed Verification',
                             ])
                             ->required(),
                     ])
