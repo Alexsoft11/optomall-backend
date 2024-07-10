@@ -92,7 +92,7 @@ class ProductDetailResource extends JsonResource
                 'valueId' => $attribute['Vid'] ?? null,
             ];
         }, $attributes), function ($attribute) use ($propertyNames) {
-            return in_array($attribute['propertyName'], $propertyNames) && $attribute['imageUrl'] !== null;
+            return in_array($attribute['propertyName'], $propertyNames) && $attribute['image_url'] !== null;
         }));
     }
 
