@@ -64,9 +64,6 @@ class OrderResource extends Resource
                                     FileUpload::make('image_url')
                                         ->label('Rasm')
                                         ->multiple()
-                                        ->preview(function ($value) {
-                                            return '<img src="' . $value . '" style="max-width: 100px; max-height: 100px;" />';
-                                        }),
                                 ])
                             ]),
                     ])
