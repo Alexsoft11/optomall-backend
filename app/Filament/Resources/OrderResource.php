@@ -10,6 +10,7 @@ use Filament\Forms;
 use Filament\Forms\Components\Builder\Block;
 use Filament\Forms\Components\Card;
 use Filament\Forms\Components\Fieldset;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Group;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Section;
@@ -18,6 +19,7 @@ use Filament\Forms\Components\ToggleButtons;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
@@ -31,19 +33,17 @@ class OrderResource extends Resource
     {
         return $form
             ->schema([
-                Fieldset::make('User')
-                    ->relationship('user')
+                Fieldset::make('Foydalanuvchi')
                     ->schema([
-                        TextInput::make('id'),
-                        TextInput::make('name'),
-                        TextInput::make('email'),
-                        TextInput::make('phone'),
+                        TextInput::make('user_name')->label('Ism'),
+                        TextInput::make('user_phone')->label('Telefon raqami'),
+                        TextInput::make('location_url')->label('Manzil linki'),
+                        TextInput::make('location_name')->label('Manzil nomi'),
                     ]),
-
-                Fieldset::make('Order')->schema([
-                    TextInput::make('id')->label('Order ID')->disabled(),
-                    TextInput::make('total_price')->label('Total Price')->disabled(),
-                    ToggleButtons::make('status')
+                Fieldset::make('Buyurtma')->schema([
+                    TextInput::make('id')->label('Buyurtma IDsi')->disabled(),
+                    TextInput::make('total_price')->label('Jami narxi')->disabled(),
+                    ToggleButtons::make('Status')
                         ->inline()
                         ->options(OrderStatus::class)
                         ->required(),
@@ -52,14 +52,24 @@ class OrderResource extends Resource
                 ]),
                 Group::make()
                     ->schema([
-                        Section::make('Order items')
+                        Section::make('Buyurtma mahsulotlari')
                             ->schema([
-                                Repeater::make('items')->label('item')->relationship('items')->schema([
-                                    TextInput::make('quantity'),
-                                    TextInput::make('price'),
-                                    TextInput::make('color_id'),
-                                    TextInput::make('size_id'),
-                                    TextInput::make('composition_id'),
+                                Repeater::make('items')->label('Mahsulot')->relationship('items')->schema([
+                                    TextInput::make('quantity')->label('Miqdori'),
+                                    TextInput::make('price')->label('Narxi'),
+                                    TextInput::make('color')->label("Rang"),
+                                    TextInput::make('size')->label("O'lcham"),
+                                    FileUpload::make('image_url')->label('Rasm')->disk('public'),
+                                ])
+                            ]),
+                    ])
+                    ->columnSpan(['lg' => fn (?Order $record) => $record === null ? 3 : 2]),
+                Group::make()
+                    ->schema([
+                        Section::make('Buyurtma checklari')
+                            ->schema([
+                                Repeater::make('checks')->label('Cheklar')->relationship('checks')->schema([
+                                    FileUpload::make('image')->label('Chek')->disk('public'),
                                 ])
                             ]),
                     ])
