@@ -37,7 +37,7 @@ class ProductController extends Controller
      */
     public function categoriesFromTaoBao()
     {
-        $categories = Category::all();
+        $categories = Category::all()->where('is_active', true);
 
         return $this->respondWithSuccess([
             'categories' => CategoryResource::collection($categories)
