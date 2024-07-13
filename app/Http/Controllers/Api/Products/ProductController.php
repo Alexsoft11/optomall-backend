@@ -34,24 +34,25 @@ class ProductController extends Controller
      * @OA\Post(
      *     path="/api/liked-product",
      *     tags={"Liked products"},
-     *     summary="Add or remove a liked product",
-     *     description="Add a product to the liked products list or remove it if it already exists",
-     *     operationId="addOrRemoveLikedProduct",
+     *     summary="Add or remove liked products",
+     *     description="Add products to the liked products list or remove them if they already exist",
+     *     operationId="addOrRemoveLikedProducts",
      *     security={{ "bearerAuth":{} }},
      *     @OA\RequestBody(
      *         required=true,
-     *         description="Liked product details",
+     *         description="Liked products details",
      *         @OA\JsonContent(
-     *             required={"product_id"},
-     *             @OA\Property(property="product_id", type="string", example="1")
+     *             type="array",
+     *             @OA\Items(type="string"),
+     *             example={"34234@", "23424243"}
      *         )
      *     ),
      *     @OA\Response(
      *         response=201,
-     *         description="Liked product successfully added or removed",
+     *         description="Liked products successfully added or removed",
      *         @OA\JsonContent(
      *             type="object",
-     *             @OA\Property(property="message", type="string", example="Liked product successfully added or removed")
+     *             @OA\Property(property="message", type="string", example="Liked products successfully added or removed")
      *         )
      *     ),
      *     @OA\Response(
@@ -68,35 +69,42 @@ class ProductController extends Controller
      */
     public function addLikedProduct(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'product_id' => 'required|string',
+        $validator = Validator::make(['product_ids' => $request->all()], [
+            'product_ids' => 'required|array',
+            'product_ids.*' => 'string',
         ]);
 
         if ($validator->fails()) {
             return response()->json(['message' => 'Invalid data', 'errors' => $validator->errors(), 'error' => true], 400);
         }
 
-        $likedProduct = LikedProduct::where('user_id', auth()->user()->id)
-            ->where('product_id', $request->product_id)
-            ->first();
+        $userId = auth()->user()->id;
+        $productIds = $request->all();
+        $messages = [];
 
-        if ($likedProduct) {
-            $likedProduct->delete();
-            return response()->json(['message' => 'Liked product successfully removed'], 200);
-        } else {
-            $productDetailResponse = $this->productDetailFromTaoBao(new Request(['productId' => $request->product_id]));
-            $productDetail = json_decode($productDetailResponse->getContent(), true)['detail'];
+        foreach ($productIds as $productId) {
+            $likedProduct = LikedProduct::where('user_id', $userId)
+                ->where('product_id', $productId)
+                ->first();
 
-            LikedProduct::create([
-                'user_id' => auth()->user()->id,
-                'product_id' => $request->product_id,
-                'title' => $productDetail['title'],
-                'image' => $productDetail['image'],
-                'price' => $productDetail['price'],
-            ]);
+            if ($likedProduct) {
+                $likedProduct->delete();
+                $messages[] = "Product ID {$productId} successfully removed";
+            } else {
+                $productDetailResponse = $this->productDetailFromTaoBao(new Request(['productId' => $productId]));
+                $productDetail = json_decode($productDetailResponse->getContent(), true)['detail'];
 
-            return response()->json(['message' => 'Liked product successfully added'], 201);
+                LikedProduct::create([
+                    'user_id' => $userId,
+                    'product_id' => $productId,
+                    'title' => $productDetail['title'],
+                    'image' => $productDetail['image'],
+                    'price' => $productDetail['price'],
+                ]);
+            }
         }
+
+        return response()->json(['message' => 'Liked products successfully added or removed'], 201);
     }
 
     /**

@@ -117,6 +117,7 @@ class OrderController extends Controller
 
                 OrderItem::create([
                     'order_id' => $order->id,
+                    'product_url' => $item['product_url'],
                     'product_id' => $item['product_id'],
                     'title' => $item['title'],
                     'image_url' => $item['image_url'],
@@ -459,7 +460,7 @@ class OrderController extends Controller
                         $sizeDetail = $productSizes->firstWhere('id', $size->size_id);
                         $result[] = [
                             'id' => $basket['id'],
-                            'product_id' => $productDetail['id'] ?? null,
+                            'product_id' => "{$productDetail['id']}" ?? null,
                             'title' => $productDetail['title'] ?? null,
                             'size' => $size->name ?? null,
                             'size_id' => $size->id ?? null,
@@ -467,6 +468,7 @@ class OrderController extends Controller
                             'quantity' => $size->quantity ?? 1,
                             'image_url' => $colorDetail['image_url'] ?? null,
                             'price' => $productDetail['price'] ?? null,
+                            'product_url' => $productDetail['product_url'] ?? null,
                         ];
                     }
                 }
