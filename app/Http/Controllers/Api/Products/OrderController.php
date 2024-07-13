@@ -107,7 +107,7 @@ class OrderController extends Controller
                 'user_phone' => $request->userData['phone'],
                 'location_url' => $request->location['url'],
                 'location_name' => $request->location['name'],
-                'status' => 'pending',
+                'status' => 'processing',
                 'is_checking' => false
             ]);
 
@@ -387,12 +387,12 @@ class OrderController extends Controller
 
         $filter = $request->query('filter', 'all');
 
-        $verificationStatuses = ['under verification', 'verified', 'failed verification'];
+        $verificationStatuses = ['under_verification', 'verified', 'failed_verification'];
         $activeStatuses = ['processing', 'shipped', 'delivered', 'cancelled'];
 
         $ordersQuery = Order::where('user_id', $user->id)->select('id', 'status', 'total_price', 'user_name', 'user_phone', 'location_url', 'location_name', 'created_at');
 
-        if ($filter === 'in verification') {
+        if ($filter === 'in_verification') {
             $ordersQuery->whereIn('status', $verificationStatuses);
         } elseif ($filter === 'active') {
             $ordersQuery->whereIn('status', $activeStatuses);

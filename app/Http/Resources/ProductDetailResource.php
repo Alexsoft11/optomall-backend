@@ -60,6 +60,7 @@ class ProductDetailResource extends JsonResource
             'colors' => isset($this['Attributes']) ? $this->transformAttributes($this['Attributes'], ['Rang bilan saralash', 'tana rangi', 'rang']) : $this->transformEloquentAttributes($colors),
             'sizes' => isset($this['Attributes']) ? $this->transformSizes($this['Attributes'], ["o'lcham", 'saqlash', "Ma'lumot balandligi"]) : $sizes,
             'composition' => isset($this['Attributes']) ? $this->transformCompositions($this['Attributes'], ["Moddiy tarkibiy qism"]) : $compositions,
+            'is_like' => false,
         ];
     }
 

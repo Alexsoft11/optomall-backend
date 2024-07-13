@@ -6,15 +6,18 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\CategoryResource;
 use App\Http\Resources\ProductDetailResource;
+use App\Http\Resources\ProductDetailTokenResource;
 use OpenApi\Annotations as OA;
 use App\Http\Resources\ProductResource;
 use App\Http\Resources\ScoreResource;
 use App\Http\Resources\SubCategoryResource;
 use App\Models\Category;
+use App\Models\LikedProduct;
 use App\Models\Product;
 use App\Models\ProductCategory;
 use App\Traits\ApiResponseHelpers;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Validator;
 
 class ProductController extends Controller
 {
@@ -25,6 +28,120 @@ class ProductController extends Controller
     public function __construct()
     {
         $this->apiKey = "8e6d9b54-88a7-4dcc-9f2b-add4d68dbbb8";
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/api/liked-product",
+     *     tags={"Liked products"},
+     *     summary="Add or remove a liked product",
+     *     description="Add a product to the liked products list or remove it if it already exists",
+     *     operationId="addOrRemoveLikedProduct",
+     *     security={{ "bearerAuth":{} }},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         description="Liked product details",
+     *         @OA\JsonContent(
+     *             required={"product_id"},
+     *             @OA\Property(property="product_id", type="string", example="1")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=201,
+     *         description="Liked product successfully added or removed",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Liked product successfully added or removed")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Invalid data",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Invalid data"),
+     *             @OA\Property(property="errors", type="object"),
+     *             @OA\Property(property="error", type="boolean", example=true)
+     *         )
+     *     )
+     * )
+     */
+    public function addLikedProduct(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'product_id' => 'required|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['message' => 'Invalid data', 'errors' => $validator->errors(), 'error' => true], 400);
+        }
+
+        $likedProduct = LikedProduct::where('user_id', auth()->user()->id)
+            ->where('product_id', $request->product_id)
+            ->first();
+
+        if ($likedProduct) {
+            $likedProduct->delete();
+            return response()->json(['message' => 'Liked product successfully removed'], 200);
+        } else {
+            $productDetailResponse = $this->productDetailFromTaoBao(new Request(['productId' => $request->product_id]));
+            $productDetail = json_decode($productDetailResponse->getContent(), true)['detail'];
+
+            LikedProduct::create([
+                'user_id' => auth()->user()->id,
+                'product_id' => $request->product_id,
+                'title' => $productDetail['title'],
+                'image' => $productDetail['image'],
+                'price' => $productDetail['price'],
+            ]);
+
+            return response()->json(['message' => 'Liked product successfully added'], 201);
+        }
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/liked-products",
+     *     tags={"Liked products"},
+     *     summary="Get liked products",
+     *     description="Retrieve the list of liked products for the authenticated user",
+     *     operationId="getLikedProducts",
+     *     security={{ "bearerAuth":{} }},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful retrieval of liked products",
+     *         @OA\JsonContent(
+     *             type="array",
+     *             @OA\Items(
+     *                 @OA\Property(property="id", type="integer", example=1),
+     *                 @OA\Property(property="product_id", type="string", example="1"),
+     *                 @OA\Property(property="user_id", type="integer", example=1),
+     *                 @OA\Property(property="created_at", type="string", format="date-time", example="2023-07-10T12:00:00Z"),
+     *                 @OA\Property(property="updated_at", type="string", format="date-time", example="2023-07-10T12:00:00Z")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthorized",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Unauthenticated")
+     *         )
+     *     )
+     * )
+     */
+    public function getLikedProducts(Request $request)
+    {
+        $user = auth()->user();
+
+        if (!$user) {
+            return response()->json(['message' => 'Unauthenticated'], 401);
+        }
+
+        $likedProducts = LikedProduct::where('user_id', $user->id)->get();
+
+        return response()->json($likedProducts, 200);
     }
 
     /**
@@ -121,6 +238,77 @@ class ProductController extends Controller
 
         return $this->respondWithSuccess([
             'products' => ProductResource::collection($products['Result']['Items']['Items']['Content'])
+        ]);
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/product-detail-from-taobao-token",
+     *     summary="Get product detail from taobao",
+     *     tags={"Products"},
+     *     security={{ "bearerAuth":{} }},
+     *     @OA\Parameter(
+     *         name="productId",
+     *         in="query",
+     *         required=true,
+     *         @OA\Schema(type="string"),
+     *         description="The ID of the product to retrieve details for"
+     *     ),
+     *     @OA\Response(response="200", description="Product detail from taobao"),
+     * )
+     */
+    public function productDetailFromTaoBaoToken(Request $request)
+    {
+        $productId = $request->productId;
+        $url = "http://otapi.net/service-json/BatchGetItemFullInfo?instanceKey=06e38b86-e4a7-451e-91b3-2b40d2dd3e24&language=uz&signature=a67f4af4c43ea96f880740611d680127cbdf84ddbdaab674d8c3f265df1353e0&timestamp=20240526085023&sessionId=&itemParameters=&itemId=$productId&blockList=OriginalDescription";
+        $score = "http://otapi.net/service-json/BatchGetSimplifiedItemFullInfo?instanceKey=06e38b86-e4a7-451e-91b3-2b40d2dd3e24&language=uz&signature=a67f4af4c43ea96f880740611d680127cbdf84ddbdaab674d8c3f265df1353e0&timestamp=20240526085023&sessionId=&itemParameters=&itemId=$productId&blockList=Vendor";
+        // $url1 = "http://otapi.net/service-json/BatchSearchItemsFrame?instanceKey={$this->apiKey}&language=uz&signature=e2082ad9248214795914d5f72e7a8ee835428149d23223eb00d97a67c2f9d1f6&timestamp=20240613130232&sessionId=&xmlParameters=%3CSearchItemsParameters%3E%0D%0A%0D%0A%3CCategoryId%3E121392004%3C%2FCategoryId%3E%0D%0A%3C%2FSearchItemsParameters%3E&framePosition=0&frameSize=1&blockList=";
+        // $url2 = "http://otapi.net/service-json/BatchSearchItemsFrame?instanceKey={$this->apiKey}&language=uz&signature=e2082ad9248214795914d5f72e7a8ee835428149d23223eb00d97a67c2f9d1f6&timestamp=20240613130232&sessionId=&xmlParameters=%3CSearchItemsParameters%3E%0D%0A%0D%0A%3CCategoryId%3E50000852%3C%2FCategoryId%3E%0D%0A%3C%2FSearchItemsParameters%3E&framePosition=0&frameSize=2&blockList=";
+        // $url3 = "http://otapi.net/service-json/BatchSearchItemsFrame?instanceKey={$this->apiKey}&language=uz&signature=e2082ad9248214795914d5f72e7a8ee835428149d23223eb00d97a67c2f9d1f6&timestamp=20240613130232&sessionId=&xmlParameters=%3CSearchItemsParameters%3E%0D%0A%0D%0A%3CCategoryId%3E50013189%3C%2FCategoryId%3E%0D%0A%3C%2FSearchItemsParameters%3E&framePosition=0&frameSize=1&blockList=";
+
+        // $response1 = Http::get($url1);
+        // $products1 = $response1->json();
+        $response = Http::get($url);
+        $productDetail = $response->json();
+        $randomProducts = Product::inRandomOrder()->limit(5)->get();
+        if ($productDetail['ErrorCode'] == 'AccessDenied') {
+            $productDetailFromDataBase = Product::where('id', '808807124248')->first();
+
+            return $this->respondWithSuccess([
+                'detail' => new ProductDetailTokenResource($productDetailFromDataBase),
+                'score' => [
+                    'rating' => 4.4,
+                    'sold' => 3123,
+                ],
+                'recommended' => ProductResource::collection($randomProducts)
+            ]);
+        }
+        // $productsList1 = $products1['Result']['Items']['Items']['Content'];
+
+
+        // $response2 = Http::get($url2);
+        // $products2 = $response2->json();
+        // $productsList2 = $products2['Result']['Items']['Items']['Content'];
+
+        // $response3 = Http::get($url3);
+        // $products3 = $response3->json();
+        // $productsList3 = $products3['Result']['Items']['Items']['Content'];
+
+        // $mergedProducts = array_merge($productsList1, $productsList2, $productsList3);
+        // shuffle($mergedProducts);
+
+
+        // return $productDetail;
+        if ($productDetail['ErrorCode'] == 'NotFound') {
+            return $this->respondNotFound('Product not found', 404);
+        }
+        $score = Http::get($score);
+        $scoreDetail = $score->json();
+        // return $productDetail;
+        return $this->respondWithSuccess([
+            'detail' => new ProductDetailTokenResource($productDetail['Result']['Item']),
+            'score' => new ScoreResource($scoreDetail['Result']['Vendor']),
+            'recommended' => ProductResource::collection($randomProducts)
         ]);
     }
 
