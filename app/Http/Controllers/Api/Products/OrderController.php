@@ -107,7 +107,7 @@ class OrderController extends Controller
                 'user_phone' => $request->userData['phone'],
                 'location_url' => $request->location['url'],
                 'location_name' => $request->location['name'],
-                'status' => 'pending',
+                'status' => 'processing',
                 'is_checking' => false
             ]);
 
