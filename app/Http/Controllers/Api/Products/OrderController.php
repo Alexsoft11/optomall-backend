@@ -44,7 +44,6 @@ class OrderController extends Controller
      *                 @OA\Property(property="url", type="string", example="https://google.com")
      *             ),
      *             @OA\Property(property="items", type="array", @OA\Items(
-     *                 @OA\Property(property="product_url", type="string", example="https://example.com/product1"),
      *                 @OA\Property(property="product_id", type="string", example="1"),
      *                 @OA\Property(property="title", type="string", example="title"),
      *                 @OA\Property(property="image_url", type="string", example="url"),
@@ -87,7 +86,6 @@ class OrderController extends Controller
             'location.name' => 'required|string',
             'location.url' => 'required|string',
             'items.*.product_id' => 'required|string',
-            'items.*.product_url' => 'required|string',
             'items.*.title' => 'required|string',
             'items.*.image_url' => 'required|string',
             'items.*.quantity' => 'required|integer|min:1',
@@ -119,14 +117,14 @@ class OrderController extends Controller
 
                 OrderItem::create([
                     'order_id' => $order->id,
-                    'product_url' => $item['product_url'],
                     'product_id' => $item['product_id'],
                     'title' => $item['title'],
                     'image_url' => $item['image_url'],
                     'quantity' => $item['quantity'],
                     'price' => $item['price'],
                     'color' => $item['color'],
-                    'size' => $item['size']
+                    'size' => $item['size'],
+                    'product_url' => $productDetail['product_url'],
                 ]);
             }
 
