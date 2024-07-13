@@ -149,10 +149,6 @@ class AuthController extends Controller
 
         $credentials = $request->only('email', 'password');
 
-        $tempUser = TempUser::where('email', $credentials['email'])->first();
-        if ($tempUser && !$tempUser->email_verified) {
-            return response()->json(['message' => 'verify_email', 'error' => false], 403);
-        }
         $user = User::where('email', $credentials['email'])->first();
         if (!$user) {
             return response()->json(['message' => 'email_doesnt_exist', 'error' => false], 401);
@@ -161,6 +157,10 @@ class AuthController extends Controller
             return response()->json(['message' => 'wrong_password', 'error' => false], 401);
         }
         if (!$user->info_filled) {
+            return response()->json(['message' => 'add_personal_data', 'error' => false], 403);
+        }
+
+        if (!$user->email_verified) {
             return response()->json(['message' => 'add_personal_data', 'error' => false], 403);
         }
         $token = $user->createToken('AuthToken')->plainTextToken;
@@ -305,10 +305,16 @@ class AuthController extends Controller
 
         if (empty($googleUser)) {
             return response()->json(['message' => 'User not found'], 404);
-        }
+        }  
+
+        
 
         $user = User::where('email', $googleUser->getEmail())->first();
         $password = Str::random(16);
+
+        if (!$user->info_filled) {
+            return response()->json(['message' => 'add_personal_data', 'error' => false], 403);
+        }
 
         if (!$user) {
             $user = User::create([
