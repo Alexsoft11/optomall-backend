@@ -141,7 +141,18 @@ class ProductController extends Controller
 
         $likedProducts = LikedProduct::where('user_id', $user->id)->get();
 
-        return response()->json($likedProducts, 200);
+        $likedProductsArray = $likedProducts->map(function ($product) {
+            return [
+                'id' => $product->id,
+                'product_id' => $product->product_id,
+                'title' => $product->title,
+                'price' => $product->price,
+                'image' => $product->image,
+                'is_liked' => true
+            ];
+        });
+
+        return response()->json($likedProductsArray, 200);
     }
 
     /**
