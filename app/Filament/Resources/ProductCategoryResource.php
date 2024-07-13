@@ -21,7 +21,7 @@ class ProductCategoryResource extends Resource
 
     protected static ?string $navigationGroup = "Mahsulotlar";
 
-    protected static ?string $navigationLabel = "Mahsulotlar Katalogi";
+    protected static ?string $navigationLabel = "products_catalog";
 
     protected static ?string $model = ProductCategory::class;
 
@@ -44,7 +44,7 @@ class ProductCategoryResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('name'),
+                Tables\Columns\TextColumn::make('name')->label(trans('name')),
                 Tables\Columns\TextColumn::make('slug'),
                 Tables\Columns\TextColumn::make('category.name')
                     ->label('Category')
@@ -77,5 +77,10 @@ class ProductCategoryResource extends Resource
             'create' => Pages\CreateProductCategory::route('/create'),
             'edit' => Pages\EditProductCategory::route('/{record}/edit'),
         ];
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return trans('products_catalog');
     }
 }

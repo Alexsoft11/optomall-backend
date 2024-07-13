@@ -23,9 +23,10 @@ class SocialsResource extends Resource
 {
     protected static ?string $model = Socials::class;
 
-    protected static ?string $navigationLabel = "Ijtimoiy tarmoqlar";
+    protected static ?string $navigationLabel = "socials";
 
     protected static ?string $navigationIcon = 'heroicon-o-heart';
+
 
     public static function form(Forms\Form $form): Forms\Form
     {
@@ -130,5 +131,10 @@ class SocialsResource extends Resource
             'view' => Pages\ViewSocials::route('/{record}'),
             'edit' => Pages\EditSocials::route('/{record}/edit'),
         ];
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return trans('socials');
     }
 }

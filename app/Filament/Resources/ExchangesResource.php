@@ -18,7 +18,7 @@ class ExchangesResource extends Resource
 
     protected static ?string $navigationGroup = "Mahsulotlar";
 
-    protected static ?string $navigationLabel = "Birjalar";
+    protected static ?string $navigationLabel = "exchanges";
 
     protected static ?string $model = Exchanges::class;
 
@@ -68,5 +68,10 @@ class ExchangesResource extends Resource
             'create' => Pages\CreateExchanges::route('/create'),
             'edit' => Pages\EditExchanges::route('/{record}/edit'),
         ];
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return trans('exchanges');
     }
 }

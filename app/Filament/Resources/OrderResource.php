@@ -30,6 +30,9 @@ class OrderResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-shopping-cart';
 
+    protected static ?string $navigationLabel = "orders";
+
+
     public static function form(Form $form): Form
     {
         return $form
@@ -150,5 +153,10 @@ class OrderResource extends Resource
             'edit' => Pages\EditOrder::route('/{record}/edit'),
             'view' => Pages\ViewOrder::route('/{record}'),
         ];
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return trans('orders');
     }
 }
