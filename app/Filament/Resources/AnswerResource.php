@@ -19,7 +19,9 @@ class AnswerResource extends Resource
 
     protected static ?string $navigationGroup = "Savol-javoblar";
 
-    protected static ?string $navigationLabel = "Javoblar";
+    protected static ?string $navigationLabel = "answers";
+
+    
 
     protected static ?string $model = Answer::class;
 
@@ -85,5 +87,10 @@ class AnswerResource extends Resource
             'create' => Pages\CreateAnswer::route('/create'),
             'edit' => Pages\EditAnswer::route('/{record}/edit'),
         ];
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return trans('answers');
     }
 }

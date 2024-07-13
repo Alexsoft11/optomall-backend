@@ -23,6 +23,9 @@ class SliderResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
+    protected static ?string $navigationLabel = 'sliders'; // Use a key from your JSON file
+
+
     public static function form(Form $form): Form
     {
         return $form
@@ -41,7 +44,7 @@ class SliderResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('url'),
-                ImageColumn::make('image')
+                ImageColumn::make('image')->label(trans('image'))
             ])
             ->filters([
                 //
@@ -70,5 +73,10 @@ class SliderResource extends Resource
             'create' => Pages\CreateSlider::route('/create'),
             'edit' => Pages\EditSlider::route('/{record}/edit'),
         ];
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return trans('sliders');
     }
 }
