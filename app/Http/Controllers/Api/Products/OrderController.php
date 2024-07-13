@@ -132,6 +132,10 @@ class OrderController extends Controller
                 $order->save();
             }
 
+            Basket::where('user_id', auth()->user()->id)
+                ->where('product_id', $item['product_id'])
+                ->delete();
+
             return $order;
         });
 
