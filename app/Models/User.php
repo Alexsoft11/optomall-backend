@@ -52,6 +52,11 @@ class User extends Authenticatable implements FilamentUser
         ];
     }
 
+    public function likedProducts()
+    {
+        return $this->hasMany(LikedProduct::class);
+    }
+
     public function canAccessPanel(Panel $panel): bool
     {
         return $this->email === 'admin@mail.ru';

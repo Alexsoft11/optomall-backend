@@ -56,6 +56,7 @@ class OrderResource extends Resource
                         Section::make('Buyurtma mahsulotlari')
                             ->schema([
                                 Repeater::make('items')->label('Mahsulot')->relationship('items')->schema([
+                                    TextInput::make('product_url')->label('Mahsulot linki'),
                                     TextInput::make('title')->label('Nomi'),
                                     TextInput::make('quantity')->label('Miqdori'),
                                     TextInput::make('price')->label('Narxi'),
