@@ -43,8 +43,7 @@ class ProductController extends Controller
      *         description="Liked products details",
      *         @OA\JsonContent(
      *             type="array",
-     *             @OA\Items(type="string"),
-     *             example={"34234@", "23424243"}
+     *             @OA\Items(type="string")
      *         )
      *     ),
      *     @OA\Response(
