@@ -34,9 +34,9 @@ class ProductController extends Controller
      * @OA\Post(
      *     path="/api/liked-product",
      *     tags={"Liked products"},
-     *     summary="Add a liked product",
-     *     description="Add a product to the liked products list",
-     *     operationId="addLikedProduct",
+     *     summary="Add or remove a liked product",
+     *     description="Add a product to the liked products list or remove it if it already exists",
+     *     operationId="addOrRemoveLikedProduct",
      *     security={{ "bearerAuth":{} }},
      *     @OA\RequestBody(
      *         required=true,
@@ -48,10 +48,10 @@ class ProductController extends Controller
      *     ),
      *     @OA\Response(
      *         response=201,
-     *         description="Liked product successfully added",
+     *         description="Liked product successfully added or removed",
      *         @OA\JsonContent(
      *             type="object",
-     *             @OA\Property(property="message", type="string", example="Liked product successfully added")
+     *             @OA\Property(property="message", type="string", example="Liked product successfully added or removed")
      *         )
      *     ),
      *     @OA\Response(
@@ -68,26 +68,35 @@ class ProductController extends Controller
      */
     public function addLikedProduct(Request $request)
     {
-        $productDetailResponse = $this->productDetailFromTaoBao(new Request(['productId' => $request->product_id]));
-        $productDetail = json_decode($productDetailResponse->getContent(), true)['detail'];
-
         $validator = Validator::make($request->all(), [
             'product_id' => 'required|string',
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['message' => 'invalid_data', 'errors' => $validator->errors(), 'error' => true], 400);
+            return response()->json(['message' => 'Invalid data', 'errors' => $validator->errors(), 'error' => true], 400);
         }
 
-        LikedProduct::create([
-            'user_id' => auth()->user()->id,
-            'product_id' => $request->product_id,
-            'title' => $productDetail['title'],
-            'image' => $productDetail['image'],
-            'price' => $productDetail['price'],
-        ]);
+        $likedProduct = LikedProduct::where('user_id', auth()->user()->id)
+            ->where('product_id', $request->product_id)
+            ->first();
 
-        return response()->json(['message' => 'Liked product successfully added'], 201);
+        if ($likedProduct) {
+            $likedProduct->delete();
+            return response()->json(['message' => 'Liked product successfully removed'], 200);
+        } else {
+            $productDetailResponse = $this->productDetailFromTaoBao(new Request(['productId' => $request->product_id]));
+            $productDetail = json_decode($productDetailResponse->getContent(), true)['detail'];
+
+            LikedProduct::create([
+                'user_id' => auth()->user()->id,
+                'product_id' => $request->product_id,
+                'title' => $productDetail['title'],
+                'image' => $productDetail['image'],
+                'price' => $productDetail['price'],
+            ]);
+
+            return response()->json(['message' => 'Liked product successfully added'], 201);
+        }
     }
 
     /**
