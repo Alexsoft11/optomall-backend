@@ -29,6 +29,7 @@ Route::get('/sub-categories-from-taobao', [ProductController::class, 'subCategor
 Route::get('/search-products-from-taobao', [ProductController::class, 'searchProductsFromTaobao']);
 Route::post('/orders', [OrderController::class, 'create']);
 Route::get('questions', [ListController::class, 'questions']);
+Route::get('/product-detail-from-taobao', [ProductController::class, 'productDetailFromTaoBao']);
 
 
 Route::get('/top-products', [ProductController::class, 'topProducts']);
@@ -56,7 +57,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/success-orders', [OrderController::class, 'getSuccessOrders']);
     Route::post('/liked-product', [ProductController::class, 'addLikedProduct']);
     Route::get('/liked-products', [ProductController::class, 'getLikedProducts']);
-    Route::get('/product-detail-from-taobao', [ProductController::class, 'productDetailFromTaoBao']);
+    Route::get('/product-detail-from-taobao-token', [ProductController::class, 'productDetailFromTaoBaoToken']);
 });
 
 
