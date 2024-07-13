@@ -11,10 +11,12 @@ use App\Http\Resources\ProductResource;
 use App\Http\Resources\ScoreResource;
 use App\Http\Resources\SubCategoryResource;
 use App\Models\Category;
+use App\Models\LikedProduct;
 use App\Models\Product;
 use App\Models\ProductCategory;
 use App\Traits\ApiResponseHelpers;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Validator;
 
 class ProductController extends Controller
 {
@@ -25,6 +27,111 @@ class ProductController extends Controller
     public function __construct()
     {
         $this->apiKey = "8e6d9b54-88a7-4dcc-9f2b-add4d68dbbb8";
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/api/liked-product",
+     *     tags={"Liked products"},
+     *     summary="Add a liked product",
+     *     description="Add a product to the liked products list",
+     *     operationId="addLikedProduct",
+     *     security={{ "bearerAuth":{} }},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         description="Liked product details",
+     *         @OA\JsonContent(
+     *             required={"product_id"},
+     *             @OA\Property(property="product_id", type="string", example="1")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=201,
+     *         description="Liked product successfully added",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Liked product successfully added")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Invalid data",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Invalid data"),
+     *             @OA\Property(property="errors", type="object"),
+     *             @OA\Property(property="error", type="boolean", example=true)
+     *         )
+     *     )
+     * )
+     */
+    public function addLikedProduct(Request $request)
+    {
+        $productDetailResponse = $this->productDetailFromTaoBao(new Request(['productId' => $request->product_id]));
+        $productDetail = json_decode($productDetailResponse->getContent(), true)['detail'];
+
+        $validator = Validator::make($request->all(), [
+            'product_id' => 'required|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['message' => 'invalid_data', 'errors' => $validator->errors(), 'error' => true], 400);
+        }
+
+        LikedProduct::create([
+            'user_id' => auth()->user()->id,
+            'product_id' => $request->product_id,
+            'title' => $productDetail['title'],
+            'image' => $productDetail['image'],
+            'price' => $productDetail['price'],
+        ]);
+
+        return response()->json(['message' => 'Liked product successfully added'], 201);
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/liked-products",
+     *     tags={"Liked products"},
+     *     summary="Get liked products",
+     *     description="Retrieve the list of liked products for the authenticated user",
+     *     operationId="getLikedProducts",
+     *     security={{ "bearerAuth":{} }},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful retrieval of liked products",
+     *         @OA\JsonContent(
+     *             type="array",
+     *             @OA\Items(
+     *                 @OA\Property(property="id", type="integer", example=1),
+     *                 @OA\Property(property="product_id", type="string", example="1"),
+     *                 @OA\Property(property="user_id", type="integer", example=1),
+     *                 @OA\Property(property="created_at", type="string", format="date-time", example="2023-07-10T12:00:00Z"),
+     *                 @OA\Property(property="updated_at", type="string", format="date-time", example="2023-07-10T12:00:00Z")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthorized",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Unauthenticated")
+     *         )
+     *     )
+     * )
+     */
+    public function getLikedProducts(Request $request)
+    {
+        $user = auth()->user();
+
+        if (!$user) {
+            return response()->json(['message' => 'Unauthenticated'], 401);
+        }
+
+        $likedProducts = LikedProduct::where('user_id', $user->id)->get();
+
+        return response()->json($likedProducts, 200);
     }
 
     /**
@@ -129,6 +236,7 @@ class ProductController extends Controller
      *     path="/api/product-detail-from-taobao",
      *     summary="Get product detail from taobao",
      *     tags={"Products"},
+     *     security={{ "bearerAuth":{} }},
      *     @OA\Parameter(
      *         name="productId",
      *         in="query",

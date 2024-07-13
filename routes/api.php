@@ -24,7 +24,6 @@ Route::post('password/forgot', [ForgotPasswordController::class, 'forgotPassword
 Route::post('password/reset', [ResetPasswordController::class, 'resetPassword']);
 Route::get('socials', [ListController::class, 'socials']);
 Route::get('/products-from-taobao', [ProductController::class, 'productsFromTaobao']);
-Route::get('/product-detail-from-taobao', [ProductController::class, 'productDetailFromTaoBao']);
 Route::get('/categories-from-taobao', [ProductController::class, 'categoriesFromTaoBao']);
 Route::get('/sub-categories-from-taobao', [ProductController::class, 'subCategoriesFromTaoBao']);
 Route::get('/search-products-from-taobao', [ProductController::class, 'searchProductsFromTaobao']);
@@ -55,6 +54,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/remove', [OrderController::class, 'removeBasketItem']);
     Route::post('/add-check', [OrderController::class, 'addCheck']);
     Route::get('/success-orders', [OrderController::class, 'getSuccessOrders']);
+    Route::post('/liked-product', [ProductController::class, 'addLikedProduct']);
+    Route::get('/liked-products', [ProductController::class, 'getLikedProducts']);
+    Route::get('/product-detail-from-taobao', [ProductController::class, 'productDetailFromTaoBao']);
 });
 
 
