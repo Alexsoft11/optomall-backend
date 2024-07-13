@@ -21,7 +21,7 @@ class UserResource extends Resource
 {
     protected static ?string $model = User::class;
 
-    protected static ?string $navigationLabel = "Foydalanuvchilar";
+    protected static ?string $navigationLabel = "users";
 
     protected static ?string $navigationIcon = 'heroicon-o-users';
 
@@ -78,4 +78,10 @@ class UserResource extends Resource
     {
         return false;
     }
+
+    public static function getNavigationLabel(): string
+    {
+        return trans('users');
+    }
+
 }

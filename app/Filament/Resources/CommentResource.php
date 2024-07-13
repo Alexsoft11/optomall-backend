@@ -28,7 +28,7 @@ class CommentResource extends Resource
 
     protected static ?string $navigationGroup = "Mahsulotlar";
 
-    protected static ?string $navigationLabel = "Izohlar";
+    protected static ?string $navigationLabel = "comments";
 
     protected static ?string $navigationIcon = 'heroicon-o-chat-bubble-bottom-center-text';
 
@@ -138,5 +138,10 @@ class CommentResource extends Resource
     {
         return parent::getEloquentQuery()
             ->with(['user', 'product']);  // Ensure relationships are eager loaded
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return trans('comments');
     }
 }

@@ -18,7 +18,7 @@ class QuestionResource extends Resource
 
     protected static ?string $navigationGroup = "Savol-javoblar";
 
-    protected static ?string $navigationLabel = "Savollar";
+    protected static ?string $navigationLabel = "questions";
 
     protected static ?string $model = Question::class;
 
@@ -76,5 +76,10 @@ class QuestionResource extends Resource
             'create' => Pages\CreateQuestion::route('/create'),
             'edit' => Pages\EditQuestion::route('/{record}/edit'),
         ];
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return trans('questions');
     }
 }
