@@ -8,11 +8,11 @@ use Filament\Support\Contracts\HasLabel;
 
 enum OrderStatus: string implements HasColor, HasIcon, HasLabel
 {
-    case Ver_underVerification = 'under verification';
+    case Ver_underVerification = 'under_verification';
 
     case Ver_verified = 'verified';
 
-    case Ver_failedVerification = 'failed verification';
+    case Ver_failedVerification = 'failed_verification';
 
     case Processing = 'processing';
 
