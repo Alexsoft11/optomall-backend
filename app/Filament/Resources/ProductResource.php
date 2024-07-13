@@ -27,7 +27,7 @@ class ProductResource extends Resource
 
     protected static ?string $navigationGroup = "Mahsulotlar";
 
-    protected static ?string $navigationLabel = "Mahsulotlar";
+    protected static ?string $navigationLabel = "products";
 
     protected static ?string $model = Product::class;
 
@@ -109,7 +109,7 @@ class ProductResource extends Resource
                 TextColumn::make('category.name')->label('Category')->sortable()->searchable(),
                 TextColumn::make('title')->sortable()->searchable(),
                 TextColumn::make('price')->sortable()->searchable(),
-                ImageColumn::make('image')->sortable(),
+                ImageColumn::make('image')->sortable()->label(trans('image')),
                 TextColumn::make('location')->sortable()->searchable(),
                 TextColumn::make('product_url')->sortable(),
             ])
@@ -142,5 +142,10 @@ class ProductResource extends Resource
             'edit' => Pages\EditProduct::route('/{record}/edit'),
             'view' => Pages\ShowProduct::route('/{record}'),
         ];
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return trans('products');
     }
 }

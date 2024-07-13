@@ -13,7 +13,11 @@ class ListComment extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            Actions\ViewAction::make(),
         ];
+    }
+
+    public function getTitle(): string
+    {
+        return trans('comments');
     }
 }

@@ -20,7 +20,7 @@ class CategoryResource extends Resource
 
     protected static ?string $navigationGroup = "Mahsulotlar";
 
-    protected static ?string $navigationLabel = "Katalog";
+    protected static ?string $navigationLabel = "categories";
 
     protected static ?string $model = Category::class;
 
@@ -42,7 +42,7 @@ class CategoryResource extends Resource
             ->columns([
                 TextColumn::make('id')->sortable()->searchable(),
                 TextColumn::make('name')->sortable()->searchable(),
-                ImageColumn::make('image')->sortable()->disk('public'),
+                ImageColumn::make('image')->sortable()->disk('public')->label(trans('image')),
                 ToggleColumn::make('is_active')->sortable(),
             ])
             ->filters([
@@ -73,5 +73,10 @@ class CategoryResource extends Resource
             'edit' => Pages\EditCategory::route('/{record}/edit'),
             'view' => Pages\ViewCategory::route('/{record}'),
         ];
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return trans('categories');
     }
 }
