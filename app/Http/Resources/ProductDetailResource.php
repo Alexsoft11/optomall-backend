@@ -9,6 +9,7 @@ use App\Models\ProductComposition;
 use App\Models\ProductPicture;
 use App\Models\ProductSize;
 use App\Models\ProductVideo;
+use App\Models\User;
 
 class ProductDetailResource extends JsonResource
 {
@@ -21,6 +22,8 @@ class ProductDetailResource extends JsonResource
     public function toArray($request)
     {
         $productId = 808807124248;
+
+        $isLiked = auth()->check() && auth()->user()->likedProducts()->where('product_id', $this['Id'] ?? $productId)->exists();
 
         $pictures = ProductPicture::where('product_id', $productId)->get();
         $videos = ProductVideo::where('product_id', $productId)->get();
@@ -60,6 +63,7 @@ class ProductDetailResource extends JsonResource
             'colors' => isset($this['Attributes']) ? $this->transformAttributes($this['Attributes'], ['Rang bilan saralash', 'tana rangi', 'rang']) : $this->transformEloquentAttributes($colors),
             'sizes' => isset($this['Attributes']) ? $this->transformSizes($this['Attributes'], ["o'lcham", 'saqlash', "Ma'lumot balandligi"]) : $sizes,
             'composition' => isset($this['Attributes']) ? $this->transformCompositions($this['Attributes'], ["Moddiy tarkibiy qism"]) : $compositions,
+            'is_liked' => $isLiked,
         ];
     }
 
