@@ -112,6 +112,7 @@ class OrderController extends Controller
                 'location_url' => $request->location['url'],
                 'location_name' => $request->location['name'],
                 'status' => 'processing',
+                'status_color' => 'black',
                 'is_checking' => false
             ]);
 
