@@ -9,6 +9,7 @@ use App\Models\BasketItemSize;
 use App\Models\Order;
 use App\Models\OrderCheck;
 use App\Models\OrderItem;
+use App\Models\OrderStatus;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -413,8 +414,8 @@ class OrderController extends Controller
 
         $filter = $request->query('filter', 'all');
 
-        $verificationStatuses = ['under_verification', 'verified', 'failed_verification'];
-        $activeStatuses = ['processing', 'shipped', 'delivered', 'cancelled'];
+        $verificationStatuses = OrderStatus::where('type', 'in_verification')->pluck('slug');
+        $activeStatuses = OrderStatus::where('type', 'active')->pluck('slug');
 
         $ordersQuery = Order::where('user_id', $user->id)->select('id', 'status', 'total_price', 'user_name', 'user_phone', 'location_url', 'location_name', 'created_at');
 
