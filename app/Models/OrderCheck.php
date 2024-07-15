@@ -12,6 +12,7 @@ class OrderCheck extends Model
     protected $fillable = [
         'order_id',
         'image',
+        'card_number_id'
     ];
 
     public function order()
