@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
 use App\Mail\GoogleLoginSuccess;
-
+use Illuminate\Support\Carbon;
 
 class AuthController extends Controller
 {
@@ -118,55 +118,64 @@ class AuthController extends Controller
     }
 
 
-    /**
-     * @OA\Post(
-     *     path="/api/login",
-     *     summary="Login a user",
-     *     tags={"Auth"},
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\JsonContent(
-     *             required={"email","password"},
-     *             @OA\Property(property="email", type="string", format="email", example="khamidovsherzod003@gmail.com"),
-     *             @OA\Property(property="password", type="string", format="password", example="12345678")
-     *         ),
-     *     ),
-     *     @OA\Response(response="200", description="User logged in successfully"),
-     *     @OA\Response(response="401", description="Incorrect login or password"),
-     *     @OA\Response(response="403", description="Email not verified")
-     * )
-     */
-    public function login(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'email' => 'required|email',
-            'password' => 'required|string|min:8',
-        ]);
+   
+ /**
+ * @OA\Post(
+ *     path="/api/login",
+ *     summary="Login a user",
+ *     tags={"Auth"},
+ *     @OA\RequestBody(
+ *         required=true,
+ *         @OA\JsonContent(
+ *             required={"email","password"},
+ *             @OA\Property(property="email", type="string", format="email", example="khamidovsherzod003@gmail.com"),
+ *             @OA\Property(property="password", type="string", format="password", example="12345678")
+ *         ),
+ *     ),
+ *     @OA\Response(response="200", description="User logged in successfully"),
+ *     @OA\Response(response="401", description="Incorrect login or password"),
+ *     @OA\Response(response="403", description="Email not verified")
+ * )
+ */
+public function login(Request $request)
+{
+    $validator = Validator::make($request->all(), [
+        'email' => 'required|email',
+        'password' => 'required|string|min:8',
+    ]);
 
-        if ($validator->fails()) {
-            return response()->json(['message' => 'validation_errors', 'errors' => $validator->errors()], 422);
-        }
-
-        $credentials = $request->only('email', 'password');
-
-        $user = User::where('email', $credentials['email'])->first();
-        if (!$user) {
-            return response()->json(['message' => 'email_doesnt_exist', 'error' => false], 401);
-        }
-        if (!Hash::check($credentials['password'], $user->password)) {
-            return response()->json(['message' => 'wrong_password', 'error' => false], 401);
-        }
-        if (!$user->info_filled) {
-            return response()->json(['message' => 'add_personal_data', 'error' => false], 403);
-        }
-
-        if (!$user->email_verified) {
-            return response()->json(['message' => 'add_personal_data', 'error' => false], 403);
-        }
-        $token = $user->createToken('AuthToken')->plainTextToken;
-
-        return response()->json(['token' => $token], 200);
+    if ($validator->fails()) {
+        return response()->json(['message' => 'validation_errors', 'errors' => $validator->errors()], 422);
     }
+
+    $credentials = $request->only('email', 'password');
+
+    $user = User::where('email', $credentials['email'])->first();
+    if (!$user) {
+        return response()->json(['message' => 'email_doesnt_exist', 'error' => false], 401);
+    }
+    if (!Hash::check($credentials['password'], $user->password)) {
+        return response()->json(['message' => 'wrong_password', 'error' => false], 401);
+    }
+    if (!$user->info_filled) {
+        return response()->json(['message' => 'add_personal_data', 'error' => false], 403);
+    }
+
+    if (!$user->email_verified) {
+        return response()->json(['message' => 'email_not_verified', 'error' => false], 403);
+    }
+
+    // Create the token with an expiration date
+    $token = $user->createToken('AuthToken')->plainTextToken;
+    $createdAt = Carbon::now();
+    $expiresAt = $createdAt->copy()->addDays(3);
+
+    return response()->json([
+        'token' => $token,
+        'created_at' => $createdAt->toDateTimeString(),
+        'expires_at' => $expiresAt->toDateTimeString()
+    ], 200);
+}
 
 
 
