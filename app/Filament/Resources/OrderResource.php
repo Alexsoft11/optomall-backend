@@ -54,6 +54,7 @@ class OrderResource extends Resource
                                     ->label('Mahsulot')
                                     ->relationship('items')
                                     ->schema([
+                                        TextInput::make('image_url')->label('Rasm'),
                                         TextInput::make('product_url')->label('Mahsulot linki'),
                                         TextInput::make('title')->label('Nomi'),
                                         TextInput::make('quantity')->label('Miqdori'),
@@ -69,7 +70,7 @@ class OrderResource extends Resource
                         Section::make('Buyurtma checklari')
                             ->schema([
                                 Repeater::make('checks')->label('Cheklar')->relationship('checks')->schema([
-                                    FileUpload::make('image')->label('Chek'),
+                                    FileUpload::make('image')->disk('public')->label('Chek'),
                                 ]),
                             ]),
                     ])
