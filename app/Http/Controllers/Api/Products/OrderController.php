@@ -93,7 +93,6 @@ class OrderController extends Controller
             'items.*.color' => 'required|string',
             'items.*.size' => 'required|string',
             'items.*.size_id' => 'required|integer',
-            'items.*.color_id' => 'required|integer',
             'items.*.price' => 'required|numeric|min:0',
             'total_price' => 'required|numeric|min:0'
         ]);
@@ -141,7 +140,7 @@ class OrderController extends Controller
 
                     // Remove associated BasketItemColor
                     $basketItemColor = BasketItemColor::where('basket_item_size_id', $item['size_id'])
-                        ->where('color_id', $item['color_id'])
+                        ->where('color_id', $basketItemSize['color_id'])
                         ->first();
 
                     if ($basketItemColor) {
