@@ -2,11 +2,9 @@
 
 namespace App\Filament\Resources;
 
-use App\Enums\OrderStatus;
 use App\Filament\Resources\OrderResource\Pages;
 use App\Models\Order;
-use App\Models\OrderItem;
-use Filament\Actions\Modal\Actions\Action;
+use App\Models\OrderStatus;
 use Filament\Forms;
 use Filament\Forms\Components\Builder\Block;
 use Filament\Forms\Components\Card;
@@ -17,16 +15,11 @@ use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\ToggleButtons;
-use Filament\Forms\Components\ViewField;
 use Filament\Forms\Form;
-use Filament\Infolists\Components\ImageEntry;
 use Filament\Resources\Resource;
 use Filament\Tables;
-use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
-use Illuminate\Support\HtmlString;
 
 class OrderResource extends Resource
 {
@@ -35,7 +28,6 @@ class OrderResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-shopping-cart';
 
     protected static ?string $navigationLabel = "orders";
-
 
     public static function form(Form $form): Form
     {
@@ -51,10 +43,6 @@ class OrderResource extends Resource
                 Fieldset::make('Buyurtma')->schema([
                     TextInput::make('id')->label('Buyurtma IDsi')->disabled(),
                     TextInput::make('total_price')->label('Jami narxi')->disabled(),
-                    // ToggleButtons::make('Status')
-                    //     ->inline()
-                    //     ->options(OrderStatus::class)
-                    //     ->required(),
                     TextInput::make('created_at')->label('Created At')->disabled(),
                     TextInput::make('updated_at')->label('Updated At')->disabled(),
                 ]),
@@ -72,7 +60,6 @@ class OrderResource extends Resource
                                         TextInput::make('price')->label('Narxi'),
                                         TextInput::make('color')->label('Rang'),
                                         TextInput::make('size')->label("O'lcham"),
-                                        
                                     ]),
                             ]),
                     ])
@@ -83,7 +70,7 @@ class OrderResource extends Resource
                             ->schema([
                                 Repeater::make('checks')->label('Cheklar')->relationship('checks')->schema([
                                     FileUpload::make('image')->label('Chek'),
-                                ])
+                                ]),
                             ]),
                     ])
                     ->columnSpan(['lg' => fn (?Order $record) => $record === null ? 3 : 2]),
@@ -100,18 +87,11 @@ class OrderResource extends Resource
                 TextColumn::make('status')->sortable(),
                 TextColumn::make('created_at')->label('Created At')->sortable(),
                 TextColumn::make('updated_at')->label('Updated At')->sortable(),
+                TextColumn::make('status_color')->label('Status Rangi')->sortable(), // Add the status_color column
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
-                    ->options([
-                        'processing' => 'Processing',
-                        'shipped' => 'Shipped',
-                        'delivered' => 'Delivered',
-                        'cancelled' => 'Cancelled',
-                        'under verification' => 'Under Verification',
-                        'verified' => 'Verified',
-                        'failed verification' => 'Failed Verification',
-                    ]),
+                    ->options(OrderStatus::pluck('name', 'slug')->toArray()), // Fetch statuses from database
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
@@ -120,19 +100,17 @@ class OrderResource extends Resource
                     ->label("Statusni o'zgartirish")
                     ->form([
                         Select::make('status')
-                            ->options([
-                                'processing' => 'Processing',
-                                'shipped' => 'Shipped',
-                                'delivered' => 'Delivered',
-                                'cancelled' => 'Cancelled',
-                                'under verification' => 'Under Verification',
-                                'verified' => 'Verified',
-                                'failed verification' => 'Failed Verification',
-                            ])
+                            ->options(OrderStatus::pluck('name', 'slug')->toArray()) // Fetch statuses from database
                             ->required(),
                     ])
                     ->action(function ($record, $data) {
-                        $record->update(['status' => $data['status']]);
+                        $status = OrderStatus::where('slug', $data['status'])->get()->first();
+                        if ($status) {
+                            $record->update([
+                                'status' => $status->slug,
+                                'status_color' => $status->color, // Update the status_color field
+                            ]);
+                        }
                     })
                     ->modalHeading('Change Status')
                     ->button(),
@@ -141,8 +119,6 @@ class OrderResource extends Resource
                 Tables\Actions\DeleteBulkAction::make(),
             ]);
     }
-
-
 
     public static function getRelations(): array
     {
