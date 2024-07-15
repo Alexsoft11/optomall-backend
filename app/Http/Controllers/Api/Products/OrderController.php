@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Basket;
 use App\Models\BasketItemColor;
 use App\Models\BasketItemSize;
+use App\Models\CardNumber;
 use App\Models\Order;
 use App\Models\OrderCheck;
 use App\Models\OrderItem;
@@ -206,8 +207,9 @@ class OrderController extends Controller
     public function getOrder(Request $request)
     {
         $order = Order::where('id', $request->order_id)->where('user_id', auth()->user()->id)->first();
+        $cardNumber = CardNumber::orderBy('money', 'desc')->first();
 
-        return response()->json(['message' => 'successfull', 'order' => ['id' => $order->id, 'total_price' => $order->total_price, 'card_number' => '9860176612846848']], 201);
+        return response()->json(['message' => 'successfull', 'order' => ['id' => $order->id, 'total_price' => $order->total_price, 'card_number' => $cardNumber->card_number]], 201);
     }
 
 
