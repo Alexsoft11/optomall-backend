@@ -14,10 +14,11 @@ class Order extends Model
         'user_id',
         'total_price',
         'status',
+        'status_color',
         'user_name',
         'user_phone',
         'location_url',
-        'location_name',        
+        'location_name',
     ];
 
     public function user()
@@ -34,6 +35,4 @@ class Order extends Model
     {
         return $this->hasMany(OrderCheck::class);
     }
-
-
 }
