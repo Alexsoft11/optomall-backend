@@ -270,9 +270,11 @@ class OrderController extends Controller
         }
 
         $order = DB::transaction(function () use ($request) {
+            $cardNumber = CardNumber::orderBy('money', 'desc')->first();
             $order = OrderCheck::create([
                 'order_id' => $request->order_id,
-                'image' => $request->image->store('order_checks', 'public') // Store the image and save the path
+                'image' => $request->image->store('order_checks', 'public'), // Store the image and save the path
+                'card_number_id' => $cardNumber->id
             ]);
 
             return $order;
