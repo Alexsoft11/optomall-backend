@@ -50,6 +50,7 @@ class OrderController extends Controller
      *                 @OA\Property(property="quantity", type="integer", example="2"),
      *                 @OA\Property(property="color", type="string", example="black"),
      *                 @OA\Property(property="size", type="string", example="xl"),
+     *                 @OA\Property(property="size_id", type="number", example="4")
      *                 @OA\Property(property="price", type="number", example="4.99")
      *             )),
      *             @OA\Property(property="total_price", type="number", example="50.99")
@@ -91,6 +92,8 @@ class OrderController extends Controller
             'items.*.quantity' => 'required|integer|min:1',
             'items.*.color' => 'required|string',
             'items.*.size' => 'required|string',
+            'items.*.size_id' => 'required|integer',
+            'items.*.color_id' => 'required|integer',
             'items.*.price' => 'required|numeric|min:0',
             'total_price' => 'required|numeric|min:0'
         ]);
@@ -126,16 +129,39 @@ class OrderController extends Controller
                     'size' => $item['size'],
                     'product_url' => $productDetail['product_url'],
                 ]);
+
+                // Remove basket items associated with the size_id and color_id
+                $basketItemSize = BasketItemSize::where('user_id', auth()->user()->id)
+                    ->where('id', $item['size_id'])
+                    ->first();
+
+                if ($basketItemSize) {
+                    $basketId = $basketItemSize->basket_id;
+                    $basketItemSize->delete();
+
+                    // Remove associated BasketItemColor
+                    $basketItemColor = BasketItemColor::where('basket_item_size_id', $item['size_id'])
+                        ->where('color_id', $item['color_id'])
+                        ->first();
+
+                    if ($basketItemColor) {
+                        $basketItemColor->delete();
+                    }
+
+                    // Check if the basket has no more sizes or colors, then delete the basket
+                    if (
+                        !BasketItemSize::where('basket_id', $basketId)->exists() &&
+                        !BasketItemColor::where('basket_item_size_id', $item['size_id'])->exists()
+                    ) {
+                        Basket::where('id', $basketId)->delete();
+                    }
+                }
             }
 
             if (OrderCheck::where('order_id', $order->id)->exists()) {
                 $order->is_checking = true;
                 $order->save();
             }
-
-            Basket::where('user_id', auth()->user()->id)
-                ->where('product_id', $item['product_id'])
-                ->delete();
 
             return $order;
         });

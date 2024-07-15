@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Enums\OrderStatus;
 use App\Filament\Resources\OrderResource\Pages;
 use App\Models\Order;
+use App\Models\OrderItem;
 use Filament\Actions\Modal\Actions\Action;
 use Filament\Forms;
 use Filament\Forms\Components\Builder\Block;
@@ -17,12 +18,15 @@ use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\ToggleButtons;
+use Filament\Forms\Components\ViewField;
 use Filament\Forms\Form;
+use Filament\Infolists\Components\ImageEntry;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Support\HtmlString;
 
 class OrderResource extends Resource
 {
@@ -58,17 +62,18 @@ class OrderResource extends Resource
                     ->schema([
                         Section::make('Buyurtma mahsulotlari')
                             ->schema([
-                                Repeater::make('items')->label('Mahsulot')->relationship('items')->schema([
-                                    TextInput::make('product_url')->label('Mahsulot linki'),
-                                    TextInput::make('title')->label('Nomi'),
-                                    TextInput::make('quantity')->label('Miqdori'),
-                                    TextInput::make('price')->label('Narxi'),
-                                    TextInput::make('color')->label("Rang"),
-                                    TextInput::make('size')->label("O'lcham"),
-                                    FileUpload::make('image_url')
-                                        ->label('Rasm')
-                                        ->multiple()
-                                ])
+                                Repeater::make('items')
+                                    ->label('Mahsulot')
+                                    ->relationship('items')
+                                    ->schema([
+                                        TextInput::make('product_url')->label('Mahsulot linki'),
+                                        TextInput::make('title')->label('Nomi'),
+                                        TextInput::make('quantity')->label('Miqdori'),
+                                        TextInput::make('price')->label('Narxi'),
+                                        TextInput::make('color')->label('Rang'),
+                                        TextInput::make('size')->label("O'lcham"),
+                                        
+                                    ]),
                             ]),
                     ])
                     ->columnSpan(['lg' => fn (?Order $record) => $record === null ? 3 : 2]),
