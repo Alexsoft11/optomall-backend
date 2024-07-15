@@ -268,86 +268,84 @@ public function login(Request $request)
     }
 
 
-    /**
-     * @OA\Post(
-     *     path="/api/google-login",
-     *     summary="Login or register a user using Google access token",
-     *     tags={"Auth"},
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\JsonContent(
-     *             required={"token"},
-     *             @OA\Property(property="token", type="string", example="ya29.a0AfH6SM...")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="User logged in successfully",
-     *         @OA\JsonContent(
-     *             @OA\Property(
-     *                 property="user",
-     *                 type="object",
-     *                 @OA\Property(property="id", type="integer", example=1)
-     *             ),
-     *             @OA\Property(property="token", type="string", example="1|eXaMpLeToKeN12345")
-     *         )
-     *     ),
-     *     @OA\Response(response=404, description="User not found")
-     * )
-     */
+  /**
+ * @OA\Post(
+ *     path="/api/google-login",
+ *     summary="Login or register a user using Google access token",
+ *     tags={"Auth"},
+ *     @OA\RequestBody(
+ *         required=true,
+ *         @OA\JsonContent(
+ *             required={"token"},
+ *             @OA\Property(property="token", type="string", example="ya29.a0AfH6SM...")
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=200,
+ *         description="User logged in successfully",
+ *         @OA\JsonContent(
+ *             @OA\Property(
+ *                 property="user",
+ *                 type="object",
+ *                 @OA\Property(property="id", type="integer", example=1)
+ *             ),
+ *             @OA\Property(property="token", type="string", example="1|eXaMpLeToKeN12345")
+ *         )
+ *     ),
+ *     @OA\Response(response=404, description="User not found")
+ * )
+ */
 
+public function googleLoginViaAccessToken(Request $request)
+{
+    $request->validate([
+        'token' => ['required', 'string']
+    ]);
 
-    public function googleLoginViaAccessToken(Request $request)
-    {
-        $request->validate([
-            'token' => ['required', 'string']
-        ]);
+    $token = $request->input('token');
+    Log::info('Google Access Token: ' . $token);
 
-        $token = $request->input('token');
-        Log::info('Google Access Token: ' . $token);
-
-        try {
-            $googleUser = Socialite::driver('google')->userFromToken($token);
-        } catch (\Exception $e) {
-            return response()->json(['message' => 'Invalid token or unable to fetch Google user data'], 401);
-        }
-
-        if (empty($googleUser)) {
-            return response()->json(['message' => 'User not found'], 404);
-        }  
-
-        
-
-        $user = User::where('email', $googleUser->getEmail())->first();
-        $password = Str::random(16);
-
-        if (!$user->info_filled) {
-            return response()->json(['message' => 'add_personal_data', 'error' => false], 403);
-        }
-
-        if (!$user) {
-            $user = User::create([
-                'name' => $googleUser->getName(),
-                'email' => $googleUser->getEmail(),
-                'password' => Hash::make($password),
-                'email_verified_at' => now(),
-            ]);
-            $user->email_verified = true;
-            $user->email_verified_at = now();
-            $user->save();
-
-            Mail::to($user->email)->send(new GoogleLoginSuccess($user, $password));
-        }
-
-        $token = $user->createToken('LOGIN');
-
-        return response()->json([
-            'user' => [
-                'id' => $user->id,
-            ],
-            'unique_id' => $user->unique_id,
-            'token' => $token->plainTextToken,
-            "message" => "sent_your_info_to_your_email"
-        ]);
+    try {
+        $googleUser = Socialite::driver('google')->userFromToken($token);
+    } catch (\Exception $e) {
+        return response()->json(['message' => 'Invalid token or unable to fetch Google user data'], 401);
     }
+
+    if (empty($googleUser)) {
+        return response()->json(['message' => 'User not found'], 404);
+    }  
+
+    $user = User::where('email', $googleUser->getEmail())->first();
+    $password = Str::random(16);
+
+    if (!$user) {
+        $user = User::create([
+            'name' => $googleUser->getName(),
+            'email' => $googleUser->getEmail(),
+            'password' => Hash::make($password),
+            'email_verified_at' => now(),
+        ]);
+        $user->email_verified = true;
+        $user->email_verified_at = now();
+        $user->save();
+
+        Mail::to($user->email)->send(new GoogleLoginSuccess($user, $password));
+    }
+
+    if (!$user->info_filled) {
+        return response()->json(['unique_id' => $user->unique_id, 'message' => 'add_personal_data']);
+    }
+
+    $token = $user->createToken('LOGIN');
+
+    return response()->json([
+        'user' => [
+            'id' => $user->id,
+        ],
+        'unique_id' => $user->unique_id,
+        'token' => $token->plainTextToken,
+        "message" => "sent_your_info_to_your_email"
+    ]);
+}
+
 }
