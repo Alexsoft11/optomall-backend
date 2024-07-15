@@ -50,7 +50,7 @@ class OrderController extends Controller
      *                 @OA\Property(property="quantity", type="integer", example="2"),
      *                 @OA\Property(property="color", type="string", example="black"),
      *                 @OA\Property(property="size", type="string", example="xl"),
-     *                 @OA\Property(property="size_id", type="number", example="4")
+     *                 @OA\Property(property="size_id", type="number", example="4"),
      *                 @OA\Property(property="price", type="number", example="4.99")
      *             )),
      *             @OA\Property(property="total_price", type="number", example="50.99")
