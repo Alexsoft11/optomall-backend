@@ -34,7 +34,12 @@ class SliderResource extends Resource
                     ->directory('slider-images')
                     ->image()
                     ->required()
-                    ->maxSize(2048),
+                    ->maxSize(10000),
+                FileUpload::make('mobile_image')
+                    ->directory('slider-images')
+                    ->image()
+                    ->required()
+                    ->maxSize(10000),
                 TextInput::make('url')->required()->url(),
             ]);
     }
@@ -44,7 +49,8 @@ class SliderResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('url'),
-                ImageColumn::make('image')->label(trans('image'))
+                ImageColumn::make('image')->label(trans('image')),
+                ImageColumn::make('mobile_image')->label(trans('mobile_image'))
             ])
             ->filters([
                 //
