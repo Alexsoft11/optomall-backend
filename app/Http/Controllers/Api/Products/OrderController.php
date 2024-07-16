@@ -672,6 +672,6 @@ class OrderController extends Controller
         // Remove the size and associated colors from the basket
         $basketItemSize->delete();
 
-        return response()->json(['message' => 'Basket item removed successfully'], 200);
+        return response()->json($this->getUserBasket($request), 200);
     }
 }
