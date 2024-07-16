@@ -133,8 +133,7 @@ class OrderController extends Controller
                 ]);
 
                 // Remove basket items associated with the size_id and color_id
-                $basketItemSize = BasketItemSize::where('user_id', auth()->user()->id)
-                    ->where('id', $item['size_id'])
+                $basketItemSize = BasketItemSize::where('id', $item['size_id'])
                     ->first();
 
                 if ($basketItemSize) {
@@ -142,8 +141,7 @@ class OrderController extends Controller
                     $basketItemSize->delete();
 
                     // Remove associated BasketItemColor
-                    $basketItemColor = BasketItemColor::where('basket_item_size_id', $item['size_id'])
-                        ->where('color_id', $basketItemSize['color_id'])
+                    $basketItemColor = BasketItemColor::where('id', $basketItemSize['color_id'])
                         ->first();
 
                     if ($basketItemColor) {
@@ -153,7 +151,7 @@ class OrderController extends Controller
                     // Check if the basket has no more sizes or colors, then delete the basket
                     if (
                         !BasketItemSize::where('basket_id', $basketId)->exists() &&
-                        !BasketItemColor::where('basket_item_size_id', $item['size_id'])->exists()
+                        !BasketItemColor::where('id', $basketItemSize['color_id'])->exists()
                     ) {
                         Basket::where('id', $basketId)->delete();
                     }
