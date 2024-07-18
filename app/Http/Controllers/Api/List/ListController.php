@@ -7,6 +7,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Question;
 use App\Models\Comment;
 use App\Models\Product;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
 use App\Models\Socials;
 use OpenApi\Annotations as OA;
 use Illuminate\Support\Facades\Http;
@@ -87,49 +89,131 @@ class ListController extends Controller
  *     security={{"bearerAuth":{}}},
  *     @OA\RequestBody(
  *         required=true,
- *         @OA\JsonContent(
- *             required={"product_id", "name"},
- *             @OA\Property(property="product_id", type="integer", example=1),
- *             @OA\Property(property="name", type="string", example="Great product!")
+ *         @OA\MediaType(
+ *             mediaType="multipart/form-data",
+ *             @OA\Schema(
+ *                 required={"product_id", "name", "rating"},
+ *                 @OA\Property(property="product_id", type="integer", example=1),
+ *                 @OA\Property(property="name", type="string", example="Great product!"),
+ *                 @OA\Property(property="rating", type="integer", example=5),
+ *                 @OA\Property(
+ *                     property="images[]",
+ *                     type="array",
+ *                     @OA\Items(type="string", format="binary")
+ *                 )
+ *             )
  *         )
  *     ),
- *     @OA\Response(response="200", description="Comment posted successfully"),
+ *     @OA\Response(response="201", description="Comment posted successfully"),
  *     @OA\Response(response="400", description="Invalid input"),
  *     @OA\Response(response="401", description="Unauthorized"),
- *     @OA\Response(response="404", description="Product not found"),
  * )
  */
 public function postComment(Request $request)
 {
-    $request->validate([
-        'product_id' => 'required|integer',
+    $validator = Validator::make($request->all(), [
+        'product_id' => 'required|integer|exists:products,id',
         'name' => 'required|string',
+        'rating' => 'required|integer',
+        'images.*' => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048'
     ]);
 
+    if ($validator->fails()) {
+        return response()->json(['message' => 'Invalid data', 'errors' => $validator->errors()], 400);
+    }
+
     $user = $request->user();
-    $product_id = $request->product_id;
-    $subCategoryId = $request->subCategoryId;
-    $productsCount = $request->productsCount ? $request->productsCount : 20;
 
-    $product = Product::find($product_id);
+    if (!$user) {
+        return response()->json(['message' => 'Unauthorized'], 401);
+    }
 
-    if (!$product) {
-        $response = Http::get("http://otapi.net/service-json/BatchSearchItemsFrame?instanceKey={$this->apiKey}&language=uz&signature=ede6e796a3f325d3d0a7743c7c4e7d93648c74d7c41744f1671714e327b5d52b&timestamp=20240526085107&sessionId=&xmlParameters=%3CSearchItemsParameters%3E%3CCategoryId%3E$subCategoryId%3C%2FCategoryId%3E%3C%2FSearchItemsParameters%3E&framePosition=0&frameSize=$productsCount&blockList=/{$product_id}");
-
-        if ($response->failed()) {
-            return response()->json(['message' => 'Product not found'], 404);
+    $imagePaths = [];
+    if ($request->hasFile('images')) {
+        foreach ($request->file('images') as $image) {
+            $path = $image->store('comments', 'public');
+            $imagePaths[] = $path;
         }
-
-        $productData = $response->json();
     }
 
     $comment = new Comment();
     $comment->name = $request->name;
     $comment->user_id = $user->id;
-    $comment->product_id = $product_id; 
+    $comment->product_id = $request->product_id;
+    $comment->rating = $request->rating;
+    $comment->images = $imagePaths; // Store paths directly as an array
     $comment->save();
 
-    return response()->json(['message' => 'Comment posted successfully'], 200);
+    return response()->json(['message' => 'Comment posted successfully'], 201);
 }
+
+/**
+ * @OA\Get(
+ *     path="/api/get-comments",
+ *     summary="Get comments for a product",
+ *     tags={"Comments"},
+ *     @OA\Parameter(
+ *         name="product_id",
+ *         in="query",
+ *         required=true,
+ *         description="ID of the product to retrieve comments for",
+ *         @OA\Schema(type="integer", example=1)
+ *     ),
+ *     @OA\Response(response="200", description="List of comments retrieved successfully",
+ *          @OA\JsonContent(
+ *              type="array",
+ *              @OA\Items(
+ *                  @OA\Property(property="id", type="integer"),
+ *                  @OA\Property(property="name", type="string"),
+ *                  @OA\Property(property="rating", type="integer"),
+ *                  @OA\Property(property="images", type="array",
+ *                      @OA\Items(type="string", format="url")
+ *                  ),
+ *                  @OA\Property(property="created_at", type="string", format="date-time"),
+ *                  @OA\Property(property="updated_at", type="string", format="date-time")
+ *              )
+ *          )
+ *     ),
+ *     @OA\Response(response="400", description="Invalid input"),
+ *     @OA\Response(response="401", description="Unauthorized"),
+ *     @OA\Response(response="404", description="Product not found"),
+ * )
+ */
+public function getComments(Request $request)
+{
+    $validator = Validator::make($request->all(), [
+        'product_id' => 'required|integer|exists:products,id'
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json(['message' => 'invalid_input', 'errors' => $validator->errors()], 400);
+    }
+
+    $product_id = $request->input('product_id');
+    $comments = Comment::with('user')->where('product_id', $product_id)->get();
+
+    if ($comments->isEmpty()) {
+        return response()->json(['message' => 'not_found'], 404);
+    }
+
+    $comments = $comments->map(function ($comment) {
+        $comment->images = array_map(function ($path) {
+            return asset('storage/' . $path); 
+        }, $comment->images);
+
+        return [
+            'id' => $comment->id,
+            'product_id' => $comment->product_id,
+            'user_name' => $comment->user ? $comment->user->name : null,
+            'name' => $comment->name,
+            'rating' => $comment->rating,
+            'images' => $comment->images,
+            'created_at' => $comment->created_at->format('d.m.y'),
+        ];
+    });
+
+    return response()->json($comments, 200);
+}
+
 
 }

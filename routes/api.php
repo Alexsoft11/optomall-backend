@@ -30,6 +30,7 @@ Route::get('/search-products-from-taobao', [ProductController::class, 'searchPro
 Route::post('/orders', [OrderController::class, 'create']);
 Route::get('questions', [ListController::class, 'questions']);
 Route::get('/product-detail-from-taobao', [ProductController::class, 'productDetailFromTaoBao']);
+Route::get('/get-comments', [ListController::class, 'getComments']);
 
 
 Route::get('/top-products', [ProductController::class, 'topProducts']);
