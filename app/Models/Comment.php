@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -9,7 +8,11 @@ class Comment extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name'];
+    protected $fillable = ['name', 'user_id', 'product_id', 'rating', 'images'];
+
+    protected $casts = [
+        'images' => 'array',
+    ];
 
     public function user()
     {
