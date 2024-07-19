@@ -146,7 +146,7 @@ class OrderController extends Controller
                     'order_id' => $order->id,
                     'product_id' => $item['product_id'],
                     'title' => $item['title'],
-                    'image_url' => $item['image_url'],
+                    'image_url' => $imagePath,
                     'quantity' => $item['quantity'],
                     'price' => $item['price'],
                     'color' => $item['color'],
