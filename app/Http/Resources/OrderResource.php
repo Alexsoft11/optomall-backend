@@ -21,7 +21,7 @@ class OrderResource extends JsonResource
             'total_price' => $this->total_price,
             'user_name' => $this->user_name,
             'user_phone' => $this->user_phone,
-            'country' => $this->country == 'uzbekistan' ? url('/flags/uzbekistan.png') : url('/flags/china.png'),
+            'country' => $this->country == 'uzbekistan' ? url('/flags/uzbekistan.png') : url('/flags/china.jpg'),
             'location_url' => $this->location_url,
             'location_name' => $this->location_name,
             'substatus' => [
