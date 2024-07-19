@@ -132,10 +132,11 @@ class OrderController extends Controller
                 $productDetail = json_decode($productDetailResponse->getContent(), true)['detail'];
 
                 // Download image and save to storage
-                // Download image and save to storage
                 $url = $item['image_url'];
-                $filename = basename($url);
-                $imagePath = 'order_images/' . $filename;
+
+                // Generate a random filename
+                $randomName = Str::random(40) . '.' . pathinfo($url, PATHINFO_EXTENSION);
+                $imagePath = 'order_images/' . $randomName;
 
                 // Using Guzzle to download the image
                 $response = $client->get($url);
@@ -145,7 +146,7 @@ class OrderController extends Controller
                     'order_id' => $order->id,
                     'product_id' => $item['product_id'],
                     'title' => $item['title'],
-                    'image_url' => $item['image_url'],
+                    'image_url' => $imagePath,
                     'quantity' => $item['quantity'],
                     'price' => $item['price'],
                     'color' => $item['color'],
