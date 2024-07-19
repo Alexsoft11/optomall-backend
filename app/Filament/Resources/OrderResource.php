@@ -65,8 +65,11 @@ class OrderResource extends Resource
                                     ->label('Mahsulot')
                                     ->relationship('items')
                                     ->schema([
-                                        TextInput::make('image_url')->label('Rasm'),
-                                        FileUpload::make('image_url')->disk('public')->label('Rasm'),
+                                        FileUpload::make('image_url')
+                                            ->disk('public') // Ensure you have the 'public' disk configured in your filesystem config
+                                            ->directory('order_images') // Specify the directory where files will be stored
+                                            ->label('Rasm')
+                                            ->image(), // This will restrict uploads to images and provide a preview
                                         TextInput::make('product_url')->label('Mahsulot linki'),
                                         TextInput::make('title')->label('Nomi'),
                                         TextInput::make('quantity')->label('Miqdori'),
