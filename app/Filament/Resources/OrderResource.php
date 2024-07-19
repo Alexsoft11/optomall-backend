@@ -8,6 +8,7 @@ use App\Models\OrderStatus;
 use Filament\Forms;
 use Filament\Forms\Components\Builder\Block;
 use Filament\Forms\Components\Card;
+use Filament\Forms\Components\ColorPicker;
 use Filament\Forms\Components\Fieldset;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Group;
@@ -15,6 +16,7 @@ use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\ToggleButtons;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -33,19 +35,28 @@ class OrderResource extends Resource
     {
         return $form
             ->schema([
+                ToggleButtons::make('country')
+                    ->options([
+                        'uzbekistan' => 'Uzbekistan',
+                        'china' => 'China'
+                    ])
+                    ->icons([
+                        'uzbekistan' => 'heroicon-o-flag',
+                        'china' => 'heroicon-o-flag'
+                    ]),
                 Fieldset::make('Foydalanuvchi')
                     ->schema([
                         TextInput::make('user_name')->label('Ism'),
                         TextInput::make('user_phone')->label('Telefon raqami'),
                         TextInput::make('location_url')->label('Manzil linki'),
                         TextInput::make('location_name')->label('Manzil nomi'),
-                    ]),
+                    ])->disabled(),
                 Fieldset::make('Buyurtma')->schema([
                     TextInput::make('id')->label('Buyurtma IDsi')->disabled(),
                     TextInput::make('total_price')->label('Jami narxi')->disabled(),
                     TextInput::make('created_at')->label('Created At')->disabled(),
                     TextInput::make('updated_at')->label('Updated At')->disabled(),
-                ]),
+                ])->disabled(),
                 Group::make()
                     ->schema([
                         Section::make('Buyurtma mahsulotlari')
@@ -55,6 +66,7 @@ class OrderResource extends Resource
                                     ->relationship('items')
                                     ->schema([
                                         TextInput::make('image_url')->label('Rasm'),
+                                        FileUpload::make('image_url')->disk('public')->label('Rasm'),
                                         TextInput::make('product_url')->label('Mahsulot linki'),
                                         TextInput::make('title')->label('Nomi'),
                                         TextInput::make('quantity')->label('Miqdori'),
@@ -64,6 +76,7 @@ class OrderResource extends Resource
                                     ]),
                             ]),
                     ])
+                    ->disabled()
                     ->columnSpan(['lg' => fn (?Order $record) => $record === null ? 3 : 2]),
                 Group::make()
                     ->schema([
@@ -72,6 +85,19 @@ class OrderResource extends Resource
                                 Repeater::make('checks')->label('Cheklar')->relationship('checks')->schema([
                                     FileUpload::make('image')->disk('public')->label('Chek'),
                                 ]),
+                            ]),
+                    ])
+                    ->disabled()
+                    ->columnSpan(['lg' => fn (?Order $record) => $record === null ? 3 : 2]),
+                Group::make()
+                    ->schema([
+                        Section::make("Qo'shimcha")
+                            ->schema([
+                                TextInput::make('substatus_uz')->label('Sub status uz'),
+                                TextInput::make('substatus_ru')->label('Sub status ru'),
+                                TextInput::make('substatus_en')->label('Sub status en'),
+                                ColorPicker::make('substatus_color')->label('Sub status rangi'),
+                                TextInput::make('kg')->label("Kargo og'irligi"),
                             ]),
                     ])
                     ->columnSpan(['lg' => fn (?Order $record) => $record === null ? 3 : 2]),
@@ -92,7 +118,7 @@ class OrderResource extends Resource
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
-                    ->options(OrderStatus::pluck('name', 'slug')->toArray()), // Fetch statuses from database
+                    ->options(OrderStatus::pluck('name_uz', 'slug')->toArray()), // Fetch statuses from database
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
@@ -101,7 +127,7 @@ class OrderResource extends Resource
                     ->label("Statusni o'zgartirish")
                     ->form([
                         Select::make('status')
-                            ->options(OrderStatus::pluck('name', 'slug')->toArray()) // Fetch statuses from database
+                            ->options(OrderStatus::pluck('name_uz', 'slug')->toArray()) // Fetch statuses from database
                             ->required(),
                     ])
                     ->action(function ($record, $data) {

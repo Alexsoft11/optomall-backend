@@ -11,6 +11,7 @@ use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Group;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -32,6 +33,10 @@ class CardNumberResource extends Resource
             ->schema([
                 TextInput::make('card_number')->label('Karta raqami'),
                 TextInput::make('money')->label('Pul'),
+                Select::make('type')->label('Turi')->options([
+                    'order' => 'Buyurtmalar uchun',
+                    'cargo' => 'Kargolar uchun',
+                ]),
                 Group::make()
                     ->schema([
                         Section::make('Buyurtma checklari')
@@ -52,6 +57,7 @@ class CardNumberResource extends Resource
             ->columns([
                 TextColumn::make('card_number')->label('Karta raqami'),
                 TextColumn::make('money')->label('pul'),
+                TextColumn::make('type')->label('Turi'),
             ])
             ->filters([
                 //
