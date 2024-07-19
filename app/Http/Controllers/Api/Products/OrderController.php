@@ -226,7 +226,7 @@ class OrderController extends Controller
     {
         $order = Order::where('id', $request->order_id)->where('user_id', auth()->user()->id)->first();
         $cardNumber = CardNumber::orderBy('money', 'desc')->where('type', 'order')->first() ?? 9860176612846848;
-        $kgPrice = Exchanges::where('currency', 'kg')->first();
+        $kgPrice = Exchanges::where('currency', 'kg')->first() ?? 10000;
 
         return response()->json(['message' => 'successfull', 'order' => ['id' => $order->id, 'total_price' => $order->total_price, 'kg_price' => $kgPrice->amount, 'card_number' => $cardNumber->card_number]], 201);
     }
