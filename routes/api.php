@@ -30,6 +30,7 @@ Route::get('/search-products-from-taobao', [ProductController::class, 'searchPro
 Route::post('/orders', [OrderController::class, 'create']);
 Route::get('questions', [ListController::class, 'questions']);
 Route::get('/product-detail-from-taobao', [ProductController::class, 'productDetailFromTaoBao']);
+Route::get('/get-comments', [ListController::class, 'getComments']);
 
 
 Route::get('/top-products', [ProductController::class, 'topProducts']);
@@ -51,6 +52,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/orders', [OrderController::class, 'getUserOrders']);
     Route::get('/get-orders', [OrderController::class, 'getOrders']);
     Route::get('/get-order', [OrderController::class, 'getOrder']);
+    Route::get('/get-cargo', [OrderController::class, 'getCargo']);
     Route::put('/add', [OrderController::class, 'updateBasketItemSizeQuantity']);
     Route::delete('/remove', [OrderController::class, 'removeBasketItem']);
     Route::post('/add-check', [OrderController::class, 'addCheck']);

@@ -28,8 +28,12 @@ class OrderStatusResource extends Resource
     {
         return $form
             ->schema([
-                TextInput::make('name')->label('Nomi'),
-                TextInput::make('message')->label('Xabar'),
+                TextInput::make('name_uz')->label('Nomi uz'),
+                TextInput::make('name_en')->label('Nomi en'),
+                TextInput::make('name_ru')->label('Nomi ru'),
+                TextInput::make('message_uz')->label('Xabar_uz'),
+                TextInput::make('message_en')->label('Xabar_en'),
+                TextInput::make('message_ru')->label('Xabar_ru'),
                 ColorPicker::make('color')->label('Rangi'),
                 Select::make('type')->label('Turi')->options([
                     'active' => 'Aktiv',
@@ -42,8 +46,8 @@ class OrderStatusResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('name')->label('Nomi'),
-                TextColumn::make('message')->label('Xabar'),
+                TextColumn::make('name_uz')->label('Nomi'),
+                TextColumn::make('message_uz')->label('Xabar'),
                 ColorColumn::make('color')->label('Rangi'),
                 TextColumn::make('type')->label('Turi'),
             ])
