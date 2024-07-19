@@ -3,16 +3,21 @@
 namespace App\Http\Controllers\Api\Products;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\OrderResource;
 use App\Models\Basket;
 use App\Models\BasketItemColor;
 use App\Models\BasketItemSize;
 use App\Models\CardNumber;
+use App\Models\Exchanges;
 use App\Models\Order;
 use App\Models\OrderCheck;
 use App\Models\OrderItem;
 use App\Models\OrderStatus;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Validator;
 
 class OrderController extends Controller
@@ -90,7 +95,7 @@ class OrderController extends Controller
             'location.url' => 'required|string',
             'items.*.product_id' => 'required|string',
             'items.*.title' => 'required|string',
-            'items.*.image_url' => 'required|string',
+            'items.*.image_url' => 'required|url',
             'items.*.quantity' => 'required|integer|min:1',
             'items.*.color' => 'required|string',
             'items.*.size' => 'required|string',
@@ -120,11 +125,17 @@ class OrderController extends Controller
                 $productDetailResponse = $this->productController->productDetailFromTaoBao(new Request(['productId' => $item['product_id']]));
                 $productDetail = json_decode($productDetailResponse->getContent(), true)['detail'];
 
+                // Download image and save to storage
+                $imageContent = Http::get($item['image_url'])->body();
+                $imagePath = 'order_images/' . Str::random(40) . '.jpg';
+                Storage::put($imagePath, $imageContent);
+                $storedImageUrl = Storage::url($imagePath);
+
                 OrderItem::create([
                     'order_id' => $order->id,
                     'product_id' => $item['product_id'],
                     'title' => $item['title'],
-                    'image_url' => $item['image_url'],
+                    'image_url' => $storedImageUrl,
                     'quantity' => $item['quantity'],
                     'price' => $item['price'],
                     'color' => $item['color'],
@@ -133,16 +144,14 @@ class OrderController extends Controller
                 ]);
 
                 // Remove basket items associated with the size_id and color_id
-                $basketItemSize = BasketItemSize::where('id', $item['size_id'])
-                    ->first();
+                $basketItemSize = BasketItemSize::where('id', $item['size_id'])->first();
 
                 if ($basketItemSize) {
                     $basketId = $basketItemSize->basket_id;
                     $basketItemSize->delete();
 
                     // Remove associated BasketItemColor
-                    $basketItemColor = BasketItemColor::where('id', $basketItemSize['color_id'])
-                        ->first();
+                    $basketItemColor = BasketItemColor::where('id', $basketItemSize['color_id'])->first();
 
                     if ($basketItemColor) {
                         $basketItemColor->delete();
@@ -206,9 +215,44 @@ class OrderController extends Controller
     public function getOrder(Request $request)
     {
         $order = Order::where('id', $request->order_id)->where('user_id', auth()->user()->id)->first();
-        $cardNumber = CardNumber::orderBy('money', 'desc')->first();
+        $cardNumber = CardNumber::orderBy('money', 'desc')->where('type', 'order')->first() ?? 9860176612846848;
+        $kgPrice = Exchanges::where('currency', 'kg')->first();
 
-        return response()->json(['message' => 'successfull', 'order' => ['id' => $order->id, 'total_price' => $order->total_price, 'card_number' => $cardNumber->card_number]], 201);
+        return response()->json(['message' => 'successfull', 'order' => ['id' => $order->id, 'total_price' => $order->total_price, 'kg_price' => $kgPrice->amount, 'card_number' => $cardNumber->card_number]], 201);
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/get-cargo",
+     *     summary="Get total cargo weight",
+     *     description="Get cargo",
+     *     tags={"Order"},
+     *     security={{ "bearerAuth":{} }},
+     *     @OA\Parameter(
+     *         name="order_id",
+     *         in="query",
+     *         required=true,
+     *         @OA\Schema(type="integer", example=1),
+     *         description="ID of the order"
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthorized",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Unauthenticated.")
+     *         )
+     *     ),
+     * )
+     */
+    public function getCargo(Request $request)
+    {
+        $user = $request->user();
+        $order = Order::where('user_id', $user->id)->where('id', $request->order_id)->first();
+        $cardNumber = CardNumber::orderBy('money', 'desc')->where('type', 'cargo')->first() ?? 9860176612846848;
+        $kgPrice = Exchanges::where('currency', 'kg')->first();
+
+        return response()->json(['message' => 'successfull', 'order' => ['id' => $order->id, 'total_price' => $order->kg * $kgPrice->amount, 'kg' => $order->kg, 'kg_price' => $kgPrice->amount, 'card_number' => $cardNumber->card_number]], 201);
     }
 
 
@@ -411,6 +455,7 @@ class OrderController extends Controller
      *     )
      * )
      */
+
     public function getOrders(Request $request)
     {
         $user = $request->user();
@@ -420,7 +465,7 @@ class OrderController extends Controller
         $verificationStatuses = OrderStatus::where('type', 'in_verification')->pluck('slug');
         $activeStatuses = OrderStatus::where('type', 'active')->pluck('slug');
 
-        $ordersQuery = Order::where('user_id', $user->id)->select('id', 'status', 'total_price', 'user_name', 'user_phone', 'location_url', 'location_name', 'created_at');
+        $ordersQuery = Order::where('user_id', $user->id);
 
         if ($filter === 'in_verification') {
             $ordersQuery->whereIn('status', $verificationStatuses);
@@ -428,24 +473,11 @@ class OrderController extends Controller
             $ordersQuery->whereIn('status', $activeStatuses);
         }
 
-        $orders = $ordersQuery->with(['items' => function ($query) {
-            $query->select('id', 'order_id', 'title', 'price', 'image_url');
-        }])->get();
+        $orders = $ordersQuery->with('items')->get();
 
-
-        $orders = $orders->map(function ($order) {
-            $order->items = $order->items->map(function ($item) {
-                return [
-                    'title' => $item->title,
-                    'price' => $item->price,
-                    'image_url' => $item->image_url,
-                ];
-            });
-            return $order;
-        });
-
-        return response()->json(['orders' => $orders], 200);
+        return response()->json(['orders' => OrderResource::collection($orders)], 200);
     }
+
 
     /**
      * @OA\Get(
