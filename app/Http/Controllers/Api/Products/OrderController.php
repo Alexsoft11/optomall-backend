@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Log;
 
 class OrderController extends Controller
 {
@@ -122,51 +123,57 @@ class OrderController extends Controller
             ]);
 
             foreach ($request->items as $item) {
+                // Fetch product details (adjust this part according to your logic)
                 $productDetailResponse = $this->productController->productDetailFromTaoBao(new Request(['productId' => $item['product_id']]));
                 $productDetail = json_decode($productDetailResponse->getContent(), true)['detail'];
 
                 // Download image and save to storage
-                $imageContent = Http::get($item['image_url'])->body();
-                $imagePath = 'order_images/' . Str::random(40) . '.jpg';
-                Storage::put($imagePath, $imageContent);
-                $storedImageUrl = Storage::url($imagePath);
+                $response = Http::get($item['image_url']);
+                if ($response->successful() && strlen($response->body()) > 0) {
+                    $imageContent = $response->body();
+                    $imagePath = 'order_images/' . Str::random(40) . '.jpg';
+                    Storage::put($imagePath, $imageContent);
+                    $storedImageUrl = Storage::url($imagePath);
+                    Log::info("Image downloaded and stored", ['url' => $item['image_url'], 'path' => $storedImageUrl]);
 
-                OrderItem::create([
-                    'order_id' => $order->id,
-                    'product_id' => $item['product_id'],
-                    'title' => $item['title'],
-                    'image_url' => $storedImageUrl,
-                    'quantity' => $item['quantity'],
-                    'price' => $item['price'],
-                    'color' => $item['color'],
-                    'size' => $item['size'],
-                    'product_url' => $productDetail['product_url'],
-                ]);
+                    OrderItem::create([
+                        'order_id' => $order->id,
+                        'product_id' => $item['product_id'],
+                        'title' => $item['title'],
+                        'image_url' => $storedImageUrl,
+                        'quantity' => $item['quantity'],
+                        'price' => $item['price'],
+                        'color' => $item['color'],
+                        'size' => $item['size'],
+                        'product_url' => $productDetail['product_url'],
+                    ]);
 
-                // Remove basket items associated with the size_id and color_id
-                $basketItemSize = BasketItemSize::where('id', $item['size_id'])->first();
+                    // Remove basket items associated with the size_id and color_id
+                    $basketItemSize = BasketItemSize::where('id', $item['size_id'])->first();
+                    if ($basketItemSize) {
+                        $basketId = $basketItemSize->basket_id;
+                        $basketItemSize->delete();
 
-                if ($basketItemSize) {
-                    $basketId = $basketItemSize->basket_id;
-                    $basketItemSize->delete();
+                        // Remove associated BasketItemColor
+                        $basketItemColor = BasketItemColor::where('id', $basketItemSize['color_id'])->first();
+                        if ($basketItemColor) {
+                            $basketItemColor->delete();
+                        }
 
-                    // Remove associated BasketItemColor
-                    $basketItemColor = BasketItemColor::where('id', $basketItemSize['color_id'])->first();
-
-                    if ($basketItemColor) {
-                        $basketItemColor->delete();
+                        // Check if the basket has no more sizes or colors, then delete the basket
+                        if (
+                            !BasketItemSize::where('basket_id', $basketId)->exists() &&
+                            !BasketItemColor::where('id', $basketItemSize['color_id'])->exists()
+                        ) {
+                            Basket::where('id', $basketId)->delete();
+                        }
                     }
-
-                    // Check if the basket has no more sizes or colors, then delete the basket
-                    if (
-                        !BasketItemSize::where('basket_id', $basketId)->exists() &&
-                        !BasketItemColor::where('id', $basketItemSize['color_id'])->exists()
-                    ) {
-                        Basket::where('id', $basketId)->delete();
-                    }
+                } else {
+                    Log::error("Failed to download image", ['url' => $item['image_url'], 'response' => $response->body()]);
                 }
             }
 
+            // Check if the order requires checking
             if (OrderCheck::where('order_id', $order->id)->exists()) {
                 $order->is_checking = true;
                 $order->save();
