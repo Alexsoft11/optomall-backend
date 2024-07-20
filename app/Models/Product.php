@@ -57,6 +57,7 @@ class Product extends Model
     {
         return $this->hasMany(ProductComposition::class, 'product_id');
     }
+
 }
 
 // ProductPicture Model

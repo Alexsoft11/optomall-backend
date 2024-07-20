@@ -758,13 +758,121 @@ class ProductController extends Controller
                         'price',
                         'rating',
                         'quantity',
+                    );
+            }])
+            ->get([
+                'id',
+                'name_uz',
+                'name_ru',
+                'name_en',
+                'slug',
+                'image',
+                'image_mobile',
+                'is_active'
+            ])
+            ->map(function ($category) {
+                return [
+                    'id' => $category->id,
+                    'name' => [
+                        'uz' => $category->name_uz,
+                        'ru' => $category->name_ru,
+                        'en' => $category->name_en,
+                    ],
+                    'slug' => $category->slug,
+                    'image' => $category->image,
+                    'image_mobile' => $category->image_mobile,
+                    'is_active' => $category->is_active,
+                    'products' => $category->products->map(function ($product) {
+                        return [
+                            'id' => $product->id,
+                            'title' => [
+                                'uz' => $product->title_uz,
+                                'ru' => $product->title_ru,
+                                'en' => $product->title_en,
+                            ],
+                            'price' => $product->price,
+                            'rating' => $product->rating,
+                            'quantity' => $product->quantity,
+                        ];
+                    })
+                ];
+            });
+
+        return response()->json(['categories' => $categories]);
+    }
+
+
+        /**
+     * @OA\Get(
+     *     path="/api/additional-categories-token",
+     *     summary="Get list of active categories with products",
+     *     tags={"Products"},
+     *     security={{ "bearerAuth":{} }},
+     *     @OA\Parameter(
+     *         name="limit",
+     *         in="query",
+     *         required=false,
+     *         @OA\Schema(type="integer", example=3)
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="List of active categories with products",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="categories", type="array",
+     *                 @OA\Items(type="object",
+     *                     @OA\Property(property="name", type="object",
+     *                         @OA\Property(property="uz", type="string"),
+     *                         @OA\Property(property="ru", type="string"),
+     *                         @OA\Property(property="en", type="string")
+     *                     ),
+     *                     @OA\Property(property="slug", type="string"),
+     *                     @OA\Property(property="image", type="string"),
+     *                     @OA\Property(property="image_mobile", type="string"),
+     *                     @OA\Property(property="is_active", type="boolean"),
+     *                     @OA\Property(property="products", type="array",
+     *                         @OA\Items(type="object",
+     *                             @OA\Property(property="title", type="object",
+     *                                 @OA\Property(property="uz", type="string"),
+     *                                 @OA\Property(property="ru", type="string"),
+     *                                 @OA\Property(property="en", type="string")
+     *                             ),
+     *                             @OA\Property(property="price", type="string"),
+     *                             @OA\Property(property="description", type="object",
+     *                                 @OA\Property(property="uz", type="string"),
+     *                                 @OA\Property(property="ru", type="string"),
+     *                                 @OA\Property(property="en", type="string")
+     *                             )
+     *                         )
+     *                     )
+     *                 )
+     *             )
+     *         )
+     *     )
+     * )
+     */
+    public function categoriesToken(Request $request)
+    {
+        $limit = $request->query('limit', 3);
+        $categories = Category::where('is_active', true)
+            ->with(['products' => function ($query) use ($limit) {
+                $query->limit($limit)
+                    ->select(
+                        'id',
+                        'category_id',
+                        'title_uz',
+                        'title_ru',
+                        'title_en',
+                        'price',
+                        'rating',
+                        'quantity',
                         'description_uz',
                         'description_ru',
                         'description_en'
                     );
             }])
             ->get([
-                'id', 
+                'id',
                 'name_uz',
                 'name_ru',
                 'name_en',
@@ -812,120 +920,108 @@ class ProductController extends Controller
 
     /**
      * @OA\Get(
-     *     path="/api/additional-products/{id}",
-     *     summary="Get product details by ID",
+     *     path="/api/additional-products",
+     *     summary="Get list of all products",
      *     tags={"Products"},
-     *     @OA\Parameter(
-     *         name="id",
-     *         in="path",
-     *         required=true,
-     *         @OA\Schema(type="integer")
-     *     ),
      *     @OA\Response(
      *         response=200,
-     *         description="Product details with additional information",
+     *         description="List of products",
      *         @OA\JsonContent(
-     *             type="object",
-     *             @OA\Property(property="id", type="integer"),
-     *             @OA\Property(property="category_id", type="integer"),
-     *             @OA\Property(property="title", type="object",
-     *                 @OA\Property(property="uz", type="string"),
-     *                 @OA\Property(property="ru", type="string"),
-     *                 @OA\Property(property="en", type="string")
-     *             ),
-     *             @OA\Property(property="price", type="string"),
-     *             @OA\Property(property="image", type="string"),
-     *             @OA\Property(property="description", type="object",
-     *                 @OA\Property(property="uz", type="string"),
-     *                 @OA\Property(property="ru", type="string"),
-     *                 @OA\Property(property="en", type="string")
-     *             ),
-     *             @OA\Property(property="colors", type="array",
-     *                 @OA\Items(type="object",
-     *                     @OA\Property(property="value", type="string"),
-     *                     @OA\Property(property="image_url", type="string"),
-     *                     @OA\Property(property="mini_image_url", type="string")
-     *                 )
-     *             ),
-     *             @OA\Property(property="sizes", type="array",
-     *                 @OA\Items(type="object",
-     *                     @OA\Property(property="value", type="string")
-     *                 )
-     *             ),
-     *             @OA\Property(property="compositions", type="array",
-     *                 @OA\Items(type="object",
-     *                     @OA\Property(property="value", type="string")
-     *                 )
-     *             ),
-     *             @OA\Property(property="pictures", type="array",
-     *                 @OA\Items(type="object",
-     *                     @OA\Property(property="image_url", type="string"),
-     *                     @OA\Property(property="is_main", type="boolean")
-     *                 )
+     *             type="array",
+     *             @OA\Items(type="object",
+     *                 @OA\Property(property="id", type="integer"),
+     *                 @OA\Property(property="title", type="object",
+     *                     @OA\Property(property="uz", type="string"),
+     *                     @OA\Property(property="ru", type="string"),
+     *                     @OA\Property(property="en", type="string")
+     *                 ),
+     *                 @OA\Property(property="image", type="string"),
+     *                 @OA\Property(property="price", type="string"),
+     *                 @OA\Property(property="rating", type="number", format="float")
      *             )
      *         )
-     *     ),
-     *     @OA\Response(
-     *         response=404,
-     *         description="Product not found"
      *     )
      * )
      */
-    public function show($id)
+    public function additionalProducts()
     {
-        $product = Product::with([
-            'colors',
-            'sizes',
-            'compositions',
-            'pictures'
-        ])->find($id);
+        $products = Product::select(
+            'id',
+            'title_uz',
+            'title_ru',
+            'title_en',
+            'image',
+            'price'
+        )
+            ->get()
+            ->map(function ($product) {
+                return [
+                    'id' => $product->id,
+                    'title' => [
+                        'uz' => $product->title_uz,
+                        'ru' => $product->title_ru,
+                        'en' => $product->title_en,
+                    ],
+                    'image' => url('storage/'.$product->image),
+                    'price' => $product->price
+                ];
+            });
 
-        if (!$product) {
-            return response()->json(['message' => 'Product not found'], 404);
-        }
+        return response()->json($products);
+    }
 
-        return response()->json([
-            'id' => $product->id,
-            'category_id' => $product->category_id,
-            'title' => [
-                'uz' => $product->title_uz,
-                'ru' => $product->title_ru,
-                'en' => $product->title_en,
-            ],
-            'price' => $product->price,
-            'image' => $product->image,
-            'description' => [
-                'uz' => $product->description_uz,
-                'ru' => $product->description_ru,
-                'en' => $product->description_en,
-            ],
-            'colors' => $product->colors->map(function ($color) {
+
+    
+    /**
+     * @OA\Get(
+     *     path="/api/additional-products-token",
+     *     summary="Get list of all products",
+     *     security={{ "bearerAuth":{} }},
+     *     tags={"Products"},
+     *     @OA\Response(
+     *         response=200,
+     *         description="List of products",
+     *         @OA\JsonContent(
+     *             type="array",
+     *             @OA\Items(type="object",
+     *                 @OA\Property(property="id", type="integer"),
+     *                 @OA\Property(property="title", type="object",
+     *                     @OA\Property(property="uz", type="string"),
+     *                     @OA\Property(property="ru", type="string"),
+     *                     @OA\Property(property="en", type="string")
+     *                 ),
+     *                 @OA\Property(property="image", type="string"),
+     *                 @OA\Property(property="price", type="string"),
+     *                 @OA\Property(property="rating", type="number", format="float")
+     *             )
+     *         )
+     *     )
+     * )
+     */
+    public function additionalProductsToken()
+    {
+        $products = Product::select(
+            'id',
+            'title_uz',
+            'title_ru',
+            'title_en',
+            'image',
+            'price'
+        )
+            ->get()
+            ->map(function ($product) {
                 return [
-                    'id' => $color->id,
-                    'value' => $color->value,
-                    'image_url' => $color->image_url,
-                    'mini_image_url' => $color->mini_image_url
+                    'id' => $product->id,
+                    'title' => [
+                        'uz' => $product->title_uz,
+                        'ru' => $product->title_ru,
+                        'en' => $product->title_en,
+                    ],
+                    'image' => url('storage/'.$product->image),
+                    'price' => $product->price
                 ];
-            }),
-            'sizes' => $product->sizes->map(function ($size) {
-                return [
-                    'id' => $size->id,
-                    'value' => $size->value
-                ];
-            }),
-            'compositions' => $product->compositions->map(function ($composition) {
-                return [
-                    'id' => $composition->id,
-                    'value' => $composition->value
-                ];
-            }),
-            'pictures' => $product->pictures->map(function ($picture) {
-                return [
-                    'id' => $picture->id,
-                    'image_url' => $picture->image_url,
-                    'is_main' => $picture->is_main
-                ];
-            })
-        ]);
+            });
+
+        return response()->json($products);
     }
 }
