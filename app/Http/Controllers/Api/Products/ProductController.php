@@ -789,6 +789,7 @@ class ProductController extends Controller
                                 'en' => $product->title_en,
                             ],
                             'price' => $product->price,
+                            'is_liked' => false,
                         ];
                     })
                 ];
