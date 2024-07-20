@@ -756,6 +756,7 @@ class ProductController extends Controller
                         'title_ru',
                         'title_en',
                         'price',
+                        'image'
                     );
             }])
             ->get([
@@ -862,6 +863,7 @@ class ProductController extends Controller
                         'title_ru',
                         'title_en',
                         'price',
+                        'image'
                     );
             }])
             ->get([
