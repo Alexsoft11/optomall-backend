@@ -777,8 +777,8 @@ class ProductController extends Controller
                         'en' => $category->name_en,
                     ],
                     'slug' => $category->slug,
-                    'image' => $category->image,
-                    'image_mobile' => $category->image_mobile,
+                    'image' => url('storage/' . $category->image),
+                    'image_mobile' =>  url('storage/' . $category->image_mobile),
                     'is_active' => $category->is_active,
                     'products' => $category->products->map(function ($product) {
                         return [
@@ -789,6 +789,7 @@ class ProductController extends Controller
                                 'en' => $product->title_en,
                             ],
                             'price' => $product->price,
+                            'image' => url('storage/' . $product->image),
                             'is_liked' => false,
                         ];
                     })
@@ -882,8 +883,8 @@ class ProductController extends Controller
                         'en' => $category->name_en,
                     ],
                     'slug' => $category->slug,
-                    'image' => $category->image,
-                    'image_mobile' => $category->image_mobile,
+                    'image' => url('storage/' . $category->image),
+                    'image_mobile' =>  url('storage/' . $category->image_mobile),
                     'is_active' => $category->is_active,
                     'products' => $category->products->map(function ($product) {
                         $isLiked = auth()->check() && auth()->user()->likedProducts()->where('product_id', $product->id)->exists();
@@ -895,6 +896,7 @@ class ProductController extends Controller
                                 'en' => $product->title_en,
                             ],
                             'price' => $product->price,
+                            'image' => url('storage/' . $product->image),
                             'is_liked' => $isLiked,
                         ];
                     })
