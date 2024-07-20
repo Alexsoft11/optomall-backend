@@ -55,14 +55,11 @@ class ProductResource extends Resource
                     ->label('Narx')
                     ->numeric()
                     ->required(),
-                TextArea::make('description_uz')
-                    ->rows(5)
+                TextInput::make('description_uz')
                     ->nullable(),
-                TextArea::make('description_ru')
-                    ->rows(5)
+                TextInput::make('description_ru')
                     ->nullable(),
-                TextArea::make('description_en')
-                    ->rows(5)
+                TextInput::make('description_en')
                     ->nullable(),
                     Forms\Components\TextInput::make('rating')
                     ->numeric()
