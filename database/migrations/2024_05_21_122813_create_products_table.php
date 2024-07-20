@@ -13,18 +13,17 @@ return new class extends Migration
     {
         Schema::create('products', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('product_category_id')->constrained()->onDelete('cascade');
-            $table->string('title');
+            $table->foreignId('category_id')->constrained()->onDelete('cascade');
+            $table->string('title_uz');
+            $table->string('title_ru');
+            $table->string('title_en');
             $table->string('price');
             $table->string('image');
-            $table->string('location');
-            $table->string('product_url');
-            $table->text('description')->nullable();
-            $table->integer('quantity')->default(0);
-            $table->decimal('discount_percent', 5, 2)->nullable();
-            $table->decimal('discounted_price', 8, 2)->nullable();
-            $table->decimal('rating', 3, 2)->nullable();
-            $table->integer('sold')->default(0);
+            $table->integer('quantity');
+            $table->integer('rating');
+            $table->text('description_uz')->nullable();
+            $table->text('description_ru')->nullable();
+            $table->text('description_en')->nullable();
             $table->timestamps();
         });
 
@@ -36,20 +35,10 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        Schema::create('product_videos', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('product_id')->constrained()->onDelete('cascade');
-            $table->string('preview_url')->nullable();
-            $table->string('url');
-            $table->timestamps();
-        });
-
         Schema::create('product_colors', function (Blueprint $table) {
             $table->id();
-            $table->integer('color_id');
             $table->foreignId('product_id')->constrained()->onDelete('cascade');
-            $table->string('property_name');
-            $table->string('value');
+            $table->string('value')->nullable();
             $table->string('image_url')->nullable();
             $table->string('mini_image_url')->nullable();
             $table->timestamps();
@@ -57,18 +46,15 @@ return new class extends Migration
 
         Schema::create('product_sizes', function (Blueprint $table) {
             $table->id();
-            $table->integer('size_id');
             $table->foreignId('product_id')->constrained()->onDelete('cascade');
-            $table->string('property_name');
-            $table->string('value');
+            $table->string('value')->nullable();
             $table->timestamps();
         });
 
         Schema::create('product_compositions', function (Blueprint $table) {
             $table->id();
             $table->foreignId('product_id')->constrained()->onDelete('cascade');
-            $table->string('property_name');
-            $table->string('value');
+            $table->string('value')->nullable();
             $table->timestamps();
         });
     }
@@ -78,7 +64,6 @@ return new class extends Migration
         Schema::dropIfExists('product_compositions');
         Schema::dropIfExists('product_sizes');
         Schema::dropIfExists('product_colors');
-        Schema::dropIfExists('product_videos');
         Schema::dropIfExists('product_pictures');
         Schema::dropIfExists('products');
     }

@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::table('categories', function (Blueprint $table) {
             $table->text('image')->nullable();
+            $table->text('image_mobile')->nullable();
             $table->boolean('is_active')->default(false);
         });
     }
@@ -24,6 +25,7 @@ return new class extends Migration
     {
         Schema::table('categories', function (Blueprint $table) {
             $table->dropColumn('image');
+            $table->dropColumn('image_mobile');
             $table->dropColumn('is_active');
         });
     }

@@ -12,12 +12,17 @@ class Category extends Model
     use HasFactory;
     use HasSlug;
 
-    protected $fillable = ['name', 'image', 'is_active', 'catalog_id'];
+    protected $fillable = ['name_uz', 'name_ru', 'name_en' , 'image_mobile' , 'image', 'is_active', 'catalog_id'];
+
+    public function products()
+    {
+        return $this->hasMany(Product::class);
+    }
 
     public function getSlugOptions(): SlugOptions
     {
         return SlugOptions::create()
-            ->generateSlugsFrom('name')
+            ->generateSlugsFrom('name_en')
             ->saveSlugsTo('slug');
     }
 }
