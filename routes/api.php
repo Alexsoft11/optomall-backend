@@ -31,6 +31,8 @@ Route::post('/orders', [OrderController::class, 'create']);
 Route::get('questions', [ListController::class, 'questions']);
 Route::get('/product-detail-from-taobao', [ProductController::class, 'productDetailFromTaoBao']);
 Route::get('/get-comments', [ListController::class, 'getComments']);
+Route::get('additional-categories', [ProductController::class, 'categories']);
+Route::get('additional-products/{id}', [ProductController::class, 'show']);
 
 
 Route::get('/top-products', [ProductController::class, 'topProducts']);
