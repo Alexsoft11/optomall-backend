@@ -756,8 +756,6 @@ class ProductController extends Controller
                         'title_ru',
                         'title_en',
                         'price',
-                        'rating',
-                        'quantity',
                     );
             }])
             ->get([
@@ -791,8 +789,6 @@ class ProductController extends Controller
                                 'en' => $product->title_en,
                             ],
                             'price' => $product->price,
-                            'rating' => $product->rating,
-                            'quantity' => $product->quantity,
                         ];
                     })
                 ];
@@ -802,7 +798,7 @@ class ProductController extends Controller
     }
 
 
-        /**
+    /**
      * @OA\Get(
      *     path="/api/additional-categories-token",
      *     summary="Get list of active categories with products",
@@ -864,11 +860,6 @@ class ProductController extends Controller
                         'title_ru',
                         'title_en',
                         'price',
-                        'rating',
-                        'quantity',
-                        'description_uz',
-                        'description_ru',
-                        'description_en'
                     );
             }])
             ->get([
@@ -894,6 +885,7 @@ class ProductController extends Controller
                     'image_mobile' => $category->image_mobile,
                     'is_active' => $category->is_active,
                     'products' => $category->products->map(function ($product) {
+                        $isLiked = auth()->check() && auth()->user()->likedProducts()->where('product_id', $product->id)->exists();
                         return [
                             'id' => $product->id,
                             'title' => [
@@ -902,13 +894,7 @@ class ProductController extends Controller
                                 'en' => $product->title_en,
                             ],
                             'price' => $product->price,
-                            'rating' => $product->rating,
-                            'quantity' => $product->quantity,
-                            'description' => [
-                                'uz' => $product->description_uz,
-                                'ru' => $product->description_ru,
-                                'en' => $product->description_en,
-                            ]
+                            'is_liked' => $isLiked,
                         ];
                     })
                 ];
@@ -962,7 +948,7 @@ class ProductController extends Controller
                         'ru' => $product->title_ru,
                         'en' => $product->title_en,
                     ],
-                    'image' => url('storage/'.$product->image),
+                    'image' => url('storage/' . $product->image),
                     'price' => $product->price
                 ];
             });
@@ -971,7 +957,7 @@ class ProductController extends Controller
     }
 
 
-    
+
     /**
      * @OA\Get(
      *     path="/api/additional-products-token",
@@ -1017,7 +1003,7 @@ class ProductController extends Controller
                         'ru' => $product->title_ru,
                         'en' => $product->title_en,
                     ],
-                    'image' => url('storage/'.$product->image),
+                    'image' => url('storage/' . $product->image),
                     'price' => $product->price
                 ];
             });
