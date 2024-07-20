@@ -12,6 +12,7 @@ use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\TextArea;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -54,13 +55,13 @@ class ProductResource extends Resource
                     ->label('Narx')
                     ->numeric()
                     ->required(),
-                Forms\Components\TextArea::make('description_uz')
+                TextArea::make('description_uz')
                     ->rows(5)
                     ->nullable(),
-                Forms\Components\TextArea::make('description_ru')
+                TextArea::make('description_ru')
                     ->rows(5)
                     ->nullable(),
-                Forms\Components\TextArea::make('description_en')
+                TextArea::make('description_en')
                     ->rows(5)
                     ->nullable(),
                     Forms\Components\TextInput::make('rating')
