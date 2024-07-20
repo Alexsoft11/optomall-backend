@@ -60,6 +60,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/liked-product', [ProductController::class, 'addLikedProduct']);
     Route::get('/liked-products', [ProductController::class, 'getLikedProducts']);
     Route::get('/product-detail-from-taobao-token', [ProductController::class, 'productDetailFromTaoBaoToken']);
+    Route::get('/products-token', [ProductController::class, 'productsToken']);
 });
 
 
