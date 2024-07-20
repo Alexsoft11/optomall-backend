@@ -65,7 +65,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/product-detail-from-taobao-token', [ProductController::class, 'productDetailFromTaoBaoToken']);
     Route::get('additional-products-token', [ProductController::class, 'additionalProductsToken']);
     Route::get('additional-categories-token', [ProductController::class, 'categoriesToken']);
-
+    Route::get('/products-token', [ProductController::class, 'productsToken']);
 });
 
 

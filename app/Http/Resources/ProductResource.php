@@ -28,6 +28,7 @@ class ProductResource extends JsonResource
             'image' => strpos($this->resource['image'], 'https') === 0 ? $this->resource['image'] : 'https://backend.cjsaam.site/storage/' . ($this->resource['image'] ?? $this['image']),
             'discounted_price' => $promotionPriceExists ? round($this->resource['PromotionPrice']['ConvertedPriceList']['Internal']['Price']) * $amount : null,
             'discount_percent' => $promotionPercentExists ? $this->resource['PromotionPricePercent'][0]['Percent'] : null,
+            'is_liked' => false,
         ];
     }
 }
