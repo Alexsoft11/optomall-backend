@@ -37,31 +37,42 @@ class ProductResource extends Resource
     {
         return $form
             ->schema([
-                Select::make('product_category_id')
+                Select::make('category_id')
                     ->label('Mahsulot kategoriyasi')
-                    ->relationship('category', 'name')
+                    ->relationship('category', 'name_uz')
                     ->required(),
-                Forms\Components\TextInput::make('title')
-                    ->label('Sarlavha')
+                Forms\Components\TextInput::make('title_uz')
+                ->required()
+                ->maxLength(255),
+                Forms\Components\TextInput::make('title_ru')
+                ->required()
+                ->maxLength(255),
+                Forms\Components\TextInput::make('title_en')
                     ->required()
                     ->maxLength(255),
                 Forms\Components\TextInput::make('price')
                     ->label('Narx')
                     ->numeric()
                     ->required(),
+                Forms\Components\TextArea::make('description_uz')
+                    ->rows(5)
+                    ->nullable(),
+                Forms\Components\TextArea::make('description_ru')
+                    ->rows(5)
+                    ->nullable(),
+                Forms\Components\TextArea::make('description_en')
+                    ->rows(5)
+                    ->nullable(),
+                    Forms\Components\TextInput::make('rating')
+                    ->numeric()
+                    ->nullable(),
+                    Forms\Components\TextInput::make('quantity')
+                    ->numeric()
+                    ->nullable(),
                 FileUpload::make('image')
                     ->label('Rasm')
                     ->directory('product-images')
                     ->image(),
-                Forms\Components\TextInput::make('location')
-                    ->label('Hudud')
-                    ->required()
-                    ->maxLength(255),
-                Forms\Components\TextInput::make('product_url')
-                    ->label('Mahsulot linki')
-                    ->required()
-                    ->url()
-                    ->maxLength(255),
                 Repeater::make('pictures')
                     ->label('Rasmlar')
                     ->relationship('pictures')
@@ -69,19 +80,11 @@ class ProductResource extends Resource
                         Forms\Components\FileUpload::make('image_url'),
                         Forms\Components\Toggle::make('is_main')->label('Main Picture'),
                     ]),
-                Repeater::make('videos')
-                    ->label('Videolar')
-                    ->relationship('videos')
-                    ->schema([
-                        Forms\Components\FileUpload::make('preview_url'),
-                        Forms\Components\TextInput::make('url'),
-                    ]),
                 Repeater::make('colors')
                     ->label('Ranglar')
                     ->relationship('colors')
                     ->schema([
-                        Hidden::make('property_name')->default('rang'),
-                        Forms\Components\TextInput::make('value')->required(),
+                        Forms\Components\TextInput::make('value')->nullable(),
                         Forms\Components\FileUpload::make('image_url'),
                         Forms\Components\FileUpload::make('mini_image_url'),
                     ]),
@@ -89,15 +92,13 @@ class ProductResource extends Resource
                     ->label("O'lchamlar")
                     ->relationship('sizes')
                     ->schema([
-                        Hidden::make('property_name')->default("o'lcham"),
-                        Forms\Components\TextInput::make('value')->required(),
+                        Forms\Components\TextInput::make('value')->nullable(),
                     ]),
                 Repeater::make('compositions')
                     ->label("Tarkibiy qismlar")
                     ->relationship('compositions')
                     ->schema([
-                        Hidden::make('property_name')->default('Moddiy tarkibiy qism'),
-                        Forms\Components\TextInput::make('value')->required(),
+                        Forms\Components\TextInput::make('value')->nullable(),
                     ]),
             ]);
     }
@@ -106,12 +107,10 @@ class ProductResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('category.name')->label('Category')->sortable()->searchable(),
+                TextColumn::make('category.name_uz')->label('Category')->sortable()->searchable(),
                 TextColumn::make('title')->sortable()->searchable(),
                 TextColumn::make('price')->sortable()->searchable(),
                 ImageColumn::make('image')->sortable()->label(trans('image')),
-                TextColumn::make('location')->sortable()->searchable(),
-                TextColumn::make('product_url')->sortable(),
             ])
             ->filters([
                 //
