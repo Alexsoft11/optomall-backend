@@ -38,11 +38,6 @@ class Product extends Model
         return $this->hasMany(ProductPicture::class, 'product_id');
     }
 
-    public function videos()
-    {
-        return $this->hasMany(ProductVideo::class, 'product_id');
-    }
-
     public function colors()
     {
         return $this->hasMany(ProductColor::class, 'product_id');
@@ -67,21 +62,6 @@ class ProductPicture extends Model
 
     protected $fillable = [
         'product_id', 'image_url', 'is_main',
-    ];
-
-    public function product()
-    {
-        return $this->belongsTo(Product::class, 'product_id');
-    }
-}
-
-// ProductVideo Model
-class ProductVideo extends Model
-{
-    use HasFactory;
-
-    protected $fillable = [
-        'product_id', 'preview_url', 'url',
     ];
 
     public function product()

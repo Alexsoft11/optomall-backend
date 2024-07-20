@@ -361,7 +361,7 @@ class ProductController extends Controller
         $productDetail = $response->json();
         $randomProducts = Product::inRandomOrder()->limit(5)->get();
         if ($productDetail['ErrorCode'] == 'AccessDenied') {
-            $productDetailFromDataBase = Product::where('id', '808807124248')->first();
+            $productDetailFromDataBase = Product::where('id', $productId)->first();
 
             return $this->respondWithSuccess([
                 'detail' => new ProductDetailResource($productDetailFromDataBase),
@@ -618,7 +618,7 @@ class ProductController extends Controller
         } else {
 
             // $url = "http://otapi.net/service-json/BatchSearchItemsFrame?instanceKey={$this->apiKey}&language=en&signature=85c20a117ee63be63b4690ce3784948afcda244cb4d6c61446424cfe7494ce73&timestamp=20240616064555&sessionId=&xmlParameters=%3CSearchItemsParameters%3E%0D%0A%3CItemTitle%3Eiphone%3C%2FItemTitle%3E%0D%0A%3CFeatures%3E%0D%0A+++++%3CFeature+Name%3D%22Discount%22%3Etrue%3C%2FFeature%3E%0D%0A%3C%2FFeatures%3E%0D%0A%3C%2FSearchItemsParameters%3E&framePosition=0&frameSize=$productCount&blockList=AvailableSearchMethods";
-            // $url1 = "http://otapi.net/service-json/BatchSearchItemsFrame?instanceKey={$this->apiKey}&language=en&signature=85c20a117ee63be63b4690ce3784948afcda244cb4d6c61446424cfe7494ce73&timestamp=20240616064555&sessionId=&xmlParameters=%3CSearchItemsParameters%3E%0D%0A%3CItemTitle%3EFutbolka%3C%2FItemTitle%3E%0D%0A%3CFeatures%3E%0D%0A+++++%3CFeature+Name%3D%22Discount%22%3Etrue%3C%2FFeature%3E%0D%0A%3C%2FFeatures%3E%0D%0A%3C%2FSearchItemsParameters%3E&framePosition=0&frameSize=$productCount&blockList=AvailableSearchMethods";
+            // $url1 = "http://otapi.net/service-json/BatchSea rchItemsFrame?instanceKey={$this->apiKey}&language=en&signature=85c20a117ee63be63b4690ce3784948afcda244cb4d6c61446424cfe7494ce73&timestamp=20240616064555&sessionId=&xmlParameters=%3CSearchItemsParameters%3E%0D%0A%3CItemTitle%3EFutbolka%3C%2FItemTitle%3E%0D%0A%3CFeatures%3E%0D%0A+++++%3CFeature+Name%3D%22Discount%22%3Etrue%3C%2FFeature%3E%0D%0A%3C%2FFeatures%3E%0D%0A%3C%2FSearchItemsParameters%3E&framePosition=0&frameSize=$productCount&blockList=AvailableSearchMethods";
             // $url2 = "http://otapi.net/service-json/BatchSearchItemsFrame?instanceKey={$this->apiKey}&language=en&signature=85c20a117ee63be63b4690ce3784948afcda244cb4d6c61446424cfe7494ce73&timestamp=20240616064555&sessionId=&xmlParameters=%3CSearchItemsParameters%3E%0D%0A%3CItemTitle%3Eoshxona%3C%2FItemTitle%3E%0D%0A%3CFeatures%3E%0D%0A+++++%3CFeature+Name%3D%22Discount%22%3Etrue%3C%2FFeature%3E%0D%0A%3C%2FFeatures%3E%0D%0A%3C%2FSearchItemsParameters%3E&framePosition=0&frameSize=$productCount&blockList=AvailableSearchMethods";
 
             // $response = Http::get($url);
