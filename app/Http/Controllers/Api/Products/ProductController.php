@@ -660,9 +660,6 @@ class ProductController extends Controller
                         'price',
                         'rating',
                         'quantity',
-                        'description_uz',
-                        'description_ru',
-                        'description_en'
                     );
             }])
             ->get([
@@ -698,11 +695,6 @@ class ProductController extends Controller
                             'price' => $product->price,
                             'rating' => $product->rating,
                             'quantity' => $product->quantity,
-                            'description' => [
-                                'uz' => $product->description_uz,
-                                'ru' => $product->description_ru,
-                                'en' => $product->description_en,
-                            ]
                         ];
                     })
                 ];
