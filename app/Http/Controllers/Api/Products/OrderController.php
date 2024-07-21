@@ -9,6 +9,7 @@ use App\Models\BasketItemColor;
 use App\Models\BasketItemSize;
 use App\Models\CardNumber;
 use App\Models\Exchanges;
+use App\Models\Income;
 use App\Models\Order;
 use App\Models\OrderCheck;
 use App\Models\OrderItem;
@@ -151,7 +152,7 @@ class OrderController extends Controller
                     'price' => $item['price'],
                     'color' => $item['color'],
                     'size' => $item['size'],
-                    'product_url' => $productDetail['product_url'],
+                    'product_url' => 'ok.com',
                 ]);
 
                 // Remove basket items associated with the size_id and color_id
@@ -280,9 +281,10 @@ class OrderController extends Controller
      *         @OA\MediaType(
      *             mediaType="multipart/form-data",
      *             @OA\Schema(
-     *                 required={"order_id", "image"},
+     *                 required={"order_id", "image", "type"},
      *                 @OA\Property(property="order_id", type="integer", example="1"),
-     *                 @OA\Property(property="image", type="string", format="binary")
+     *                 @OA\Property(property="image", type="string", format="binary"),
+     *                 @OA\Property(property="type", type="string", example="order"),
      *             )
      *         )
      *     ),
@@ -310,7 +312,17 @@ class OrderController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'order_id' => 'required|integer|exists:orders,id',
-            'image' => 'required|image'
+            'image' => 'required|image',
+            'type' => 'required|in:order,cargo',
+        ]);
+
+        $Order = Order::where('id', $request->order_id)->first();
+
+        Income::create([
+            'user_id' => auth()->user()->id,
+            'order_id' => $request->order_id,
+            'amount' => $Order->total_price,
+            'type' => $request->type,
         ]);
 
         if (OrderCheck::where('order_id', $request->order_id)->count() > 4) {
@@ -322,12 +334,14 @@ class OrderController extends Controller
         }
 
         $order = DB::transaction(function () use ($request) {
-            $cardNumber = CardNumber::orderBy('money', 'desc')->first();
+            $cardNumber = CardNumber::orderBy('money', 'desc')->where('type', $request->type)->first();
             $order = OrderCheck::create([
                 'order_id' => $request->order_id,
                 'image' => $request->image->store('order_checks', 'public'), // Store the image and save the path
                 'card_number_id' => $cardNumber->id
             ]);
+
+
 
             return $order;
         });
