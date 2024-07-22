@@ -165,13 +165,13 @@ public function login(Request $request)
         return response()->json(['message' => 'email_not_verified', 'error' => false], 403);
     }
 
-    // Create the token with an expiration date
     $token = $user->createToken('AuthToken')->plainTextToken;
     $createdAt = Carbon::now();
     $expiresAt = $createdAt->copy()->addDays(3);
 
     return response()->json([
         'token' => $token,
+        'info_filled' => $user->info_filled,
         'created_at' => $createdAt->toDateTimeString(),
         'expires_at' => $expiresAt->toDateTimeString()
     ], 200);
@@ -342,6 +342,7 @@ public function googleLoginViaAccessToken(Request $request)
         'user' => [
             'id' => $user->id,
         ],
+        'info_filled' => $user->info_filled,
         'unique_id' => $user->unique_id,
         'token' => $token->plainTextToken,
         "message" => "sent_your_info_to_your_email"
