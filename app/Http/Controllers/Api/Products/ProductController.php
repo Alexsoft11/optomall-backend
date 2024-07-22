@@ -207,7 +207,8 @@ class ProductController extends Controller
         $response = Http::get($url);
         $categories = $response->json();
         if ($categories['ErrorCode'] == 'AccessDenied') {
-            $subCategories = ProductCategory::where('category_id', $categoryId)->get();
+            // $subCategories = ProductCategory::where('category_id', $categoryId)->get();
+            $subCategories = [];
 
             return $this->respondWithSuccess([
                 'sub_categories' => SubCategoryResource::collection($subCategories)
