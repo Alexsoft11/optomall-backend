@@ -12,7 +12,9 @@ class LikedProduct extends Model
     protected $fillable = [
         'user_id',
         'product_id',
-        'title',
+        'title_uz',
+        'title_en',
+        'title_ru',
         'price',
         'image'
     ];

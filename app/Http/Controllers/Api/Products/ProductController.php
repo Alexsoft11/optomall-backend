@@ -83,6 +83,7 @@ class ProductController extends Controller
         $messages = [];
 
         foreach ($productIds as $productId) {
+            // return $productId;
             $likedProduct = LikedProduct::where('user_id', $userId)
                 ->where('product_id', $productId)
                 ->first();
@@ -93,11 +94,13 @@ class ProductController extends Controller
             } else {
                 $productDetailResponse = $this->productDetailFromTaoBao(new Request(['productId' => $productId]));
                 $productDetail = json_decode($productDetailResponse->getContent(), true)['detail'];
-
+                // return $productDetail;
                 LikedProduct::create([
                     'user_id' => $userId,
                     'product_id' => $productId,
-                    'title' => $productDetail['title'],
+                    'title_uz' => $productDetail['title']['uz'],
+                    'title_en' => $productDetail['title']['en'],
+                    'title_ru' => $productDetail['title']['ru'],
                     'image' => $productDetail['image'],
                     'price' => $productDetail['price'],
                 ]);
@@ -153,7 +156,7 @@ class ProductController extends Controller
             return [
                 'id' => $product->id,
                 'product_id' => $product->product_id,
-                'title' => $product->title,
+                'title' => ['uz' => $product->title_uz, 'en' => $product->title_en, 'ru' => $product->title_ru],
                 'price' => $product->price,
                 'image' => $product->image,
                 'is_liked' => true
@@ -291,7 +294,7 @@ class ProductController extends Controller
         $productDetail = $response->json();
         $randomProducts = Product::inRandomOrder()->limit(5)->get();
         if ($productDetail['ErrorCode'] == 'AccessDenied') {
-            $productDetailFromDataBase = Product::where('id', '808807124248')->first();
+            $productDetailFromDataBase = Product::where('id', $productId)->first();
 
             return $this->respondWithSuccess([
                 'detail' => new ProductDetailTokenResource($productDetailFromDataBase),

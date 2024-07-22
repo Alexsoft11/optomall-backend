@@ -21,7 +21,7 @@ class ProductDetailTokenResource extends JsonResource
      */
     public function toArray($request)
     {
-        $productId = 808807124248;
+        $productId = $this['id'];
 
         $isLiked = auth()->check() && auth()->user()->likedProducts()->where('product_id', $this['Id'] ?? $productId)->exists();
 
