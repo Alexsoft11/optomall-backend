@@ -193,6 +193,7 @@ class ProfileController extends Controller
  *             @OA\Property(property="street", type="string", example="Toshbuloq street"),
  *             @OA\Property(property="house", type="string", example="46-uy"),
  *             @OA\Property(property="post_index", type="string", example="10000"),
+ *             @OA\Property(property="location", type="string", example="location_path_url"),
  *         ),
  *     ),
  *     @OA\Response(response="200", description="Location added or updated successfully"),
@@ -208,6 +209,7 @@ public function locationForm(Request $request)
         'street' => 'required|string|max:255',
         'house' => 'required|string|max:255',
         'post_index' => 'required|string|max:255',
+        'location' => 'required|url',
     ]);
 
     if ($validator->fails()) {
@@ -226,6 +228,7 @@ public function locationForm(Request $request)
         'street' => $request->street,
         'house' => $request->house,
         'post_index' => $request->post_index,
+        'location' => $request->location,
     ]);
 
     return response()->json(['message' => 'location_added_successfully'], 200);
