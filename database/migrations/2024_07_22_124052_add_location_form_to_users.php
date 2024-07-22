@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('street')->nullable();
             $table->string('house')->nullable();
             $table->string('post_index')->nullable();
+            $table->string('location')->nullable();
 
         });
     }

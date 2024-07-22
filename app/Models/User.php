@@ -42,7 +42,8 @@ class User extends Authenticatable implements FilamentUser
         'district',
         'street',
         'house',
-        'post_index'
+        'post_index',
+        'location'
     ];
 
     /**
