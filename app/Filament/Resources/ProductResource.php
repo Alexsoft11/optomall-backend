@@ -13,6 +13,7 @@ use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\TextArea;
+use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -98,6 +99,7 @@ class ProductResource extends Resource
                     ->schema([
                         Forms\Components\TextInput::make('value')->nullable(),
                     ]),
+                    Toggle::make('is_active'),
             ]);
     }
 

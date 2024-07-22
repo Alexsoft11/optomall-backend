@@ -16,6 +16,8 @@ class Product extends Model
         'title_uz',
         'title_ru',
         'title_en',
+        'is_active',
+        'is_locale',
         'price',
         'image',
         'location',
