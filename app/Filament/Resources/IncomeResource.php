@@ -89,12 +89,12 @@ class IncomeResource extends Resource
                 ])
 
             ])->footerActions([
-                // Here you can add a footer action to show the total amount
-                Tables\Columns\TextColumn::make('total_amount')
-                    ->label('Total Amount')
-                    ->footer(function (Builder $query) {
-                        return number_format($query->sum('amount'), 2);
-                    }),
+                // // Here you can add a footer action to show the total amount
+                // Tables\Columns\TextColumn::make('total_amount')
+                //     ->label('Total Amount')
+                //     ->footer(function (Builder $query) {
+                //         return number_format($query->sum('amount'), 2);
+                //     }),
             ]);
     }
 
