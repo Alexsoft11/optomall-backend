@@ -23,7 +23,7 @@ class ProductTokenResource extends JsonResource
         // $this['Price']['ConvertedPriceList']['Internal']['Price'] * $amount ??
         return [
             'id' => $this->resource['Id'] ?? $this['id'],
-            'title' => $this->resource['Title'] ?? $this['title'],
+            'title' => $this->resource['Title'] ?? ['uz' => $this->title_uz, 'ru' => $this->title_ru, 'en' => $this->title_en],
             'price' =>  $this->price,
             'image' => strpos($this->resource['image'], 'https') === 0 ? $this->resource['image'] : 'https://backend.cjsaam.site/storage/' . ($this->resource['image'] ?? $this['image']),
             'discounted_price' => $promotionPriceExists ? round($this->resource['PromotionPrice']['ConvertedPriceList']['Internal']['Price']) * $amount : null,
