@@ -4,11 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Spatie\Sluggable\HasSlug;
+use Spatie\Sluggable\SlugOptions;
 
 class Order extends Model
 {
     use HasFactory;
-
+    use HasSlug;
 
     protected $fillable = [
         'user_id',
@@ -24,8 +26,17 @@ class Order extends Model
         'substatus_ru',
         'substatus_en',
         'substatus_color',
+        'substatus_slug',
         'kg'
     ];
+
+
+    public function getSlugOptions(): SlugOptions
+    {
+        return SlugOptions::create()
+            ->generateSlugsFrom('substatus_uz')
+            ->saveSlugsTo('substatus_slug');
+    }
 
 
     public function user()
