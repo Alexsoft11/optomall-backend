@@ -8,6 +8,7 @@ use App\Models\Basket;
 use App\Models\BasketItemColor;
 use App\Models\BasketItemSize;
 use App\Models\CardNumber;
+use App\Models\Comment;
 use App\Models\Exchanges;
 use App\Models\Income;
 use App\Models\Order;
@@ -564,60 +565,83 @@ class OrderController extends Controller
         return response()->json($result);
     }
 
+/**
+ * @OA\Get(
+ *     path="/api/user-products",
+ *     summary="Get products based on comment status",
+ *     tags={"Comments"},
+ *     security={{"bearerAuth":{}}},
+ *     @OA\Parameter(
+ *         name="filter",
+ *         in="query",
+ *         required=true,
+ *         description="Filter for commented or non_commented products",
+ *         @OA\Schema(
+ *             type="string",
+ *             enum={"commented", "non_commented"}
+ *         )
+ *     ),
+ *     @OA\Response(response="200", description="List of products based on filter"),
+ *     @OA\Response(response="401", description="Unauthorized"),
+ *     @OA\Response(response="400", description="Invalid filter value")
+ * )
+ */
+public function getUserProducts(Request $request)
+{
+    $user = $request->user();
 
-    /**
-     * @OA\Get(
-     *     path="/api/user-products",
-     *     summary="Get products based on comment status",
-     *     tags={"Comments"},
-     *     security={{"bearerAuth":{}}},
-     *     @OA\Parameter(
-     *         name="filter",
-     *         in="query",
-     *         required=true,
-     *         description="Filter for commented or non-commented products",
-     *         @OA\Schema(
-     *             type="string",
-     *             enum={"commented", "non_commented"}
-     *         )
-     *     ),
-     *     @OA\Response(response="200", description="List of products based on filter"),
-     *     @OA\Response(response="401", description="Unauthorized"),
-     *     @OA\Response(response="400", description="Invalid filter value")
-     * )
-     */
-    public function getUserProducts(Request $request)
-    {
-        $user = $request->user();
-
-        if (!$user) {
-            return response()->json(['message' => 'Unauthorized'], 401);
-        }
-
-        $filter = $request->query('filter');
-
-        if (!in_array($filter, ['commented', 'non-commented'])) {
-            return response()->json(['message' => 'Invalid filter value'], 400);
-        }
-
-        if ($filter === 'commented') {
-            $products = Product::whereIn('id', function ($query) use ($user) {
-                $query->select('product_id')
-                    ->from('comments')
-                    ->where('user_id', $user->id);
-            })->get();
-        } else {
-            $products = Product::whereNotIn('id', function ($query) use ($user) {
-                $query->select('product_id')
-                    ->from('comments')
-                    ->where('user_id', $user->id);
-            })->get();
-        }
-
-        return response()->json($products);
+    if (!$user) {
+        return response()->json(['message' => 'Unauthorized'], 401);
     }
 
+    $filter = $request->query('filter');
 
+    if (!in_array($filter, ['commented', 'non_commented'])) {
+        return response()->json(['message' => 'Invalid filter value'], 400);
+    }
+
+    if ($filter === 'commented') {
+        $products = Product::whereIn('id', function ($query) use ($user) {
+            $query->select('product_id')
+                  ->from('comments')
+                  ->where('user_id', $user->id);
+        })->with(['comments' => function ($query) use ($user) {
+            $query->where('user_id', $user->id);
+        }])->get()->map(function ($product) {
+            $comment = $product->comments->first();
+            return [
+                'id' => $product->id,
+                'image_url' => $product->image,
+                'name' => $product->title_uz,
+                'date' => $comment->created_at->format('Y-m-d'),
+                'stars' => $comment->rating,
+                'comment' => $comment->name,
+                'photos' => $comment->images ?? [],
+            ];
+        });
+
+        return response()->json(['reviewed' => $products]);
+    } else { 
+        $products = Order::whereNotIn('id', function ($query) use ($user) {
+            $query->select('product_id')
+                  ->from('comments')
+                  ->where('user_id', $user->id);
+        })->get()->map(function ($product) {
+            return [
+                'id' => $product->id,
+                'image_url' => $product->image,
+                'name' => $product->title_uz,
+                'date' => $product->created_at->format('Y-m-d'),
+            ];
+        });
+
+        return response()->json(['waitForReview' => $products]);
+    }
+}
+
+
+ 
+ 
 
 
     /**
