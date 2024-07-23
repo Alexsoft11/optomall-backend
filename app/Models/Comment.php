@@ -23,4 +23,9 @@ class Comment extends Model
     {
         return $this->belongsTo(Product::class, 'product_id');
     }
+
+    public function comments()
+    {
+        return $this->belongsTo(Product::class, 'product_id');
+    }
 }
