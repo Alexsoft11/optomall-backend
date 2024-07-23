@@ -629,8 +629,8 @@ public function getUserProducts(Request $request)
         })->get()->map(function ($product) {
             return [
                 'id' => $product->id,
-                'image_url' => $product->image,
-                'name' => $product->title_uz,
+                'image_url' => url('storage/' . $product['image']),
+                'name' => $product['title_uz'],
                 'date' => $product->created_at->format('Y-m-d'),
             ];
         });
