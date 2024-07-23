@@ -14,6 +14,17 @@ class User extends Authenticatable implements FilamentUser
 {
     use HasFactory, HasApiTokens, Notifiable;
 
+
+     /**
+     * The attributes that should be cast to native types.
+     *
+     * @var array
+     */
+    protected $casts = [
+        'info_filled' => 'boolean',
+        'email_verified' => 'boolean',
+    ];
+
     /**
      * The attributes that are mass assignable.
      *
@@ -27,6 +38,12 @@ class User extends Authenticatable implements FilamentUser
         'email',
         'password',
         'confirm_password',
+        'region',
+        'district',
+        'street',
+        'house',
+        'post_index',
+        'location'
     ];
 
     /**

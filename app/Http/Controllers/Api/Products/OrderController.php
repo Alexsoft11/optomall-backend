@@ -14,6 +14,7 @@ use App\Models\Order;
 use App\Models\OrderCheck;
 use App\Models\OrderItem;
 use App\Models\OrderStatus;
+use App\Models\Product;
 use GuzzleHttp\Client;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -566,27 +567,58 @@ class OrderController extends Controller
 
     /**
      * @OA\Get(
-     *     path="/api/success-orders",
-     *     tags={"Order"},
-     *     summary="Get orders for authenticated user",
-     *     description="Retrieve orders created by the authenticated user",
-     *     security={{ "bearerAuth":{} }},
-     *     @OA\Response(
-     *         response=401,
-     *         description="Unauthorized",
-     *         @OA\JsonContent(
-     *             type="object",
-     *             @OA\Property(property="message", type="string", example="Unauthorized"),
-     *         ),
+     *     path="/api/user-products",
+     *     summary="Get products based on comment status",
+     *     tags={"Comments"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="filter",
+     *         in="query",
+     *         required=true,
+     *         description="Filter for commented or non-commented products",
+     *         @OA\Schema(
+     *             type="string",
+     *             enum={"commented", "non_commented"}
+     *         )
      *     ),
+     *     @OA\Response(response="200", description="List of products based on filter"),
+     *     @OA\Response(response="401", description="Unauthorized"),
+     *     @OA\Response(response="400", description="Invalid filter value")
      * )
      */
-    public function getSuccessOrders(Request $request)
+    public function getUserProducts(Request $request)
     {
         $user = $request->user();
-        $orders = Order::where('user_id', $user->id)->get();
-        return response()->json(['orders' => $orders], 200);
+
+        if (!$user) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+
+        $filter = $request->query('filter');
+
+        if (!in_array($filter, ['commented', 'non-commented'])) {
+            return response()->json(['message' => 'Invalid filter value'], 400);
+        }
+
+        if ($filter === 'commented') {
+            $products = Product::whereIn('id', function ($query) use ($user) {
+                $query->select('product_id')
+                    ->from('comments')
+                    ->where('user_id', $user->id);
+            })->get();
+        } else {
+            $products = Product::whereNotIn('id', function ($query) use ($user) {
+                $query->select('product_id')
+                    ->from('comments')
+                    ->where('user_id', $user->id);
+            })->get();
+        }
+
+        return response()->json($products);
     }
+
+
+
 
     /**
      * @OA\Put(
