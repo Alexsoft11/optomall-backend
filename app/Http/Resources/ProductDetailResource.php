@@ -11,6 +11,15 @@ use App\Models\ProductSize;
 
 class ProductDetailResource extends JsonResource
 {
+    protected $lang;
+
+    public function __construct($resource, $lang = null)
+    {
+        parent::__construct($resource);
+        $this->resource = $resource;
+        $this->lang = $lang;
+    }
+
     /**
      * Transform the resource into an array.
      *
@@ -41,13 +50,13 @@ class ProductDetailResource extends JsonResource
 
         return [
             'id' => $this['Id'] ?? $this['id'],
-            'title' => $this['Title'] ?? ['uz' => $this->title_uz, 'ru' => $this->title_ru, 'en' => $this->title_en],
+            'title' => $this['Title'] ??  $this['title_' . $this->lang],
             'price' => $originalPrice ?? $this->price,
             'discounted_price' => $discountedPrice,
             'discount_percentage' => $discountPercentage,
             'image' => $this['MainPictureUrl'] ?? url('storage/' . $this['image']),
             'quantity' => $this['MasterQuantity'] ?? $this->quantity,
-            'description' => $this['Description'] ?? ['uz' => $this->description_uz, 'ru' => $this->description_ru, 'en' => $this->description_en],
+            'description' => $this['Description'] ?? $this['description_' . $this->lang],
             'pictures' => isset($this['Pictures']) ? $this->transformPictures($this['Pictures']) : $this->transformPictures($pictures),
             'location' => $this['Location']['State'] ?? 'China',
             'product_url' => $this['ExternalItemUrl'] ?? $this->product_url,

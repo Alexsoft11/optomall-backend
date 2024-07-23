@@ -277,9 +277,20 @@ class ProductController extends Controller
      *         @OA\Schema(type="string"),
      *         description="The ID of the product to retrieve details for"
      *     ),
+     *     @OA\Parameter(
+     *         name="lang",
+     *         in="query",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *             enum={"uz", "ru", "en"}
+     *         ),
+     *         description="Language code for the product details. Available options: uz, ru, en"
+     *     ),
      *     @OA\Response(response="200", description="Product detail from taobao"),
      * )
      */
+
     public function productDetailFromTaoBaoToken(Request $request)
     {
         $productId = $request->productId;
@@ -298,7 +309,7 @@ class ProductController extends Controller
             $productDetailFromDataBase = Product::where('id', $productId)->first();
 
             return $this->respondWithSuccess([
-                'detail' => new ProductDetailTokenResource($productDetailFromDataBase),
+                'detail' => new ProductDetailTokenResource($productDetailFromDataBase, $request->lang),
                 'score' => [
                     'rating' => 4.4,
                     'sold' => 3123,
@@ -347,6 +358,16 @@ class ProductController extends Controller
      *         @OA\Schema(type="string"),
      *         description="The ID of the product to retrieve details for"
      *     ),
+     *    @OA\Parameter(
+     *         name="lang",
+     *         in="query",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *             enum={"uz", "ru", "en"}
+     *         ),
+     *         description="Language code for the product details. Available options: uz, ru, en"
+     *     ),
      *     @OA\Response(response="200", description="Product detail from taobao"),
      * )
      */
@@ -368,7 +389,7 @@ class ProductController extends Controller
             $productDetailFromDataBase = Product::where('id', $productId)->first();
 
             return $this->respondWithSuccess([
-                'detail' => new ProductDetailResource($productDetailFromDataBase),
+                'detail' => new ProductDetailResource($productDetailFromDataBase, $request->lang),
                 'score' => [
                     'rating' => 4.4,
                     'sold' => 3123,
