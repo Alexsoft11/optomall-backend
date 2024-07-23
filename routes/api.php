@@ -51,6 +51,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('auth:sanctum')->post('/user-basket', [OrderController::class, 'userBasket']);
     Route::middleware('auth:sanctum')->get('/get-user-basket', [OrderController::class, 'getUserBasket']);
     Route::get('/user-get-data', [UserController::class, 'user']);
+    Route::post('/location-form', [ProfileController::class, 'locationForm']);
     Route::post('/post-comment', [ListController::class, 'postComment']);
     Route::get('/orders', [OrderController::class, 'getUserOrders']);
     Route::get('/get-orders', [OrderController::class, 'getOrders']);
@@ -66,6 +67,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('additional-products-token', [ProductController::class, 'additionalProductsToken']);
     Route::get('additional-categories-token', [ProductController::class, 'categoriesToken']);
     Route::get('/products-token', [ProductController::class, 'productsToken']);
+    Route::get('/user-products', [OrderController::class, 'getUserProducts']);
 });
 
 

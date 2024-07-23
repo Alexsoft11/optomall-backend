@@ -50,6 +50,7 @@ class UserResource extends Resource
             ])
 
             ->actions([
+                ViewAction::make(),
                 Tables\Actions\DeleteAction::make(),
             ])
 
@@ -71,6 +72,7 @@ class UserResource extends Resource
     {
         return [
             'index' => Pages\ListUsers::route('/'),
+            'view' => Pages\ViewUsers::route('/{record}/view'),
         ];
     }
 

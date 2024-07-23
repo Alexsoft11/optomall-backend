@@ -969,6 +969,7 @@ class ProductController extends Controller
             'image',
             'price'
         )
+            ->where('is_active', true)
             ->get()
             ->map(function ($product) {
                 return [
@@ -1024,6 +1025,7 @@ class ProductController extends Controller
             'image',
             'price'
         )
+            ->where('is_active', true)
             ->get()
             ->map(function ($product) {
                 return [
