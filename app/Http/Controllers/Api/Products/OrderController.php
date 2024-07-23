@@ -620,7 +620,7 @@ public function getUserProducts(Request $request)
             ];
         });
 
-        return response()->json(['reviewed' => $products]);
+        return response()->json(['data' => $products]);
     } else { 
         $products = Order::whereNotIn('id', function ($query) use ($user) {
             $query->select('product_id')
@@ -635,7 +635,7 @@ public function getUserProducts(Request $request)
             ];
         });
 
-        return response()->json(['waitForReview' => $products]);
+        return response()->json(['data' => $products]);
     }
 }
 
