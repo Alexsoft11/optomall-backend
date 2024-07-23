@@ -30,6 +30,7 @@ class OrderResource extends JsonResource
                 'en' => $this->substatus_en,
             ],
             'substatus_color' => $this->substatus_color,
+            'substatus_slug' => $this->substatus_slug,
             'kg' => $this->kg,
             'created_at' => $this->created_at,
             'items' => OrderItemResource::collection($this->whenLoaded('items')),
