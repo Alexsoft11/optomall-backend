@@ -5,55 +5,92 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\UserResource\Pages;
 use App\Filament\Resources\UserResource\RelationManagers;
 use App\Models\User;
-use Filament\Actions\DeleteAction;
-use Filament\Actions\Modal\Actions\Action;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Filament\Tables\Actions\ViewAction;
-use Filament\Tables\Columns\TextColumn;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class UserResource extends Resource
 {
     protected static ?string $model = User::class;
 
-    protected static ?string $navigationLabel = "users";
-
-    protected static ?string $navigationIcon = 'heroicon-o-users';
+    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-            
+                Forms\Components\Select::make('roles')
+                    ->relationship('roles', 'name')
+                    ->multiple()
+                    ->preload()
+                    ->searchable(),
+                Forms\Components\TextInput::make('name')
+                    ->maxLength(100),
+                Forms\Components\TextInput::make('last_name')
+                    ->maxLength(100),
+                Forms\Components\TextInput::make('phone')
+                    ->tel()
+                    ->maxLength(255),
+                Forms\Components\TextInput::make('email')
+                    ->email()
+                    ->required()
+                    ->maxLength(255),
+                Forms\Components\TextInput::make('region')
+                    ->maxLength(255),
+                Forms\Components\TextInput::make('district')
+                    ->maxLength(255),
+                Forms\Components\TextInput::make('street')
+                    ->maxLength(255),
+                Forms\Components\TextInput::make('house')
+                    ->maxLength(255),
+                Forms\Components\TextInput::make('post_index')
+                    ->maxLength(255),
+                Forms\Components\TextInput::make('location')
+                    ->maxLength(255),
             ]);
     }
 
     public static function table(Table $table): Table
     {
         return $table
-
-        ->columns([
-            TextColumn::make('id')->label('ID'),
-            TextColumn::make('name')->label('Name'),
-            TextColumn::make('email')->label('Email'),
-            TextColumn::make('phone')->label('Phone'),
-            TextColumn::make('created_at')->label('Created At')->dateTime(),
+            ->columns([
+                Tables\Columns\TextColumn::make('id')
+                    ->numeric()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('unique_id')
+                    ->numeric()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('name')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('last_name')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('phone')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('email')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('region')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('district')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('street')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('house')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('post_index')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('location')
+                    ->searchable(),
             ])
-          
             ->filters([
-        
+                //
             ])
-
             ->actions([
-                ViewAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\EditAction::make(),
             ])
-
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
@@ -64,7 +101,7 @@ class UserResource extends Resource
     public static function getRelations(): array
     {
         return [
-            
+            //
         ];
     }
 
@@ -72,18 +109,8 @@ class UserResource extends Resource
     {
         return [
             'index' => Pages\ListUsers::route('/'),
-            'view' => Pages\ViewUsers::route('/{record}/view'),
+            'create' => Pages\CreateUser::route('/create'),
+            'edit' => Pages\EditUser::route('/{record}/edit'),
         ];
     }
-
-    public static function canCreate(): bool
-    {
-        return false;
-    }
-
-    public static function getNavigationLabel(): string
-    {
-        return trans('users');
-    }
-
 }

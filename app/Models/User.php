@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use BezhanSalleh\FilamentShield\Traits\HasPanelShield;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -9,13 +10,13 @@ use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Support\Str;
+use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable implements FilamentUser
 {
-    use HasFactory, HasApiTokens, Notifiable;
+    use HasFactory, HasApiTokens, Notifiable, HasRoles, HasPanelShield;
 
-
-     /**
+    /**
      * The attributes that should be cast to native types.
      *
      * @var array
@@ -74,10 +75,10 @@ class User extends Authenticatable implements FilamentUser
         return $this->hasMany(LikedProduct::class);
     }
 
-    public function canAccessPanel(Panel $panel): bool
-    {
-        return $this->email === 'admin@mail.ru';
-    }
+    // public function canAccessPanel(Panel $panel): bool
+    // {
+    //     return $this->email === 'admin@mail.ru';
+    // }
 
     /**
      * The "booting" method of the model.

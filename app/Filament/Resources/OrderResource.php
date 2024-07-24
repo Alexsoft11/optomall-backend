@@ -5,7 +5,10 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\OrderResource\Pages;
 use App\Models\Order;
 use App\Models\OrderStatus;
+use App\Models\Product;
+// use Filament\Actions\Action;
 use Filament\Forms;
+use Filament\Forms\Components\Actions\Action;
 use Filament\Forms\Components\Builder\Block;
 use Filament\Forms\Components\Card;
 use Filament\Forms\Components\ColorPicker;
@@ -35,79 +38,84 @@ class OrderResource extends Resource
     {
         return $form
             ->schema([
-                ToggleButtons::make('country')
-                    ->options([
-                        'uzbekistan' => 'Uzbekistan',
-                        'china' => 'China'
-                    ])
-                    ->icons([
-                        'uzbekistan' => 'heroicon-o-flag',
-                        'china' => 'heroicon-o-flag'
-                    ]),
-                Fieldset::make('Foydalanuvchi')
+                Forms\Components\Group::make()
                     ->schema([
-                        TextInput::make('user_name')->label('Ism'),
-                        TextInput::make('user_phone')->label('Telefon raqami'),
-                        TextInput::make('location_url')->label('Manzil linki'),
-                        TextInput::make('location_name')->label('Manzil nomi'),
-                        TextInput::make('region')->label('Viloyat'),
-                        TextInput::make('district')->label('Tuman'),
-                        TextInput::make('street')->label("Ko'cha"),
-                        TextInput::make('house')->label("Uy"),
-                        TextInput::make('post_index')->label("Zip kod"),
-                    ])->disabled(),
-                Fieldset::make('Buyurtma')->schema([
-                    TextInput::make('id')->label('Buyurtma IDsi')->disabled(),
-                    TextInput::make('total_price')->label('Jami narxi')->disabled(),
-                    TextInput::make('created_at')->label('Created At')->disabled(),
-                    TextInput::make('updated_at')->label('Updated At')->disabled(),
-                ])->disabled(),
-                Group::make()
-                    ->schema([
-                        Section::make('Buyurtma mahsulotlari')
+                        ToggleButtons::make('country')
+                            ->options([
+                                'uzbekistan' => 'Uzbekistan',
+                                'china' => 'China'
+                            ])
+                            ->icons([
+                                'uzbekistan' => 'heroicon-o-flag',
+                                'china' => 'heroicon-o-flag'
+                            ]),
+                        Fieldset::make('Foydalanuvchi')
                             ->schema([
-                                Repeater::make('items')
-                                    ->label('Mahsulot')
-                                    ->relationship('items')
+                                TextInput::make('user_name')->label('Ism'),
+                                TextInput::make('user_phone')->label('Telefon raqami'),
+                                TextInput::make('location_url')->label('Manzil linki'),
+                                TextInput::make('location_name')->label('Manzil nomi'),
+                                TextInput::make('region')->label('Viloyat'),
+                                TextInput::make('district')->label('Tuman'),
+                                TextInput::make('street')->label("Ko'cha"),
+                                TextInput::make('house')->label("Uy"),
+                                TextInput::make('post_index')->label("Zip kod"),
+                            ])->disabled(),
+                        Fieldset::make('Buyurtma')->schema([
+                            TextInput::make('id')->label('Buyurtma IDsi')->disabled(),
+                            TextInput::make('total_price')->label('Jami narxi')->disabled(),
+                            TextInput::make('created_at')->label('Created At')->disabled(),
+                            TextInput::make('updated_at')->label('Updated At')->disabled(),
+                        ])->disabled(),
+                        Forms\Components\Section::make('Order items')
+                            ->headerActions([
+                                Action::make('reset')
+                                    ->modalHeading('Are you sure?')
+                                    ->modalDescription('All existing items will be removed from the order.')
+                                    ->requiresConfirmation()
+                                    ->color('danger')
+                                    ->action(fn (Forms\Set $set) => $set('items', [])),
+                            ])
+                            ->schema([
+                                static::getItemsRepeater(),
+                            ]),
+                        Group::make()
+                            ->schema([
+                                Section::make('Buyurtma checklari')
                                     ->schema([
-                                        FileUpload::make('image_url')
-                                            ->disk('public')
-                                            ->label('Rasm'),
-                                        TextInput::make('product_url')->label('Mahsulot linki'),
-                                        TextInput::make('title')->label('Nomi'),
-                                        TextInput::make('quantity')->label('Miqdori'),
-                                        TextInput::make('price')->label('Narxi'),
-                                        TextInput::make('color')->label('Rang'),
-                                        TextInput::make('size')->label("O'lcham"),
+                                        Repeater::make('checks')->label('Cheklar')->relationship('checks')->schema([
+                                            FileUpload::make('image')->disk('public')->label('Chek'),
+                                        ]),
                                     ]),
-                            ]),
-                    ])
-                    ->disabled()
-                    ->columnSpan(['lg' => fn (?Order $record) => $record === null ? 3 : 2]),
-                Group::make()
-                    ->schema([
-                        Section::make('Buyurtma checklari')
+                            ])
+                            ->disabled()
+                            ->columnSpan(['lg' => fn (?Order $record) => $record === null ? 3 : 2]),
+                        Group::make()
                             ->schema([
-                                Repeater::make('checks')->label('Cheklar')->relationship('checks')->schema([
-                                    FileUpload::make('image')->disk('public')->label('Chek'),
-                                ]),
-                            ]),
+                                Section::make("Qo'shimcha")
+                                    ->schema([
+                                        TextInput::make('substatus_uz')->label('Sub status uz'),
+                                        TextInput::make('substatus_ru')->label('Sub status ru'),
+                                        TextInput::make('substatus_en')->label('Sub status en'),
+                                        ColorPicker::make('substatus_color')->label('Sub status rangi'),
+                                        TextInput::make('kg')->label("Kargo og'irligi"),
+                                    ]),
+                            ])
                     ])
-                    ->disabled()
                     ->columnSpan(['lg' => fn (?Order $record) => $record === null ? 3 : 2]),
-                Group::make()
+                Forms\Components\Section::make()
                     ->schema([
-                        Section::make("Qo'shimcha")
-                            ->schema([
-                                TextInput::make('substatus_uz')->label('Sub status uz'),
-                                TextInput::make('substatus_ru')->label('Sub status ru'),
-                                TextInput::make('substatus_en')->label('Sub status en'),
-                                ColorPicker::make('substatus_color')->label('Sub status rangi'),
-                                TextInput::make('kg')->label("Kargo og'irligi"),
-                            ]),
+                        Forms\Components\Placeholder::make('created_at')
+                            ->label('Created at')
+                            ->content(fn (Order $record): ?string => $record->created_at?->diffForHumans()),
+
+                        Forms\Components\Placeholder::make('updated_at')
+                            ->label('Last modified at')
+                            ->content(fn (Order $record): ?string => $record->updated_at?->diffForHumans()),
                     ])
-                    ->columnSpan(['lg' => fn (?Order $record) => $record === null ? 3 : 2]),
-            ]);
+                    ->columnSpan(['lg' => 1])
+                    ->hidden(fn (?Order $record) => $record === null),
+            ])->columns(3);
     }
 
     public static function table(Table $table): Table
@@ -158,6 +166,78 @@ class OrderResource extends Resource
         return [
             // Define any relationships here if needed
         ];
+    }
+
+    public static function getItemsRepeater(): Repeater
+    {
+        return Repeater::make('items')
+            ->relationship()
+            ->schema([
+                FileUpload::make('image_url')->disk('public')->columnSpan([
+                    'lg' => 10,
+                ]),
+                Forms\Components\Select::make('product_id')
+                    ->label('Product')
+                    ->options(Product::query()->pluck('title_uz', 'id'))
+                    ->reactive()
+                    ->afterStateUpdated(fn ($state, Forms\Set $set) => $set('unit_price', Product::find($state)?->price ?? 0))
+                    ->distinct()
+                    ->disableOptionsWhenSelectedInSiblingRepeaterItems()
+                    ->columnSpan([
+                        'md' => 5,
+                    ])
+                    ->searchable(),
+
+                Forms\Components\TextInput::make('quantity')
+                    ->label('Quantity')
+                    ->numeric()
+                    ->default(1)
+                    ->columnSpan([
+                        'md' => 2,
+                    ])
+                    ->required(),
+
+                Forms\Components\TextInput::make('price')
+                    ->label('Unit Price')
+                    ->disabled()
+                    ->dehydrated()
+                    ->numeric()
+                    ->required()
+                    ->columnSpan([
+                        'md' => 3,
+                    ]),
+
+                TextInput::make('color')->label('Rang')->columnSpan([
+                    'md' => 3,
+                ]),
+                TextInput::make('size')->label("O'lcham")->columnSpan([
+                    'md' => 3,
+                ]),
+            ])
+            ->extraItemActions([
+                Action::make('openProduct')
+                    ->tooltip('Open product')
+                    ->icon('heroicon-m-arrow-top-right-on-square')
+                    ->url(function (array $arguments, Repeater $component): ?string {
+                        $itemData = $component->getRawItemState($arguments['item']);
+
+                        $product = Product::find($itemData['id']);
+
+                        if (!$product) {
+                            return null;
+                        }
+
+                        return ProductResource::getUrl('edit', ['record' => $product]);
+                    }, shouldOpenInNewTab: true)
+                    ->hidden(fn (array $arguments, Repeater $component): bool => blank($component->getRawItemState($arguments['item'])['id'])),
+            ])
+            // ->orderColumn('sort')
+            ->defaultItems(1)
+            ->hiddenLabel()
+            ->columns([
+                'md' => 10,
+            ])
+            ->required();
     }
 
     public static function getPages(): array
