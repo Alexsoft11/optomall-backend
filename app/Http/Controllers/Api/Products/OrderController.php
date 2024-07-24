@@ -54,7 +54,12 @@ class OrderController extends Controller
      *             ),
      *             @OA\Property(property="location", type="object",
      *                 @OA\Property(property="name", type="string", example="Uzbekistan"),
-     *                 @OA\Property(property="url", type="string", example="https://google.com")
+     *                 @OA\Property(property="url", type="string", example="https://google.com"),
+     *                 @OA\Property(property="region", type="string"),
+     *                 @OA\Property(property="district", type="string"),
+     *                 @OA\Property(property="street", type="string"),
+     *                 @OA\Property(property="house", type="string"),
+     *                 @OA\Property(property="post_index", type="number"),
      *             ),
      *             @OA\Property(property="items", type="array", @OA\Items(
      *                 @OA\Property(property="product_id", type="string", example="1"),
@@ -88,7 +93,6 @@ class OrderController extends Controller
      *     )
      * )
      */
-
     public function create(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -99,6 +103,11 @@ class OrderController extends Controller
             'userData.phone' => 'required|string',
             'location.name' => 'required|string',
             'location.url' => 'required|string',
+            'location.region' => 'nullable|string',
+            'location.district' => 'nullable|string',
+            'location.street' => 'nullable|string',
+            'location.house' => 'nullable|string',
+            'location.post_index' => 'nullable|integer',
             'items.*.product_id' => 'required|string',
             'items.*.title' => 'required|string',
             'items.*.image_url' => 'required|url',
@@ -114,14 +123,30 @@ class OrderController extends Controller
             return response()->json(['message' => 'invalid_data', 'errors' => $validator->errors(), 'error' => true], 400);
         }
 
-        $order = DB::transaction(function () use ($request) {
+        $user = auth()->user();
+
+        // Update user location fields if they are empty
+        $user->region = $user->region ?: $request->location['region'] ?? 'default_region';
+        $user->district = $user->district ?: $request->location['district'] ?? 'default_district';
+        $user->street = $user->street ?: $request->location['street'] ?? 'default_street';
+        $user->house = $user->house ?: $request->location['house'] ?? 'default_house';
+        $user->post_index = $user->post_index ?: $request->location['post_index'] ?? 'default_post_index';
+        $user->location = $user->location ?: $request->location['url'] ?? 'default_post_index';
+        $user->save();
+
+        $order = DB::transaction(function () use ($request, $user) {
             $order = Order::create([
-                'user_id' => auth()->user()->id,
+                'user_id' => $user->id,
                 'total_price' => $request->total_price,
                 'user_name' => $request->userData['name'],
                 'user_phone' => $request->userData['phone'],
                 'location_url' => $request->location['url'],
                 'location_name' => $request->location['name'],
+                'region' => $user->region,
+                'district' => $user->district,
+                'street' => $user->street,
+                'house' => $user->house,
+                'post_index' => $user->post_index,
                 'status' => 'processing',
                 'status_color' => '#05ff00',
                 'is_checking' => false
@@ -191,6 +216,7 @@ class OrderController extends Controller
         return response()->json(['message' => 'order_created_successfully', 'order_id' => $order->id], 201);
     }
 
+
     /**
      * @OA\Get(
      *     path="/api/get-order",
@@ -228,7 +254,7 @@ class OrderController extends Controller
     public function getOrder(Request $request)
     {
         $order = Order::where('id', $request->order_id)->where('user_id', auth()->user()->id)->first();
-        $cardNumber = CardNumber::orderBy('money', 'desc')->where('type', 'order')->first() ?? 9860176612846848;
+        $cardNumber = CardNumber::orderBy('money', 'desc')->where('type', 'order')->where('is_active', 1)->first() ?? 9860176612846848;
         $kgPrice = Exchanges::where('currency', 'kg')->first() ?? 10000;
 
         return response()->json(['message' => 'successfull', 'order' => ['id' => $order->id, 'total_price' => $order->total_price, 'kg_price' => $kgPrice->amount, 'card_number' => $cardNumber->card_number]], 201);
@@ -262,7 +288,7 @@ class OrderController extends Controller
     {
         $user = $request->user();
         $order = Order::where('user_id', $user->id)->where('id', $request->order_id)->first();
-        $cardNumber = CardNumber::orderBy('money', 'desc')->where('type', 'cargo')->first() ?? 9860176612846848;
+        $cardNumber = CardNumber::orderBy('money', 'desc')->where('type', 'cargo')->where('is_active', 1)->first() ?? 9860176612846848;
         $kgPrice = Exchanges::where('currency', 'kg')->first();
 
         return response()->json(['message' => 'successfull', 'order' => ['id' => $order->id, 'total_price' => $order->kg * $kgPrice->amount, 'kg' => $order->kg, 'kg_price' => $kgPrice->amount, 'card_number' => $cardNumber->card_number]], 201);
@@ -336,7 +362,7 @@ class OrderController extends Controller
         }
 
         $order = DB::transaction(function () use ($request) {
-            $cardNumber = CardNumber::orderBy('money', 'desc')->where('type', $request->type)->first();
+            $cardNumber = CardNumber::orderBy('money', 'desc')->where('type', $request->type)->where('is_active', 1)->first();
             $order = OrderCheck::create([
                 'order_id' => $request->order_id,
                 'image' => $request->image->store('order_checks', 'public'), // Store the image and save the path
@@ -565,91 +591,91 @@ class OrderController extends Controller
         return response()->json($result);
     }
 
-/**
- * @OA\Get(
- *     path="/api/user-products",
- *     summary="Get products based on comment status",
- *     tags={"Comments"},
- *     security={{"bearerAuth":{}}},
- *     @OA\Parameter(
- *         name="filter",
- *         in="query",
- *         required=true,
- *         description="Filter for commented or non_commented products",
- *         @OA\Schema(
- *             type="string",
- *             enum={"commented", "non_commented"}
- *         )
- *     ),
- *     @OA\Response(response="200", description="List of products based on filter"),
- *     @OA\Response(response="401", description="Unauthorized"),
- *     @OA\Response(response="400", description="Invalid filter value")
- * )
- */
-public function getUserProducts(Request $request)
-{
-    $user = $request->user();
+    /**
+     * @OA\Get(
+     *     path="/api/user-products",
+     *     summary="Get products based on comment status",
+     *     tags={"Comments"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="filter",
+     *         in="query",
+     *         required=true,
+     *         description="Filter for commented or non_commented products",
+     *         @OA\Schema(
+     *             type="string",
+     *             enum={"commented", "non_commented"}
+     *         )
+     *     ),
+     *     @OA\Response(response="200", description="List of products based on filter"),
+     *     @OA\Response(response="401", description="Unauthorized"),
+     *     @OA\Response(response="400", description="Invalid filter value")
+     * )
+     */
+    public function getUserProducts(Request $request)
+    {
+        $user = $request->user();
 
-    if (!$user) {
-        return response()->json(['message' => 'Unauthorized'], 401);
+        if (!$user) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+
+        $filter = $request->query('filter');
+
+        if (!in_array($filter, ['commented', 'non_commented'])) {
+            return response()->json(['message' => 'Invalid filter value'], 400);
+        }
+
+        if ($filter === 'commented') {
+            $orders = Order::where('user_id', $user->id)
+                ->whereHas('comments', function ($query) use ($user) {
+                    $query->where('user_id', $user->id);
+                })
+                ->with(['comments' => function ($query) use ($user) {
+                    $query->where('user_id', $user->id);
+                }])
+                ->get();
+
+            $result = $orders->map(function ($order) {
+                $comment = $order->comments->first();
+                return [
+                    'id' => $order->id,
+                    'image_url' => url('storage/' . $order->items->first()->image_url),
+                    'name' => $order->items->first()->title,
+                    'date' => $comment->created_at->format('Y-m-d'),
+                    'stars' => $comment->rating,
+                    'comment' => $comment->name,
+                    'photos' => array_map(function ($image) {
+                        return url('storage/' . $image);
+                    }, $comment->images ?? []),
+                ];
+            });
+
+            return response()->json(['data' => $result]);
+        } else {
+            $orders = Order::where('user_id', $user->id)
+                ->whereDoesntHave('comments', function ($query) use ($user) {
+                    $query->where('user_id', $user->id);
+                })
+                ->get();
+
+            $result = $orders->map(function ($order) {
+                return [
+                    'id' => $order->id,
+                    'image_url' => url('storage/' . $order->items->first()->image_url),
+                    'name' => $order->items->first()->title,
+                    'date' => $order->created_at->format('Y-m-d'),
+                ];
+            });
+
+            return response()->json(['data' => $result]);
+        }
     }
 
-    $filter = $request->query('filter');
-
-    if (!in_array($filter, ['commented', 'non_commented'])) {
-        return response()->json(['message' => 'Invalid filter value'], 400);
-    }
-
-    if ($filter === 'commented') {
-        $orders = Order::where('user_id', $user->id)
-            ->whereHas('comments', function ($query) use ($user) {
-                $query->where('user_id', $user->id);
-            })
-            ->with(['comments' => function ($query) use ($user) {
-                $query->where('user_id', $user->id);
-            }])
-            ->get();
-        
-        $result = $orders->map(function ($order) {
-            $comment = $order->comments->first();
-            return [
-                'id' => $order->id,
-                'image_url' => url('storage/' . $order->items->first()->image_url),
-                'name' => $order->items->first()->title,
-                'date' => $comment->created_at->format('Y-m-d'),
-                'stars' => $comment->rating,
-                'comment' => $comment->name,
-                'photos' => array_map(function ($image) {
-                    return url('storage/' . $image); 
-                }, $comment->images ?? []),
-            ];
-        });
-
-        return response()->json(['data' => $result]);
-    } else {
-        $orders = Order::where('user_id', $user->id)
-            ->whereDoesntHave('comments', function ($query) use ($user) {
-                $query->where('user_id', $user->id);
-            })
-            ->get();
-        
-        $result = $orders->map(function ($order) {
-            return [
-                'id' => $order->id,
-                'image_url' => url('storage/' . $order->items->first()->image_url), 
-                'name' => $order->items->first()->title,
-                'date' => $order->created_at->format('Y-m-d'),
-            ];
-        });
-
-        return response()->json(['data' => $result]);
-    }
-}
 
 
 
- 
- 
+
 
 
     /**

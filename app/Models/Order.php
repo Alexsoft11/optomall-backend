@@ -21,6 +21,11 @@ class Order extends Model
         'user_phone',
         'location_url',
         'location_name',
+        'region',
+        'district',
+        'street',
+        'house',
+        'post_index',
         'country',
         'substatus_uz',
         'substatus_ru',
@@ -54,10 +59,10 @@ class Order extends Model
         return $this->hasMany(OrderCheck::class);
     }
 
-public function comments()
-{
-    return $this->hasMany(Comment::class, 'order_id');
-}
+    public function comments()
+    {
+        return $this->hasMany(Comment::class, 'order_id');
+    }
 
 
     protected $appends = ['substatus'];
