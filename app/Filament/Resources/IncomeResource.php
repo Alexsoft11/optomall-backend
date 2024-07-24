@@ -87,15 +87,16 @@ class IncomeResource extends Resource
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                 ])
-
-            ])->footerActions([
-                // // Here you can add a footer action to show the total amount
-                // Tables\Columns\TextColumn::make('total_amount')
-                //     ->label('Total Amount')
-                //     ->footer(function (Builder $query) {
-                //         return number_format($query->sum('amount'), 2);
-                //     }),
             ]);
+
+        // ])->footerActions([
+        // Here you can add a footer action to show the total amount
+        // Tables\Columns\TextColumn::make('total_amount')
+        //     ->label('Total Amount')
+        //     ->footer(function (Builder $query) {
+        //         return number_format($query->sum('amount'), 2);
+        //     }),
+        // ]);
     }
 
     public static function getRelations(): array
