@@ -12,7 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('orders', function (Blueprint $table) {
-            $table->string('substatus_slug')->unique();
+            if (!Schema::hasColumn('orders', 'substatus_slug')) {
+                $table->string('substatus_slug')->nullable();
+            }
         });
     }
 
