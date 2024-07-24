@@ -4,10 +4,12 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\IncomeResource\Pages;
 use App\Filament\Resources\IncomeResource\RelationManagers;
+use App\Filament\Resources\IncomeResource\Widgets\TotalAmount;
 use App\Models\Income;
 use Illuminate\Support\Carbon;
 use Filament\Forms;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -79,6 +81,16 @@ class IncomeResource extends Resource
 
                         return 'Created at ' . Carbon::parse($data['date'])->toFormattedDateString();
                     }),
+                Filter::make('type')
+                    ->form([
+                        Select::make('type')->options(['order' => 'Buyurtma', 'cargo' => 'Kargo'])->label('Tipi')
+                    ])
+                    ->query(function ($query, $data) {
+                        if (!empty($data['type'])) {
+                            return $query->where('type', $data['type']);
+                        }
+                        return $query;
+                    })
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
@@ -88,15 +100,6 @@ class IncomeResource extends Resource
                     Tables\Actions\DeleteBulkAction::make(),
                 ])
             ]);
-
-        // ])->footerActions([
-        // Here you can add a footer action to show the total amount
-        // Tables\Columns\TextColumn::make('total_amount')
-        //     ->label('Total Amount')
-        //     ->footer(function (Builder $query) {
-        //         return number_format($query->sum('amount'), 2);
-        //     }),
-        // ]);
     }
 
     public static function getRelations(): array
@@ -112,6 +115,13 @@ class IncomeResource extends Resource
             'index' => Pages\ListIncomes::route('/'),
             'create' => Pages\CreateIncome::route('/create'),
             'edit' => Pages\EditIncome::route('/{record}/edit'),
+        ];
+    }
+
+    public static function getWidgets(): array
+    {
+        return [
+            TotalAmount::class,
         ];
     }
 }
