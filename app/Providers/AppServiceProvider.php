@@ -24,7 +24,7 @@ class AppServiceProvider extends ServiceProvider
     {
         LanguageSwitch::configureUsing(function (LanguageSwitch $switch) {
             $switch
-                ->locales(['uz', 'ru' , 'zh_CN'])
+                ->locales(['uz', 'ru', 'zh_CN'])
                 ->visible(outsidePanels: true)
                 ->outsidePanelRoutes([
                     'profile',
@@ -39,7 +39,6 @@ class AppServiceProvider extends ServiceProvider
                 ])
                 ->flagsOnly()
                 ->circular();
-             
         });
     }
 }
