@@ -54,6 +54,12 @@ class Order extends Model
         return $this->hasMany(OrderCheck::class);
     }
 
+public function comments()
+{
+    return $this->hasMany(Comment::class, 'order_id');
+}
+
+
     protected $appends = ['substatus'];
 
     public function getSubstatusAttribute()

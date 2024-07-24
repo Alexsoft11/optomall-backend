@@ -92,8 +92,8 @@ class ListController extends Controller
  *         @OA\MediaType(
  *             mediaType="multipart/form-data",
  *             @OA\Schema(
- *                 required={"product_id", "name", "rating"},
- *                 @OA\Property(property="product_id", type="integer", example=1),
+ *                 required={"order_id", "name", "rating"},
+ *                 @OA\Property(property="order_id", type="integer", example=1),
  *                 @OA\Property(property="name", type="string", example="Great product!"),
  *                 @OA\Property(property="rating", type="integer", example=5),
  *                 @OA\Property(
@@ -112,7 +112,7 @@ class ListController extends Controller
 public function postComment(Request $request)
 {
     $validator = Validator::make($request->all(), [
-        'product_id' => 'required|integer|exists:products,id',
+        'order_id' => 'required|integer|exists:orders,id',
         'name' => 'required|string',
         'rating' => 'required|integer',
         'images.*' => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048'
@@ -128,6 +128,14 @@ public function postComment(Request $request)
         return response()->json(['message' => 'Unauthorized'], 401);
     }
 
+    $existingComment = Comment::where('user_id', $user->id)
+        ->where('order_id', $request->order_id)
+        ->first();
+
+    if ($existingComment) {
+        return response()->json(['message' => 'you_wrote_comment'], 400);
+    }
+
     $imagePaths = [];
     if ($request->hasFile('images')) {
         foreach ($request->file('images') as $image) {
@@ -135,17 +143,17 @@ public function postComment(Request $request)
             $imagePaths[] = $path;
         }
     }
-
     $comment = new Comment();
     $comment->name = $request->name;
     $comment->user_id = $user->id;
-    $comment->product_id = $request->product_id;
+    $comment->order_id = $request->order_id; 
     $comment->rating = $request->rating;
-    $comment->images = $imagePaths; // Store paths directly as an array
+    $comment->images = $imagePaths;
     $comment->save();
 
     return response()->json(['message' => 'Comment posted successfully'], 201);
 }
+
 
 /**
  * @OA\Get(

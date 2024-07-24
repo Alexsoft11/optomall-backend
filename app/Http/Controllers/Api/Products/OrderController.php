@@ -601,43 +601,51 @@ public function getUserProducts(Request $request)
     }
 
     if ($filter === 'commented') {
-        $products = Product::whereIn('id', function ($query) use ($user) {
-            $query->select('product_id')
-                  ->from('comments')
-                  ->where('user_id', $user->id);
-        })->with(['comments' => function ($query) use ($user) {
-            $query->where('user_id', $user->id);
-        }])->get()->map(function ($product) {
-            $comment = $product->comments->first();
+        $orders = Order::where('user_id', $user->id)
+            ->whereHas('comments', function ($query) use ($user) {
+                $query->where('user_id', $user->id);
+            })
+            ->with(['comments' => function ($query) use ($user) {
+                $query->where('user_id', $user->id);
+            }])
+            ->get();
+        
+        $result = $orders->map(function ($order) {
+            $comment = $order->comments->first();
             return [
-                'id' => $product->id,
-                'image_url' => $product->image,
-                'name' => $product->title_uz,
+                'id' => $order->id,
+                'image_url' => url('storage/' . $order->items->first()->image_url),
+                'name' => $order->items->first()->title,
                 'date' => $comment->created_at->format('Y-m-d'),
                 'stars' => $comment->rating,
                 'comment' => $comment->name,
-                'photos' => $comment->images ?? [],
+                'photos' => array_map(function ($image) {
+                    return url('storage/' . $image); 
+                }, $comment->images ?? []),
             ];
         });
 
-        return response()->json(['reviewed' => $products]);
-    } else { 
-        $products = Order::whereNotIn('id', function ($query) use ($user) {
-            $query->select('product_id')
-                  ->from('comments')
-                  ->where('user_id', $user->id);
-        })->get()->map(function ($product) {
+        return response()->json(['data' => $result]);
+    } else {
+        $orders = Order::where('user_id', $user->id)
+            ->whereDoesntHave('comments', function ($query) use ($user) {
+                $query->where('user_id', $user->id);
+            })
+            ->get();
+        
+        $result = $orders->map(function ($order) {
             return [
-                'id' => $product->id,
-                'image_url' => $product->image,
-                'name' => $product->title_uz,
-                'date' => $product->created_at->format('Y-m-d'),
+                'id' => $order->id,
+                'image_url' => url('storage/' . $order->items->first()->image_url), 
+                'name' => $order->items->first()->title,
+                'date' => $order->created_at->format('Y-m-d'),
             ];
         });
 
-        return response()->json(['waitForReview' => $products]);
+        return response()->json(['data' => $result]);
     }
 }
+
 
 
  
