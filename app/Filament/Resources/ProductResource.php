@@ -108,7 +108,7 @@ class ProductResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('category.name_uz')->label('Category')->sortable()->searchable(),
-                TextColumn::make('title')->sortable()->searchable(),
+                TextColumn::make('title_uz')->sortable()->searchable(),
                 TextColumn::make('price')->sortable()->searchable(),
                 ImageColumn::make('image')->sortable()->label(trans('image')),
             ])
