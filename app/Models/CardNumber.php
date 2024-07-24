@@ -9,7 +9,7 @@ class CardNumber extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['card_number', 'money', 'type'];
+    protected $fillable = ['card_number', 'money', 'type', 'is_active'];
 
     public function checks()
     {

@@ -13,10 +13,12 @@ use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\ToggleColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -31,6 +33,7 @@ class CardNumberResource extends Resource
     {
         return $form
             ->schema([
+                Toggle::make('is_active')->label('Aktiv'),
                 TextInput::make('card_number')->label('Karta raqami'),
                 TextInput::make('money')->label('Pul'),
                 Select::make('type')->label('Turi')->options([
@@ -57,6 +60,7 @@ class CardNumberResource extends Resource
             ->columns([
                 TextColumn::make('card_number')->label('Karta raqami'),
                 TextColumn::make('money')->label('pul'),
+                ToggleColumn::make('is_active')->label('Aktiv'),
                 TextColumn::make('type')->label('Turi'),
             ])
             ->filters([
