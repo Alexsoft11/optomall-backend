@@ -50,6 +50,11 @@ class OrderResource extends Resource
                         TextInput::make('user_phone')->label('Telefon raqami'),
                         TextInput::make('location_url')->label('Manzil linki'),
                         TextInput::make('location_name')->label('Manzil nomi'),
+                        TextInput::make('region')->label('Viloyat'),
+                        TextInput::make('district')->label('Tuman'),
+                        TextInput::make('street')->label("Ko'cha"),
+                        TextInput::make('house')->label("Uy"),
+                        TextInput::make('post_index')->label("Zip kod"),
                     ])->disabled(),
                 Fieldset::make('Buyurtma')->schema([
                     TextInput::make('id')->label('Buyurtma IDsi')->disabled(),
