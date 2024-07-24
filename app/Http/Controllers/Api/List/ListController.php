@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Models\Question;
 use App\Models\Comment;
+use App\Models\Order;
 use App\Models\Product;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
@@ -111,6 +112,7 @@ class ListController extends Controller
  */
 public function postComment(Request $request)
 {
+    // Validate the request data
     $validator = Validator::make($request->all(), [
         'order_id' => 'required|integer|exists:orders,id',
         'name' => 'required|string',
@@ -128,6 +130,7 @@ public function postComment(Request $request)
         return response()->json(['message' => 'Unauthorized'], 401);
     }
 
+    // Check if the user has already commented on this order
     $existingComment = Comment::where('user_id', $user->id)
         ->where('order_id', $request->order_id)
         ->first();
@@ -136,6 +139,7 @@ public function postComment(Request $request)
         return response()->json(['message' => 'you_wrote_comment'], 400);
     }
 
+    // Handle image uploads
     $imagePaths = [];
     if ($request->hasFile('images')) {
         foreach ($request->file('images') as $image) {
@@ -143,16 +147,36 @@ public function postComment(Request $request)
             $imagePaths[] = $path;
         }
     }
+
+    // Create and save the new comment
     $comment = new Comment();
     $comment->name = $request->name;
     $comment->user_id = $user->id;
-    $comment->order_id = $request->order_id; 
+    $comment->order_id = $request->order_id;
     $comment->rating = $request->rating;
     $comment->images = $imagePaths;
     $comment->save();
 
-    return response()->json(['message' => 'Comment posted successfully'], 201);
+    $uncommentedOrders = Order::where('user_id', $user->id)
+        ->whereDoesntHave('comments', function ($query) use ($user) {
+            $query->where('user_id', $user->id);
+        })
+        ->get()
+        ->map(function ($order) {
+            return [
+                'id' => $order->id,
+                'image_url' => url('storage/' . $order->items->first()->image_url), 
+                'name' => $order->items->first()->title,
+                'date' => $order->created_at->format('Y-m-d'),
+            ];
+        });
+
+    return response()->json([
+        'message' => 'Success',
+        'data' => $uncommentedOrders
+    ], 201);
 }
+
 
 
 /**
