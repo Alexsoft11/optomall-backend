@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\OrderResource\Pages;
 use App\Models\Order;
 use App\Models\OrderStatus;
+use App\Models\OrderSubStatus;
 use App\Models\Product;
 // use Filament\Actions\Action;
 use Filament\Forms;
@@ -51,12 +52,14 @@ class OrderResource extends Resource
                                 'uzbekistan' => 'heroicon-o-flag',
                                 'china' => 'heroicon-o-flag'
                             ]),
-                        Fieldset::make('Foydalanuvchi')
+                        Fieldset::make('Foydalanuvchi')->relationship('user')
                             ->schema([
-                                TextInput::make('user_name')->label('Ism'),
-                                TextInput::make('user_phone')->label('Telefon raqami'),
-                                TextInput::make('location_url')->label('Manzil linki'),
-                                TextInput::make('location_name')->label('Manzil nomi'),
+                                TextInput::make('unique_id')->label('Id'),
+                                TextInput::make('name')->label('Ism'),
+                                TextInput::make('last_name')->label('Familiyasi'),
+                                TextInput::make('phone')->label('Telefon raqami'),
+                                TextInput::make('location')->label('Manzil linki'),
+                                // TextInput::make('location_name')->label('Manzil nomi'),
                                 TextInput::make('region')->label('Viloyat'),
                                 TextInput::make('district')->label('Tuman'),
                                 TextInput::make('street')->label("Ko'cha"),
@@ -68,7 +71,15 @@ class OrderResource extends Resource
                             TextInput::make('total_price')->label('Jami narxi')->disabled(),
                             TextInput::make('created_at')->label('Created At')->disabled(),
                             TextInput::make('updated_at')->label('Updated At')->disabled(),
-                        ])->disabled(),
+                            Select::make('status')
+                                ->label('Status')
+                                ->options(OrderStatus::all()->pluck('name_uz', 'id'))
+                                ->reactive(),
+                            Select::make('substatus')
+                                ->label('Sub Status')
+                                ->options(OrderSubStatus::all()->pluck('name_uz', 'id'))
+                                ->reactive()
+                        ]),
                         Forms\Components\Section::make('Order items')
                             ->headerActions([
                                 Action::make('reset')
@@ -96,10 +107,17 @@ class OrderResource extends Resource
                             ->schema([
                                 Section::make("Qo'shimcha")
                                     ->schema([
-                                        TextInput::make('substatus_uz')->label('Sub status uz'),
-                                        TextInput::make('substatus_ru')->label('Sub status ru'),
-                                        TextInput::make('substatus_en')->label('Sub status en'),
-                                        ColorPicker::make('substatus_color')->label('Sub status rangi'),
+                                        // TextInput::make('substatus_uz')->label('Sub status uz'),
+                                        // TextInput::make('substatus_ru')->label('Sub status ru'),
+                                        // TextInput::make('substatus_en')->label('Sub status en'),
+                                        // ColorPicker::make('substatus_color')->label('Sub status rangi'),
+                                        Select::make('substatus_slug')
+                                            ->label('Substatus slug')
+                                            ->options([
+                                                'Chekni qayta yuboring' => 'send_check_again',
+                                                "Kargo uchun to'lov kutilmoqda" => 'wait_for_pay_cargo'
+                                            ]),
+                                        TextInput::make('delivery_time')->label("Yetkazib berish vaqti"),
                                         TextInput::make('kg')->label("Kargo og'irligi"),
                                     ]),
                             ])
@@ -127,7 +145,14 @@ class OrderResource extends Resource
                 TextColumn::make('id')->sortable(),
                 TextColumn::make('user_name')->label('Ismi')->sortable(),
                 TextColumn::make('total_price')->label('Jami narx')->sortable(),
-                TextColumn::make('status')->sortable(),
+                TextColumn::make('getStatus.name_uz')
+                    ->label('Status')
+                    ->sortable()
+                    ->searchable(),
+                // TextColumn::make('getSubStatus.name_uz')
+                //     ->label('Sub Status')
+                //     ->sortable()
+                //     ->searchable(),
                 TextColumn::make('created_at')->label('Created At')->sortable(),
                 TextColumn::make('updated_at')->label('Updated At')->sortable(),
                 TextColumn::make('status_color')->label('Status Rangi')->sortable(), // Add the status_color column
@@ -139,24 +164,24 @@ class OrderResource extends Resource
             ->actions([
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\ViewAction::make(),
-                Tables\Actions\Action::make('changeStatus')
-                    ->label("Statusni o'zgartirish")
-                    ->form([
-                        Select::make('status')
-                            ->options(OrderStatus::pluck('name_uz', 'slug')->toArray()) // Fetch statuses from database
-                            ->required(),
-                    ])
-                    ->action(function ($record, $data) {
-                        $status = OrderStatus::where('slug', $data['status'])->get()->first();
-                        if ($status) {
-                            $record->update([
-                                'status' => $status->slug,
-                                'status_color' => $status->color, // Update the status_color field
-                            ]);
-                        }
-                    })
-                    ->modalHeading('Change Status')
-                    ->button(),
+                // Tables\Actions\Action::make('changeStatus')
+                //     ->label("Statusni o'zgartirish")
+                //     ->form([
+                //         Select::make('status')
+                //             ->options(OrderStatus::pluck('name_uz', 'slug')->toArray()) // Fetch statuses from database
+                //             ->required(),
+                //     ])
+                //     ->action(function ($record, $data) {
+                //         $status = OrderStatus::where('slug', $data['status'])->get()->first();
+                //         if ($status) {
+                //             $record->update([
+                //                 'status' => $status->slug,
+                //                 'status_color' => $status->color, // Update the status_color field
+                //             ]);
+                //         }
+                //     })
+                //     ->modalHeading('Change Status')
+                //     ->button(),
             ])
             ->bulkActions([
                 Tables\Actions\DeleteBulkAction::make(),
