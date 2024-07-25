@@ -34,6 +34,8 @@ class OrderResource extends Resource
 
     protected static ?string $navigationLabel = "orders";
 
+    protected static ?string $label = "orders";
+
     public static function form(Form $form): Form
     {
         return $form
@@ -250,6 +252,11 @@ class OrderResource extends Resource
     }
 
     public static function getNavigationLabel(): string
+    {
+        return trans('orders');
+    }
+
+    public static function getLabel(): string
     {
         return trans('orders');
     }

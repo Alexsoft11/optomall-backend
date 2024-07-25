@@ -16,11 +16,14 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 class QuestionResource extends Resource
 {
 
-    protected static ?string $navigationGroup = "Savol-javoblar";
+    protected static ?string $navigationGroup = "quest_answers";
 
     protected static ?string $navigationLabel = "questions";
 
     protected static ?string $model = Question::class;
+
+    protected static ?string $label = "questions";
+
 
     protected static ?string $navigationIcon = 'heroicon-o-question-mark-circle';
 
@@ -81,5 +84,14 @@ class QuestionResource extends Resource
     public static function getNavigationLabel(): string
     {
         return trans('questions');
+    }
+    public static function getLabel(): string
+    {
+        return trans('questions');
+    }
+
+    public static function getNavigationGroup(): string
+    {
+        return trans('quest_answers');
     }
 }

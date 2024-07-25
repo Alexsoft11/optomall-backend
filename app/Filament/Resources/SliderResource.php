@@ -23,7 +23,10 @@ class SliderResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
-    protected static ?string $navigationLabel = 'sliders'; // Use a key from your JSON file
+    protected static ?string $navigationLabel = 'sliders';
+
+    protected static ?string $label = "sliders";
+
 
 
     public static function form(Form $form): Form
@@ -82,6 +85,10 @@ class SliderResource extends Resource
     }
 
     public static function getNavigationLabel(): string
+    {
+        return trans('sliders');
+    }
+    public static function getLabel(): string
     {
         return trans('sliders');
     }

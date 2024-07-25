@@ -26,9 +26,12 @@ class CommentResource extends Resource
 {
     protected static ?string $model = Comment::class;
 
-    protected static ?string $navigationGroup = "Mahsulotlar";
+    protected static ?string $navigationGroup = "products";
 
     protected static ?string $navigationLabel = "comments";
+
+    protected static ?string $label = "comments";
+
 
     protected static ?string $navigationIcon = 'heroicon-o-chat-bubble-bottom-center-text';
 
@@ -143,5 +146,14 @@ class CommentResource extends Resource
     public static function getNavigationLabel(): string
     {
         return trans('comments');
+    }
+    public static function getLabel(): string
+    {
+        return trans('comments');
+    }
+
+    public static function getNavigationGroup(): string
+    {
+        return trans('products');
     }
 }

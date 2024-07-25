@@ -18,9 +18,12 @@ use Filament\Tables\Table;
 class CategoryResource extends Resource
 {
 
-    protected static ?string $navigationGroup = "Mahsulotlar";
+    protected static ?string $navigationGroup = "products";
 
     protected static ?string $navigationLabel = "categories";
+
+    protected static ?string $label = "categories";
+
 
     protected static ?string $model = Category::class;
 
@@ -84,5 +87,14 @@ class CategoryResource extends Resource
     public static function getNavigationLabel(): string
     {
         return trans('categories');
+    }
+    public static function getLabel(): string
+    {
+        return trans('categories');
+    }
+
+    public static function getNavigationGroup(): string
+    {
+        return trans('products');
     }
 }
