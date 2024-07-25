@@ -126,12 +126,12 @@ class OrderController extends Controller
         $user = auth()->user();
 
         // Update user location fields if they are empty
-        $user->region = $user->region ?: $request->location['region'] ?? 'default_region';
-        $user->district = $user->district ?: $request->location['district'] ?? 'default_district';
-        $user->street = $user->street ?: $request->location['street'] ?? 'default_street';
-        $user->house = $user->house ?: $request->location['house'] ?? 'default_house';
-        $user->post_index = $user->post_index ?: $request->location['post_index'] ?? 'default_post_index';
-        $user->location = $user->location ?: $request->location['url'] ?? 'default_post_index';
+        $user->region = $user->region ?: $request->location['region'] ?? null;
+        $user->district = $user->district ?: $request->location['district'] ?? null;
+        $user->street = $user->street ?: $request->location['street'] ?? null;
+        $user->house = $user->house ?: $request->location['house'] ?? null;
+        $user->post_index = $user->post_index ?: $request->location['post_index'] ?? null;
+        $user->location = $user->location ?: $request->location['url'] ?? null;
         $user->save();
 
         $order = DB::transaction(function () use ($request, $user) {
