@@ -13,7 +13,12 @@ class ListUsers extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make(),
+            Actions\CreateAction::make()->label(trans('create')),
         ];
+    }
+
+    public function getTitle(): string
+    {
+        return trans('users');
     }
 }

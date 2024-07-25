@@ -25,6 +25,9 @@ class SocialsResource extends Resource
 
     protected static ?string $navigationLabel = "socials";
 
+    protected static ?string $label = "socials";
+
+
     protected static ?string $navigationIcon = 'heroicon-o-heart';
 
 
@@ -134,6 +137,10 @@ class SocialsResource extends Resource
     }
 
     public static function getNavigationLabel(): string
+    {
+        return trans('socials');
+    }
+    public static function getLabel(): string
     {
         return trans('socials');
     }

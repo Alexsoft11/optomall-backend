@@ -22,6 +22,9 @@ class OrderStatusResource extends Resource
 {
     protected static ?string $model = OrderStatus::class;
 
+    protected static ?string $label = "order_status";
+
+
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
     public static function form(Form $form): Form
@@ -78,5 +81,16 @@ class OrderStatusResource extends Resource
             'create' => Pages\CreateOrderStatus::route('/create'),
             'edit' => Pages\EditOrderStatus::route('/{record}/edit'),
         ];
+    }
+
+    
+    public static function getNavigationLabel(): string
+    {
+        return trans('order_status');
+    }
+    
+    public static function getLabel(): string
+    {
+        return trans('order_status');
     }
 }

@@ -27,9 +27,12 @@ use Illuminate\Database\Eloquent\Builder;
 class ProductResource extends Resource
 {
 
-    protected static ?string $navigationGroup = "Mahsulotlar";
+    protected static ?string $navigationGroup = "products";
 
     protected static ?string $navigationLabel = "products";
+
+    protected static ?string $label = "products";
+
 
     protected static ?string $model = Product::class;
 
@@ -40,66 +43,81 @@ class ProductResource extends Resource
         return $form
             ->schema([
                 Select::make('category_id')
-                    ->label('Mahsulot kategoriyasi')
+                    ->label(trans('categories'))
                     ->relationship('category', 'name_uz')
                     ->required(),
                 Forms\Components\TextInput::make('title_uz')
                 ->required()
-                ->maxLength(255),
+                ->maxLength(255)
+                ->label(trans('title_uz')),
                 Forms\Components\TextInput::make('title_ru')
                 ->required()
-                ->maxLength(255),
+                ->maxLength(255)
+                ->label(trans('title_ru')),
                 Forms\Components\TextInput::make('title_en')
                     ->required()
-                    ->maxLength(255),
+                    ->maxLength(255)
+                    ->label(trans('title_en')),
                 Forms\Components\TextInput::make('price')
                     ->label('Narx')
                     ->numeric()
-                    ->required(),
+                    ->required()
+                    ->label(trans('price')),
                 TextInput::make('description_uz')
-                    ->nullable(),
+                    ->nullable()
+                    ->label(trans('description_uz')),
                 TextInput::make('description_ru')
-                    ->nullable(),
+                    ->nullable()
+                    ->label(trans('description_ru')),
                 TextInput::make('description_en')
-                    ->nullable(),
+                    ->nullable()
+                    ->label(trans('description_en')),
                     Forms\Components\TextInput::make('rating')
                     ->numeric()
-                    ->nullable(),
+                    ->nullable()
+                    ->label(trans('rating')),
                     Forms\Components\TextInput::make('quantity')
                     ->numeric()
-                    ->nullable(),
+                    ->nullable()
+                    ->label(trans('quantity')),
                 FileUpload::make('image')
                     ->label('Rasm')
                     ->directory('product-images')
-                    ->image(),
+                    ->image()
+                    ->label(trans('image')),
                 Repeater::make('pictures')
-                    ->label('Rasmlar')
+                    ->label(trans('images'))
                     ->relationship('pictures')
                     ->schema([
-                        Forms\Components\FileUpload::make('image_url'),
-                        Forms\Components\Toggle::make('is_main')->label('Main Picture'),
+                        Forms\Components\FileUpload::make('image_url')
+                        ->label(trans('image_url')),
+                        Forms\Components\Toggle::make('is_main')->label('Main Picture')
+                        ->label(trans('main_picture')),
                     ]),
                 Repeater::make('colors')
-                    ->label('Ranglar')
                     ->relationship('colors')
+                    ->label(trans('colors'))
                     ->schema([
-                        Forms\Components\TextInput::make('value')->nullable(),
-                        Forms\Components\FileUpload::make('image_url'),
-                        Forms\Components\FileUpload::make('mini_image_url'),
+                        Forms\Components\TextInput::make('value')->nullable()->label(trans('value')),
+                        Forms\Components\FileUpload::make('image_url')->label(trans('image_url')),
+                        Forms\Components\FileUpload::make('mini_image_url')->label(trans('mini_image_url'))
                     ]),
                 Repeater::make('sizes')
                     ->label("O'lchamlar")
                     ->relationship('sizes')
+                    ->label(trans('sizes'))
                     ->schema([
-                        Forms\Components\TextInput::make('value')->nullable(),
+                        Forms\Components\TextInput::make('value')->nullable()->label(trans('value')),
                     ]),
                 Repeater::make('compositions')
                     ->label("Tarkibiy qismlar")
                     ->relationship('compositions')
+                    ->label(trans('composition'))
                     ->schema([
-                        Forms\Components\TextInput::make('value')->nullable(),
+                        Forms\Components\TextInput::make('value')->nullable()->label(trans('value')),
                     ]),
-                    Toggle::make('is_active'),
+                    Toggle::make('is_active')
+                    ->label(trans('is_active'))
             ]);
     }
 
@@ -108,8 +126,8 @@ class ProductResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('category.name_uz')->label('Category')->sortable()->searchable(),
-                TextColumn::make('title_uz')->sortable()->searchable(),
-                TextColumn::make('price')->sortable()->searchable(),
+                TextColumn::make('title_uz')->sortable()->searchable()->label(trans('title_uz')),
+                TextColumn::make('price')->sortable()->searchable()->label(trans('price')),
                 ImageColumn::make('image')->sortable()->label(trans('image')),
             ])
             ->filters([
@@ -144,6 +162,15 @@ class ProductResource extends Resource
     }
 
     public static function getNavigationLabel(): string
+    {
+        return trans('products');
+    }
+    public static function getLabel(): string
+    {
+        return trans('products');
+    }
+
+    public static function getNavigationGroup(): string
     {
         return trans('products');
     }
