@@ -16,21 +16,25 @@ class OrderResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'status' => $this->status,
-            'status_color' => $this->status_color,
+            'status' => [
+                'uz' => $this->getStatus->name_uz,
+                'ru' => $this->getStatus->name_ru,
+                'en' => $this->getStatus->name_en
+            ],
+            'status_color' => $this->getStatus->color,
+            'substatus' => [
+                'uz' => $this->getSubStatus->name_uz ?? null,
+                'ru' => $this->getSubStatus->name_ru ?? null,
+                'en' => $this->getSubStatus->name_en ?? null,
+            ],
+            'substatus_color' => $this->getSubStatus->color ?? null,
+            'substatus_slug' => $this->substatus_slug ?? null,
             'total_price' => $this->total_price,
             'user_name' => $this->user_name,
             'user_phone' => $this->user_phone,
             'country' => $this->country == 'uzbekistan' ? url('/flags/uzbekistan.png') : url('/flags/china.jpg'),
             'location_url' => $this->location_url,
             'location_name' => $this->location_name,
-            'substatus' => [
-                'uz' => $this->substatus_uz,
-                'ru' => $this->substatus_ru,
-                'en' => $this->substatus_en,
-            ],
-            'substatus_color' => $this->substatus_color,
-            'substatus_slug' => $this->substatus_slug,
             'kg' => $this->kg,
             'created_at' => $this->created_at,
             'items' => OrderItemResource::collection($this->whenLoaded('items')),

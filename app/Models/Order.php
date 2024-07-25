@@ -16,6 +16,7 @@ class Order extends Model
         'user_id',
         'total_price',
         'status',
+        'substatus',
         'status_color',
         'user_name',
         'user_phone',
@@ -36,13 +37,23 @@ class Order extends Model
     ];
 
 
-    public function getSlugOptions(): SlugOptions
+    // public function getSlugOptions(): SlugOptions
+    // {
+    //     return SlugOptions::create()
+    //         ->generateSlugsFrom('substatus_uz')
+    //         ->saveSlugsTo('substatus_slug');
+    // }
+
+
+    public function getStatus()
     {
-        return SlugOptions::create()
-            ->generateSlugsFrom('substatus_uz')
-            ->saveSlugsTo('substatus_slug');
+        return $this->belongsTo(OrderStatus::class, 'status');
     }
 
+    public function getSubStatus()
+    {
+        return $this->belongsTo(OrderSubStatus::class, 'substatus');
+    }
 
     public function user()
     {
