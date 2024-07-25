@@ -16,4 +16,9 @@ class ListOrderStatuses extends ListRecords
             Actions\CreateAction::make(),
         ];
     }
+
+    public function getTitle(): string
+    {
+        return trans('order_status');
+    }
 }

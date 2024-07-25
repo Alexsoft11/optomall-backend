@@ -24,4 +24,9 @@ class ListIncomes extends ListRecords
             TotalAmount::class,
         ];
     }
+
+    public function getTitle(): string
+    {
+        return trans('reciepts');
+    }
 }

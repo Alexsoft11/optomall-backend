@@ -17,9 +17,12 @@ use Filament\Tables\Columns\TextColumn;
 class AnswerResource extends Resource
 {
 
-    protected static ?string $navigationGroup = "Savol-javoblar";
+    protected static ?string $navigationGroup = "quest_answers";
 
     protected static ?string $navigationLabel = "answers";
+
+    protected static ?string $label = "answers";
+
 
     
 
@@ -92,5 +95,14 @@ class AnswerResource extends Resource
     public static function getNavigationLabel(): string
     {
         return trans('answers');
+    }
+    public static function getLabel(): string
+    {
+        return trans('answers');
+    }
+
+    public static function getNavigationGroup(): string
+    {
+        return trans('quest_answers');
     }
 }

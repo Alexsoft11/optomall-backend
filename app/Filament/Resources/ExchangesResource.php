@@ -16,7 +16,10 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 class ExchangesResource extends Resource
 {
 
-    protected static ?string $navigationGroup = "Mahsulotlar";
+    protected static ?string $navigationGroup = "products";
+
+    protected static ?string $label = "exchanges";
+
 
     protected static ?string $navigationLabel = "exchanges";
 
@@ -67,5 +70,14 @@ class ExchangesResource extends Resource
     public static function getNavigationLabel(): string
     {
         return trans('exchanges');
+    }
+    public static function getLabel(): string
+    {
+        return trans('exchanges');
+    }
+
+    public static function getNavigationGroup(): string
+    {
+        return trans('products');
     }
 }

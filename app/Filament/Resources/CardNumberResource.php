@@ -27,27 +27,30 @@ class CardNumberResource extends Resource
 {
     protected static ?string $model = CardNumber::class;
 
+    protected static ?string $label = "card_number";
+
+
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Toggle::make('is_active')->label('Aktiv'),
-                TextInput::make('card_number')->label('Karta raqami'),
-                TextInput::make('money')->label('Pul'),
-                Select::make('type')->label('Turi')->options([
-                    'order' => 'Buyurtmalar uchun',
-                    'cargo' => 'Kargolar uchun',
+                Toggle::make('is_active')->label(trans('is_active')),
+                TextInput::make('card_number')->label(trans('card_number')),
+                TextInput::make('money')->label(trans('money')),
+                Select::make('type')->label(trans('type'))->options([
+                    'order' => trans('order'),
+                    'cargo' => trans('cargo'),
                 ]),
                 Group::make()
                     ->schema([
-                        Section::make('Buyurtma checklari')
+                        Section::make(trans('order_checks'))
                             ->schema([
-                                Repeater::make('checks')->label('Cheklar')->relationship('checks')->schema([
+                                Repeater::make('checks')->label(trans('checks'))->relationship('checks')->schema([
                                     FileUpload::make('image')
                                         ->disk('public')
-                                        ->label('Chek'),
+                                        ->label(trans('check')),
                                 ]),
                             ]),
                     ])->disabled(),
@@ -58,10 +61,10 @@ class CardNumberResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('card_number')->label('Karta raqami'),
-                TextColumn::make('money')->label('pul'),
-                ToggleColumn::make('is_active')->label('Aktiv'),
-                TextColumn::make('type')->label('Turi'),
+                TextColumn::make('card_number')->label(trans('card_number')),
+                TextColumn::make('money')->label(trans('money')),
+                ToggleColumn::make('is_active')->label(trans('is_active')),
+                TextColumn::make('type')->label(trans('type')),
             ])
             ->filters([
                 //
@@ -90,5 +93,15 @@ class CardNumberResource extends Resource
             'create' => Pages\CreateCardNumber::route('/create'),
             'edit' => Pages\EditCardNumber::route('/{record}/edit'),
         ];
+    }
+
+    
+    public static function getNavigationLabel(): string
+    {
+        return trans('card_number');
+    }
+    public static function getLabel(): string
+    {
+        return trans('card_number');
     }
 }

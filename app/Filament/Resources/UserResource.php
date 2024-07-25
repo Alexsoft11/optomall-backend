@@ -12,10 +12,14 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use PhpParser\Node\Stmt\Label;
 
 class UserResource extends Resource
 {
     protected static ?string $model = User::class;
+
+    protected static ?string $label = "users";
+
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
@@ -63,27 +67,38 @@ class UserResource extends Resource
                     ->sortable(),
                 Tables\Columns\TextColumn::make('unique_id')
                     ->numeric()
-                    ->sortable(),
+                    ->sortable()
+                    ->label(trans('unique_id')),
                 Tables\Columns\TextColumn::make('name')
-                    ->searchable(),
+                    ->searchable()
+                    ->label(trans('ism')),
                 Tables\Columns\TextColumn::make('last_name')
-                    ->searchable(),
+                    ->searchable()
+                    ->label(trans('last_name')),
                 Tables\Columns\TextColumn::make('phone')
-                    ->searchable(),
+                    ->searchable()
+                    ->label(trans('phone')),
                 Tables\Columns\TextColumn::make('email')
-                    ->searchable(),
+                    ->searchable()
+                    ->label(trans('email')),
                 Tables\Columns\TextColumn::make('region')
-                    ->searchable(),
+                    ->searchable()
+                    ->label(trans('region')),
                 Tables\Columns\TextColumn::make('district')
-                    ->searchable(),
+                    ->searchable()
+                    ->label(trans('district')),
                 Tables\Columns\TextColumn::make('street')
-                    ->searchable(),
+                    ->searchable()
+                    ->label(trans('street')),
                 Tables\Columns\TextColumn::make('house')
-                    ->searchable(),
+                    ->searchable()
+                    ->label(trans('house')),
                 Tables\Columns\TextColumn::make('post_index')
-                    ->searchable(),
+                    ->searchable()
+                    ->label(trans('post_index')),
                 Tables\Columns\TextColumn::make('location')
-                    ->searchable(),
+                    ->searchable()
+                    ->label(trans('location')),
             ])
             ->filters([
                 //
@@ -112,5 +127,15 @@ class UserResource extends Resource
             'create' => Pages\CreateUser::route('/create'),
             'edit' => Pages\EditUser::route('/{record}/edit'),
         ];
+    }
+
+    
+    public static function getNavigationLabel(): string
+    {
+        return trans('users');
+    }
+    public static function getLabel(): string
+    {
+        return trans('users');
     }
 }

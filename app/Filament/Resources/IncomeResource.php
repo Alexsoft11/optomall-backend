@@ -22,7 +22,7 @@ class IncomeResource extends Resource
 {
     protected static ?string $model = Income::class;
 
-    protected static ?string $label = "Tushumlar";
+    protected static ?string $label = "reciepts";
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
@@ -124,4 +124,16 @@ class IncomeResource extends Resource
             TotalAmount::class,
         ];
     }
+
+    
+    public static function getNavigationLabel(): string
+    {
+        return trans('reciepts');
+    }
+
+    public static function getLabel(): string
+{
+    return trans('reciepts');
+}
+
 }
