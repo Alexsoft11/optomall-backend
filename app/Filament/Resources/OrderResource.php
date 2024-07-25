@@ -114,8 +114,8 @@ class OrderResource extends Resource
                                         Select::make('substatus_slug')
                                             ->label('Substatus slug')
                                             ->options([
-                                                'Chekni qayta yuboring' => 'send_check_again',
-                                                "Kargo uchun to'lov kutilmoqda" => 'wait_for_pay_cargo'
+                                                'send_check_again' => 'Chekni qayta yuboring',
+                                                "wait_for_pay_cargo" => "Kargo uchun to'lov kutilmoqda"
                                             ]),
                                         TextInput::make('delivery_time')->label("Yetkazib berish vaqti"),
                                         TextInput::make('kg')->label("Kargo og'irligi"),
