@@ -10,7 +10,7 @@ use Spatie\Sluggable\SlugOptions;
 class Order extends Model
 {
     use HasFactory;
-    use HasSlug;
+    // use HasSlug;
 
     protected $fillable = [
         'user_id',
