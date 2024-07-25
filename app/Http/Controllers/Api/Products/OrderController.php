@@ -525,7 +525,8 @@ class OrderController extends Controller
             $ordersQuery->whereIn('status', $activeStatuses);
         }
 
-        $orders = $ordersQuery->with('items')->get();
+        // Eager load all necessary relationships
+        $orders = $ordersQuery->with(['getStatus', 'getSubStatus', 'items'])->get();
 
         return response()->json(['orders' => OrderResource::collection($orders)], 200);
     }
