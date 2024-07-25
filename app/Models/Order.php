@@ -74,16 +74,4 @@ class Order extends Model
     {
         return $this->hasMany(Comment::class, 'order_id');
     }
-
-
-    protected $appends = ['substatus'];
-
-    public function getSubstatusAttribute()
-    {
-        return [
-            'uz' => $this->substatus_uz,
-            'ru' => $this->substatus_ru,
-            'en' => $this->substatus_en,
-        ];
-    }
 }

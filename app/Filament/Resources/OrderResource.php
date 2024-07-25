@@ -7,12 +7,8 @@ use App\Models\Order;
 use App\Models\OrderStatus;
 use App\Models\OrderSubStatus;
 use App\Models\Product;
-// use Filament\Actions\Action;
 use Filament\Forms;
 use Filament\Forms\Components\Actions\Action;
-use Filament\Forms\Components\Builder\Block;
-use Filament\Forms\Components\Card;
-use Filament\Forms\Components\ColorPicker;
 use Filament\Forms\Components\Fieldset;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Group;
@@ -41,7 +37,7 @@ class OrderResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\Group::make()
+                Group::make()
                     ->schema([
                         ToggleButtons::make('country')
                             ->options([
@@ -59,7 +55,6 @@ class OrderResource extends Resource
                                 TextInput::make('last_name')->label('Familiyasi'),
                                 TextInput::make('phone')->label('Telefon raqami'),
                                 TextInput::make('location')->label('Manzil linki'),
-                                // TextInput::make('location_name')->label('Manzil nomi'),
                                 TextInput::make('region')->label('Viloyat'),
                                 TextInput::make('district')->label('Tuman'),
                                 TextInput::make('street')->label("Ko'cha"),
@@ -80,7 +75,7 @@ class OrderResource extends Resource
                                 ->options(OrderSubStatus::all()->pluck('name_uz', 'id'))
                                 ->reactive()
                         ]),
-                        Forms\Components\Section::make('Order items')
+                        Section::make('Order items')
                             ->headerActions([
                                 Action::make('reset')
                                     ->modalHeading('Are you sure?')
@@ -107,10 +102,6 @@ class OrderResource extends Resource
                             ->schema([
                                 Section::make("Qo'shimcha")
                                     ->schema([
-                                        // TextInput::make('substatus_uz')->label('Sub status uz'),
-                                        // TextInput::make('substatus_ru')->label('Sub status ru'),
-                                        // TextInput::make('substatus_en')->label('Sub status en'),
-                                        // ColorPicker::make('substatus_color')->label('Sub status rangi'),
                                         Select::make('substatus_slug')
                                             ->label('Substatus slug')
                                             ->options([
@@ -123,7 +114,7 @@ class OrderResource extends Resource
                             ])
                     ])
                     ->columnSpan(['lg' => fn (?Order $record) => $record === null ? 3 : 2]),
-                Forms\Components\Section::make()
+                Section::make()
                     ->schema([
                         Forms\Components\Placeholder::make('created_at')
                             ->label('Created at')
@@ -149,39 +140,17 @@ class OrderResource extends Resource
                     ->label('Status')
                     ->sortable()
                     ->searchable(),
-                // TextColumn::make('getSubStatus.name_uz')
-                //     ->label('Sub Status')
-                //     ->sortable()
-                //     ->searchable(),
                 TextColumn::make('created_at')->label('Created At')->sortable(),
                 TextColumn::make('updated_at')->label('Updated At')->sortable(),
-                TextColumn::make('status_color')->label('Status Rangi')->sortable(), // Add the status_color column
+                TextColumn::make('status_color')->label('Status Rangi')->sortable(),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
-                    ->options(OrderStatus::pluck('name_uz', 'slug')->toArray()), // Fetch statuses from database
+                    ->options(OrderStatus::pluck('name_uz', 'slug')->toArray()),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\ViewAction::make(),
-                // Tables\Actions\Action::make('changeStatus')
-                //     ->label("Statusni o'zgartirish")
-                //     ->form([
-                //         Select::make('status')
-                //             ->options(OrderStatus::pluck('name_uz', 'slug')->toArray()) // Fetch statuses from database
-                //             ->required(),
-                //     ])
-                //     ->action(function ($record, $data) {
-                //         $status = OrderStatus::where('slug', $data['status'])->get()->first();
-                //         if ($status) {
-                //             $record->update([
-                //                 'status' => $status->slug,
-                //                 'status_color' => $status->color, // Update the status_color field
-                //             ]);
-                //         }
-                //     })
-                //     ->modalHeading('Change Status')
-                //     ->button(),
             ])
             ->bulkActions([
                 Tables\Actions\DeleteBulkAction::make(),
@@ -203,7 +172,7 @@ class OrderResource extends Resource
                 FileUpload::make('image_url')->disk('public')->columnSpan([
                     'lg' => 10,
                 ]),
-                Forms\Components\Select::make('product_id')
+                Select::make('product_id')
                     ->label('Product')
                     ->options(Product::query()->pluck('title_uz', 'id'))
                     ->reactive()
@@ -215,7 +184,7 @@ class OrderResource extends Resource
                     ])
                     ->searchable(),
 
-                Forms\Components\TextInput::make('quantity')
+                TextInput::make('quantity')
                     ->label('Quantity')
                     ->numeric()
                     ->default(1)
@@ -224,7 +193,7 @@ class OrderResource extends Resource
                     ])
                     ->required(),
 
-                Forms\Components\TextInput::make('price')
+                TextInput::make('price')
                     ->label('Unit Price')
                     ->disabled()
                     ->dehydrated()
@@ -258,7 +227,6 @@ class OrderResource extends Resource
                     }, shouldOpenInNewTab: true)
                     ->hidden(fn (array $arguments, Repeater $component): bool => blank($component->getRawItemState($arguments['item'])['id'])),
             ])
-            // ->orderColumn('sort')
             ->defaultItems(1)
             ->hiddenLabel()
             ->columns([
