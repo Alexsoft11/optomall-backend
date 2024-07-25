@@ -17,11 +17,11 @@ class OrderResource extends JsonResource
         return [
             'id' => $this->id,
             'status' => [
-                'uz' => $this->getStatus->name_uz,
-                'ru' => $this->getStatus->name_ru,
-                'en' => $this->getStatus->name_en
+                'uz' => $this->getStatus->name_uz ?? null,
+                'ru' => $this->getStatus->name_ru ?? null,
+                'en' => $this->getStatus->name_en ?? null
             ],
-            'status_color' => $this->getStatus->color,
+            'status_color' => $this->getStatus->color ?? null,
             'substatus' => [
                 'uz' => $this->getSubStatus->name_uz ?? null,
                 'ru' => $this->getSubStatus->name_ru ?? null,
