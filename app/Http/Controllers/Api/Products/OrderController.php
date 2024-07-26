@@ -148,6 +148,7 @@ class OrderController extends Controller
                 'house' => $user->house,
                 'post_index' => $user->post_index,
                 'status' => 'processing',
+                'substatus_slug' => 'wait_for_pay_cargo',
                 'status_color' => '#05ff00',
                 'is_checking' => false
             ]);
