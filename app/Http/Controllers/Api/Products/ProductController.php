@@ -92,15 +92,15 @@ class ProductController extends Controller
                 $likedProduct->delete();
                 $messages[] = "Product ID {$productId} successfully removed";
             } else {
-                $productDetailResponse = $this->productDetailFromTaoBao(new Request(['productId' => $productId]));
+                $productDetailResponse = $this->productDetailFromTaoBao(new Request(['productId' => $productId, 'lang' => 'uz']));
                 $productDetail = json_decode($productDetailResponse->getContent(), true)['detail'];
                 // return $productDetail;
                 LikedProduct::create([
                     'user_id' => $userId,
                     'product_id' => $productId,
-                    'title_uz' => $productDetail['title']['uz'],
-                    'title_en' => $productDetail['title']['en'],
-                    'title_ru' => $productDetail['title']['ru'],
+                    'title_uz' => $productDetail['title'],
+                    'title_en' => $productDetail['title'],
+                    'title_ru' => $productDetail['title'],
                     'image' => $productDetail['image'],
                     'price' => $productDetail['price'],
                 ]);
