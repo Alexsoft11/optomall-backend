@@ -24,7 +24,6 @@ return new class extends Migration
     {
         Schema::table('orders', function (Blueprint $table) {
             $table->string('substatus_slug')->nullable(false)->change();
-            $table->unique('substatus_slug');
         });
     }
 };
