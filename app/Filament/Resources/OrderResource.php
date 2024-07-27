@@ -54,6 +54,7 @@ class OrderResource extends Resource
                                 TextInput::make('name')->label('Ism'),
                                 TextInput::make('last_name')->label('Familiyasi'),
                                 TextInput::make('phone')->label('Telefon raqami'),
+                                TextInput::make('email')->label('Pochta'),
                                 TextInput::make('location')->label('Manzil linki'),
                                 TextInput::make('region')->label('Viloyat'),
                                 TextInput::make('district')->label('Tuman'),
@@ -86,7 +87,8 @@ class OrderResource extends Resource
                             ])
                             ->schema([
                                 static::getItemsRepeater(),
-                            ]),
+                            ])
+                            ->disabled(),
                         Group::make()
                             ->schema([
                                 Section::make('Buyurtma checklari')
@@ -141,8 +143,8 @@ class OrderResource extends Resource
                     ->sortable()
                     ->searchable(),
                 TextColumn::make('created_at')->label('Created At')->sortable(),
-                TextColumn::make('updated_at')->label('Updated At')->sortable(),
-                TextColumn::make('status_color')->label('Status Rangi')->sortable(),
+                // TextColumn::make('updated_at')->label('Updated At')->sortable(),
+                // TextColumn::make('status_color')->label('Status Rangi')->sortable(),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('status')

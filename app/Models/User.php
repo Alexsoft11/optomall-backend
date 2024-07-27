@@ -14,7 +14,7 @@ use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable implements FilamentUser
 {
-    use HasFactory, HasApiTokens, Notifiable, HasRoles, HasPanelShield;
+    use HasFactory, HasApiTokens, Notifiable, HasRoles, HasPanelShield, Notifiable;
 
     /**
      * The attributes that should be cast to native types.

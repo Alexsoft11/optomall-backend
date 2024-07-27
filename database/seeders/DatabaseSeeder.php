@@ -22,6 +22,7 @@ class DatabaseSeeder extends Seeder
             'password' =>  bcrypt('12345678'),
             'confirm_password' =>  bcrypt('12345678'),
         ]);
+        $this->call(OrderStatusSeeder::class);
         // User::factory(10)->create();
         $this->call(CategorySeeder::class);
         $this->call(ProductCategorySeeder::class);

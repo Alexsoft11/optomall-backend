@@ -128,6 +128,7 @@ return [
 
     'providers' => ServiceProvider::defaultProviders()->merge([
         Ichtrojan\Otp\OtpServiceProvider::class,
+        App\Providers\EventServiceProvider::class,
     ])->toArray(),
     'aliases' => Facade::defaultAliases()->merge([
         'Otp' => Ichtrojan\Otp\Otp::class,

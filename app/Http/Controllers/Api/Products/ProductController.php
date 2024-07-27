@@ -118,6 +118,16 @@ class ProductController extends Controller
      *     description="Retrieve the list of liked products for the authenticated user",
      *     operationId="getLikedProducts",
      *     security={{ "bearerAuth":{} }},
+     *     @OA\Parameter(
+     *         name="lang",
+     *         in="query",
+     *         required=true,
+     *         @OA\Schema(
+     *             type="string",
+     *             enum={"uz", "ru", "en"},
+     *             example="en"
+     *         )
+     *     ),
      *     @OA\Response(
      *         response=200,
      *         description="Successful retrieval of liked products",
@@ -126,7 +136,14 @@ class ProductController extends Controller
      *             @OA\Items(
      *                 @OA\Property(property="id", type="integer", example=1),
      *                 @OA\Property(property="product_id", type="string", example="1"),
-     *                 @OA\Property(property="user_id", type="integer", example=1),
+     *                 @OA\Property(property="title", type="object",
+     *                     @OA\Property(property="uz", type="string", example="Mahsulot nomi"),
+     *                     @OA\Property(property="en", type="string", example="Product name"),
+     *                     @OA\Property(property="ru", type="string", example="Название продукта")
+     *                 ),
+     *                 @OA\Property(property="price", type="number", format="float", example=29.99),
+     *                 @OA\Property(property="image", type="string", example="https://example.com/image.jpg"),
+     *                 @OA\Property(property="is_liked", type="boolean", example=true),
      *                 @OA\Property(property="created_at", type="string", format="date-time", example="2023-07-10T12:00:00Z"),
      *                 @OA\Property(property="updated_at", type="string", format="date-time", example="2023-07-10T12:00:00Z")
      *             )
@@ -150,16 +167,21 @@ class ProductController extends Controller
             return response()->json(['message' => 'Unauthenticated'], 401);
         }
 
+        $lang = $request->query('lang', 'en'); // Default to 'en' if not provided
+
         $likedProducts = LikedProduct::where('user_id', $user->id)->get();
 
-        $likedProductsArray = $likedProducts->map(function ($product) {
+        $likedProductsArray = $likedProducts->map(function ($product) use ($lang) {
+            $productDetailResponse = $this->productDetailFromTaoBao(new Request(['productId' => $product->product_id, 'lang' => $lang]));
+            $productDetail = json_decode($productDetailResponse->getContent(), true)['detail'];
+
             return [
                 'id' => $product->id,
                 'product_id' => $product->product_id,
-                'title' => ['uz' => $product->title_uz, 'en' => $product->title_en, 'ru' => $product->title_ru],
-                'price' => $product->price,
-                'image' => $product->image,
-                'is_liked' => true
+                'title' => $productDetail['title'],
+                'price' => $productDetail['price'],
+                'image' => $productDetail['image'],
+                'is_liked' => true,
             ];
         });
 
