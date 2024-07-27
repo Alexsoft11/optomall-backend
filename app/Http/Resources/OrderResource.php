@@ -2,6 +2,8 @@
 
 namespace App\Http\Resources;
 
+use App\Http\Controllers\Api\Products\ProductController;
+use \Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class OrderResource extends JsonResource
@@ -9,11 +11,25 @@ class OrderResource extends JsonResource
     /**
      * Transform the resource into an array.
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  Request  $request
      * @return array
      */
     public function toArray($request)
     {
+        $items = [];
+        foreach ($this->items as $item) {
+            $productDetailResponse = app(ProductController::class)->productDetailFromTaoBao(new Request(['productId' => $item['product_id'], 'lang' => $request->lang]));
+            $productDetail = json_decode($productDetailResponse->getContent(), true)['detail'];
+
+            $items[] = [
+                'id' => $item['id'],
+                'order_id' => $this->id,
+                'title' => $productDetail['title'],
+                'price' => $productDetail['price'],
+                'image_url' => $productDetail['image'],
+            ];
+        }
+
         return [
             'id' => $this->id,
             'status' => [
@@ -37,7 +53,7 @@ class OrderResource extends JsonResource
             'location_name' => $this->location_name,
             'kg' => $this->kg,
             'created_at' => $this->created_at,
-            'items' => OrderItemResource::collection($this->whenLoaded('items')),
+            'items' => $items,
         ];
     }
 }

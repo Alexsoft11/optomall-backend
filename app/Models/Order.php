@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Events\OrderStatusUpdated;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\Sluggable\HasSlug;
@@ -43,6 +44,17 @@ class Order extends Model
     //         ->generateSlugsFrom('substatus_uz')
     //         ->saveSlugsTo('substatus_slug');
     // }
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::updated(function ($order) {
+            if ($order->isDirty('status')) {
+                event(new OrderStatusUpdated($order));
+            }
+        });
+    }
 
 
     public function getStatus()

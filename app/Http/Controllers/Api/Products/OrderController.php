@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Products;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\OrderItemResource;
 use App\Http\Resources\OrderResource;
 use App\Models\Basket;
 use App\Models\BasketItemColor;
@@ -476,6 +477,16 @@ class OrderController extends Controller
      *             enum={"all", "active", "in_verification"}
      *         )
      *     ),
+     *  @OA\Parameter(
+     *              name="lang",
+     *              in="query",
+     *              required=false,
+     *              @OA\Schema(
+     *                  type="string",
+     *                     enum={"uz", "ru", "en"}
+     *              ),
+     *              description="Language code for the product details. Available options: uz, ru, en"
+     *          ),
      *     @OA\Response(
      *         response=200,
      *         description="Successful operation",
@@ -508,10 +519,10 @@ class OrderController extends Controller
      *     )
      * )
      */
-
     public function getOrders(Request $request)
     {
         $user = $request->user();
+        $items = [];
 
         $filter = $request->query('filter', 'all');
 
@@ -526,9 +537,7 @@ class OrderController extends Controller
             $ordersQuery->whereIn('status', $activeStatuses);
         }
 
-        // Eager load all necessary relationships
-        $orders = $ordersQuery->with(['getStatus', 'getSubStatus', 'items'])->get();
-
+        $orders = $ordersQuery->with(['getStatus', 'getSubStatus'])->get();
         return response()->json(['orders' => OrderResource::collection($orders)], 200);
     }
 
@@ -539,6 +548,16 @@ class OrderController extends Controller
      *     tags={"Order"},
      *     summary="Get basket",
      *     security={{ "bearerAuth":{} }},
+     *  @OA\Parameter(
+     *              name="lang",
+     *              in="query",
+     *              required=false,
+     *              @OA\Schema(
+     *                  type="string",
+     *                     enum={"uz", "ru", "en"}
+     *              ),
+     *              description="Language code for the product details. Available options: uz, ru, en"
+     *          ),
      *     @OA\Response(
      *         response=401,
      *         description="Unauthorized",
@@ -557,7 +576,7 @@ class OrderController extends Controller
 
         foreach ($baskets as $basket) {
             // Simulating product details fetch
-            $productDetailResponse = $this->productController->productDetailFromTaoBao(new Request(['productId' => $basket['product_id']]));
+            $productDetailResponse = $this->productController->productDetailFromTaoBao(new Request(['productId' => $basket['product_id'], 'lang' => $request->lang]));
             // return $productDetailResponse;
             $productDetail = json_decode($productDetailResponse->getContent(), true)['detail'];
             // return $productDetail;

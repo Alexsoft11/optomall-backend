@@ -9,6 +9,19 @@ class CardNumber extends Model
 {
     use HasFactory;
 
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::saving(function ($model) {
+            if ($model->is_active) {
+                static::where('is_active', true)
+                    ->where('type', $model->type)
+                    ->update(['is_active' => false]);
+            }
+        });
+    }
+
     protected $fillable = ['card_number', 'money', 'type', 'is_active'];
 
     public function checks()

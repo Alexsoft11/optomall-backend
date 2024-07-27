@@ -50,7 +50,7 @@ class OrderStatusResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('name_uz')->label('Nomi'),
-                TextColumn::make('message_uz')->label('Xabar'),
+                // TextColumn::make('message_uz')->label('Xabar'),
                 ColorColumn::make('color')->label('Rangi'),
                 TextColumn::make('type')->label('Turi'),
             ])
@@ -83,12 +83,12 @@ class OrderStatusResource extends Resource
         ];
     }
 
-    
+
     public static function getNavigationLabel(): string
     {
         return trans('order_status');
     }
-    
+
     public static function getLabel(): string
     {
         return trans('order_status');
