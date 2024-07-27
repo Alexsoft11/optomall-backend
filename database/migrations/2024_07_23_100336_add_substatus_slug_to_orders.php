@@ -12,9 +12,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('orders', function (Blueprint $table) {
+<<<<<<< HEAD
             if (!Schema::hasColumn('orders', 'substatus_slug')) {
                 $table->string('substatus_slug')->nullable();
             }
+=======
+            $table->string('substatus_slug')->nullable();
+>>>>>>> f5eca257537594624650101f97d06a537e55343c
         });
     }
 
