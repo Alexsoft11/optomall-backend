@@ -74,7 +74,13 @@ class OrderResource extends Resource
                             Select::make('substatus')
                                 ->label('Sub Status')
                                 ->options(OrderSubStatus::all()->pluck('name_uz', 'id'))
-                                ->reactive()
+                                ->reactive(),
+                            Select::make('substatus_slug')
+                                ->label('Sub Status')
+                                ->options([
+                                    'send_check_again' => 'Chekni qayta yuboring',
+                                    "wait_for_pay_cargo" => "Kargo uchun to'lov kutilmoqda"
+                                ]),
                         ]),
                         Section::make('Order items')
                             ->headerActions([
@@ -104,12 +110,6 @@ class OrderResource extends Resource
                             ->schema([
                                 Section::make("Qo'shimcha")
                                     ->schema([
-                                        Select::make('substatus_slug')
-                                            ->label('Substatus slug')
-                                            ->options([
-                                                'send_check_again' => 'Chekni qayta yuboring',
-                                                "wait_for_pay_cargo" => "Kargo uchun to'lov kutilmoqda"
-                                            ]),
                                         TextInput::make('delivery_time')->label("Yetkazib berish vaqti"),
                                         TextInput::make('kg')->label("Kargo og'irligi"),
                                     ]),
