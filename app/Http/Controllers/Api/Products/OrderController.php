@@ -390,7 +390,7 @@ class OrderController extends Controller
             ]);
 
             // Update order status
-            $order->update(['status' => "6"]);
+            $order->update(['status' => "6", 'substatus' => null]);
             $order->save();
 
             return $orderCheck;
