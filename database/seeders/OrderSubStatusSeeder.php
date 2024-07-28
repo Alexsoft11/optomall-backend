@@ -36,6 +36,12 @@ class OrderSubStatusSeeder extends Seeder
                 'name_ru' => 'Оплата за доставку оплачен',
                 'color' => '#00AC26', // Cyan
             ],
+            [
+                'name_uz' => "Chek tasdiqlanmadi",
+                'name_en' => 'The check failed verification',
+                'name_ru' => 'Чек не прошел проверку',
+                'color' => '#ff0000', // Red
+            ],
         ];
 
         foreach ($statuses as $status) {
