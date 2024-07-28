@@ -256,10 +256,10 @@ class OrderController extends Controller
     public function getOrder(Request $request)
     {
         $order = Order::where('id', $request->order_id)->where('user_id', auth()->user()->id)->first();
-        $cardNumber = CardNumber::orderBy('money', 'desc')->where('type', 'order')->where('is_active', 1)->first() ?? 9860176612846848;
-        $kgPrice = Exchanges::where('currency', 'kg')->first() ?? 10000;
+        $cardNumber = CardNumber::orderBy('money', 'desc')->where('type', 'order')->where('is_active', 1)->first();
+        $kgPrice = Exchanges::where('currency', 'kg')->first();
 
-        return response()->json(['message' => 'successfull', 'order' => ['id' => $order->id, 'total_price' => $order->total_price, 'kg_price' => $kgPrice->amount, 'card_number' => $cardNumber->card_number]], 201);
+        return response()->json(['message' => 'successfull', 'order' => ['id' => $order->id, 'total_price' => $order->total_price ?? 0, 'kg_price' => $kgPrice->amount ?? 0, 'card_number' => $cardNumber->card_number ?? 9860176612846848]], 201);
     }
 
     /**
@@ -293,7 +293,7 @@ class OrderController extends Controller
         $cardNumber = CardNumber::orderBy('money', 'desc')->where('type', 'cargo')->where('is_active', 1)->first() ?? 9860176612846848;
         $kgPrice = Exchanges::where('currency', 'kg')->first();
 
-        return response()->json(['message' => 'successfull', 'order' => ['id' => $order->id, 'total_price' => $order->kg * $kgPrice->amount, 'kg' => $order->kg, 'kg_price' => $kgPrice->amount, 'card_number' => $cardNumber->card_number]], 201);
+        return response()->json(['message' => 'successfull', 'order' => ['id' => $order->id, 'total_price' => $order->kg * $kgPrice->amount ?? 0, 'kg' => $order->kg ?? 0, 'kg_price' => $kgPrice->amount ?? 0, 'card_number' => $cardNumber->card_number ?? 0]], 201);
     }
 
 
