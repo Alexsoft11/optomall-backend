@@ -152,7 +152,7 @@ class OrderResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
-                Tables\Actions\ViewAction::make(),
+                // Tables\Actions\ViewAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\DeleteBulkAction::make(),
@@ -174,17 +174,9 @@ class OrderResource extends Resource
                 FileUpload::make('image_url')->disk('public')->columnSpan([
                     'lg' => 10,
                 ]),
-                Select::make('product_id')
-                    ->label('Product')
-                    ->options(Product::query()->pluck('title_uz', 'id'))
-                    ->reactive()
-                    ->afterStateUpdated(fn ($state, Forms\Set $set) => $set('unit_price', Product::find($state)?->price ?? 0))
-                    ->distinct()
-                    ->disableOptionsWhenSelectedInSiblingRepeaterItems()
-                    ->columnSpan([
-                        'md' => 5,
-                    ])
-                    ->searchable(),
+                TextInput::make('title')->columnSpan([
+                    'md' => 3,
+                ]),
 
                 TextInput::make('quantity')
                     ->label('Quantity')
@@ -242,7 +234,7 @@ class OrderResource extends Resource
         return [
             'index' => Pages\ListOrders::route('/'),
             'edit' => Pages\EditOrder::route('/{record}/edit'),
-            'view' => Pages\ViewOrder::route('/{record}'),
+            // 'view' => Pages\ViewOrder::route('/{record}'),
         ];
     }
 
