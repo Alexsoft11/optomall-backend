@@ -293,7 +293,7 @@ class OrderController extends Controller
         $cardNumber = CardNumber::orderBy('money', 'desc')->where('type', 'cargo')->where('is_active', 1)->first();
         $kgPrice = Exchanges::where('currency', 'kg')->first();
 
-        return response()->json(['message' => 'successfull', 'order' => ['id' => $order->id, 'total_price' => $order->kg ?? 0 * $kgPrice->amount ?? 0, 'kg' => $order->kg ?? 0, 'kg_price' => $kgPrice->amount ?? 0, 'card_number' => $cardNumber->card_number ?? 0]], 201);
+        return response()->json(['message' => 'successfull', 'order' => ['id' => $order->id, 'total_price' => $order->kg * $kgPrice->amount, 'kg' => $order->kg ?? 0, 'kg_price' => $kgPrice->amount ?? 0, 'card_number' => $cardNumber->card_number ?? 0]], 201);
     }
 
 
