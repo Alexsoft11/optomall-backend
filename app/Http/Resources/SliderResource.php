@@ -20,6 +20,7 @@ class SliderResource extends JsonResource
             'id' => $this['id'],
             'url' => $this['url'],
             'image' => url('storage/' . $this['image']),
+            'image_mobile' => url('storage/' . $this['mobile_image']),
         ];
     }
 }

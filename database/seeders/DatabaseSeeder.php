@@ -24,6 +24,7 @@ class DatabaseSeeder extends Seeder
         ]);
         $this->call(OrderStatusSeeder::class);
         $this->call(OrderSubStatusSeeder::class);
+        $this->call(ExchangeSeeder::class);
         // User::factory(10)->create();
         $this->call(CategorySeeder::class);
         $this->call(ProductCategorySeeder::class);

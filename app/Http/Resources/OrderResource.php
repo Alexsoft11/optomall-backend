@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use App\Http\Controllers\Api\Products\ProductController;
+use App\Models\Exchanges;
 use \Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -16,6 +17,7 @@ class OrderResource extends JsonResource
      */
     public function toArray($request)
     {
+        $kgPrice = Exchanges::where('currency', 'kg')->first();
         $items = [];
         foreach ($this->items as $item) {
             $productDetailResponse = app(ProductController::class)->productDetailFromTaoBao(new Request(['productId' => $item['product_id'], 'lang' => $request->lang]));
@@ -53,6 +55,7 @@ class OrderResource extends JsonResource
             'location_url' => $this->location_url,
             'location_name' => $this->location_name,
             'kg' => $this->kg,
+            'cargo_price' => $this->kg * $kgPrice->amount ?? 0,
             'created_at' => $this->created_at,
             'items' => $items,
         ];

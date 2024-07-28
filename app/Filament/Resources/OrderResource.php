@@ -169,7 +169,7 @@ class OrderResource extends Resource
                     'lg' => 10,
                 ]),
                 TextInput::make('title')->columnSpan([
-                    'md' => 3,
+                    'md' => 6,
                 ]),
 
                 TextInput::make('quantity')
