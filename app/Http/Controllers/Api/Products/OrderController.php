@@ -551,8 +551,8 @@ class OrderController extends Controller
 
         $filter = $request->query('filter', 'all');
 
-        $verificationStatuses = OrderStatus::where('type', 'in_verification')->pluck('slug');
-        $activeStatuses = OrderStatus::where('type', 'active')->pluck('slug');
+        $verificationStatuses = OrderStatus::where('type', 'in_verification')->pluck('id');
+        $activeStatuses = OrderStatus::where('type', 'active')->pluck('id');
 
         $ordersQuery = Order::where('user_id', $user->id);
 
