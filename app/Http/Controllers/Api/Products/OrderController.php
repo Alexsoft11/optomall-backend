@@ -148,8 +148,8 @@ class OrderController extends Controller
                 'street' => $user->street,
                 'house' => $user->house,
                 'post_index' => $user->post_index,
-                'status' => '1',
-                'substatus_slug' => 'wait_for_pay_cargo',
+                'status' => '2',
+                'substatus' => '1',
                 'status_color' => '#05ff00',
                 'is_checking' => false
             ]);

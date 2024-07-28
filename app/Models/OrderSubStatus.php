@@ -21,7 +21,7 @@ class OrderSubStatus extends Model
     public function getSlugOptions(): SlugOptions
     {
         return SlugOptions::create()
-            ->generateSlugsFrom('name_uz')
+            ->generateSlugsFrom('name_en')
             ->saveSlugsTo('slug');
     }
 }

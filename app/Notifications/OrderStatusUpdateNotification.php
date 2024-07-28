@@ -27,9 +27,11 @@ class OrderStatusUpdateNotification extends Notification
 
     public function toMail($notifiable)
     {
-        return (new MailMessage)
-            ->subject('Обновление статуса заказа')
-            ->view('vendor.mail.html.message', ['order' => $this->order]);
+        if ($this->order->getStatus->message_uz) {
+            return (new MailMessage)
+                ->subject('Обновление статуса заказа')
+                ->view('vendor.mail.html.message', ['order' => $this->order]);
+        }
     }
 
     public function toArray($notifiable)
@@ -42,13 +44,15 @@ class OrderStatusUpdateNotification extends Notification
 
     public function toDatabase($notifiable)
     {
-        UserMessage::create([
-            'user_id' => $notifiable->id,
-            'message_uz' => "{$this->order->getStatus->message_uz}",
-            'message_en' => "{$this->order->getStatus->message_en}",
-            'message_ru' => "{$this->order->getStatus->message_ru}",
-            'order_id' => $this->order->unique_id,
-        ]);
+        if ($this->order->getStatus->message_uz) {
+            UserMessage::create([
+                'user_id' => $notifiable->id,
+                'message_uz' => "{$this->order->getStatus->message_uz}",
+                'message_en' => "{$this->order->getStatus->message_en}",
+                'message_ru' => "{$this->order->getStatus->message_ru}",
+                'order_id' => $this->order->unique_id,
+            ]);
+        }
 
         return [
             'order_id' => $this->order->id,
