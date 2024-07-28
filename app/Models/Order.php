@@ -34,7 +34,8 @@ class Order extends Model
         'substatus_en',
         'substatus_color',
         'substatus_slug',
-        'kg'
+        'kg',
+        'unique_id'
     ];
 
 
@@ -54,6 +55,16 @@ class Order extends Model
                 event(new OrderStatusUpdated($order));
             }
         });
+        static::creating(function ($model) {
+            $model->unique_id = $model->generateUniqueId();
+        });
+    }
+
+    private function generateUniqueId()
+    {
+        $letters = strtoupper(substr(str_shuffle('ABCDEFGHIJKLMNOPQRSTUVWXYZ'), 0, 2));
+        $numbers = substr(str_shuffle('0123456789'), 0, 6);
+        return $letters . $numbers;
     }
 
 

@@ -68,6 +68,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('additional-categories-token', [ProductController::class, 'categoriesToken']);
     Route::get('/products-token', [ProductController::class, 'productsToken']);
     Route::get('/user-products', [OrderController::class, 'getUserProducts']);
+    Route::get('/user/messages', [ListController::class, 'getUserMessages']);
 });
 
 

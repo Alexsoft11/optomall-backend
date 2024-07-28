@@ -158,8 +158,8 @@ class OrderController extends Controller
 
             foreach ($request->items as $item) {
                 // Fetch product details (adjust this part according to your logic)
-                $productDetailResponse = $this->productController->productDetailFromTaoBao(new Request(['productId' => $item['product_id']]));
-                $productDetail = json_decode($productDetailResponse->getContent(), true)['detail'];
+                // $productDetailResponse = $this->productController->productDetailFromTaoBao(new Request(['productId' => $item['product_id']]));
+                // $productDetail = json_decode($productDetailResponse->getContent(), true)['detail'];
 
                 // Download image and save to storage
                 $url = $item['image_url'];

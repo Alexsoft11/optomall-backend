@@ -11,6 +11,7 @@ use App\Models\Product;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use App\Models\Socials;
+use App\Models\UserMessage;
 use OpenApi\Annotations as OA;
 use Illuminate\Support\Facades\Http;
 
@@ -41,7 +42,7 @@ class ListController extends Controller
                 'id' => $social->id,
                 'name' => $social->name,
                 'path' => $social->path,
-                'icon' => $social->icon_url,
+                'icon' => url('storage/' . $social->icon_url),
             ];
         });
 
@@ -158,7 +159,7 @@ class ListController extends Controller
         $comment->name = $request->name;
         $comment->user_id = $user->id;
         $comment->order_id = $request->order_id;
-        $comment->product_id = $product->product_id; 
+        $comment->product_id = $product->product_id;
         $comment->rating = $request->rating;
         $comment->images = $imagePaths;
         $comment->save();
@@ -251,5 +252,45 @@ class ListController extends Controller
         });
 
         return response()->json($comments, 200);
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/user/messages",
+     *     summary="Get user messages by token",
+     *     description="Retrieve user messages based on the authenticated user token.",
+     *     operationId="getUserMessages",
+     *     tags={"User Messages"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful operation",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(
+     *                 property="success",
+     *                 type="boolean",
+     *                 example=true
+     *             ),
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthorized"
+     *     )
+     * )
+     */
+    public function getUserMessages(Request $request)
+    {
+        // Retrieve the authenticated user
+        $user = $request->user();
+
+        // Retrieve the user's messages
+        $messages = UserMessage::where('user_id', $user->id)->get();
+
+        return response()->json([
+            'success' => true,
+            'messages' => $messages,
+        ]);
     }
 }

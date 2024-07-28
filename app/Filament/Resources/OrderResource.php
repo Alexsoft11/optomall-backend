@@ -63,7 +63,7 @@ class OrderResource extends Resource
                                 TextInput::make('post_index')->label("Zip kod"),
                             ])->disabled(),
                         Fieldset::make('Buyurtma')->schema([
-                            TextInput::make('id')->label('Buyurtma IDsi')->disabled(),
+                            TextInput::make('unique_id')->label('Buyurtma IDsi')->disabled(),
                             TextInput::make('total_price')->label('Jami narxi')->disabled(),
                             TextInput::make('created_at')->label('Created At')->disabled(),
                             TextInput::make('updated_at')->label('Updated At')->disabled(),
@@ -135,7 +135,7 @@ class OrderResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('id')->sortable(),
+                TextColumn::make('unique_id')->sortable(),
                 TextColumn::make('user_name')->label('Ismi')->sortable(),
                 TextColumn::make('total_price')->label('Jami narx')->sortable(),
                 TextColumn::make('getStatus.name_uz')
