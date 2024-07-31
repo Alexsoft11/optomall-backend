@@ -7,8 +7,10 @@ use App\Models\Order;
 use App\Models\OrderStatus;
 use App\Models\OrderSubStatus;
 use App\Models\Product;
+use App\Models\User;
 use Filament\Forms;
 use Filament\Forms\Components\Actions\Action;
+use Filament\Forms\Components\ColorPicker;
 use Filament\Forms\Components\Fieldset;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Group;
@@ -20,6 +22,7 @@ use Filament\Forms\Components\ToggleButtons;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Columns\ColorColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
@@ -52,15 +55,6 @@ class OrderResource extends Resource
                             ->schema([
                                 TextInput::make('unique_id')->label('Id'),
                                 TextInput::make('name')->label('Ism'),
-                                TextInput::make('last_name')->label('Familiyasi'),
-                                TextInput::make('phone')->label('Telefon raqami'),
-                                TextInput::make('email')->label('Pochta'),
-                                TextInput::make('location')->label('Manzil linki'),
-                                TextInput::make('region')->label('Viloyat'),
-                                TextInput::make('district')->label('Tuman'),
-                                TextInput::make('street')->label("Ko'cha"),
-                                TextInput::make('house')->label("Uy"),
-                                TextInput::make('post_index')->label("Zip kod"),
                             ])->disabled(),
                         Fieldset::make('Buyurtma')->schema([
                             TextInput::make('unique_id')->label('Buyurtma IDsi')->disabled(),
@@ -89,6 +83,18 @@ class OrderResource extends Resource
                                 static::getItemsRepeater(),
                             ])
                             ->disabled(),
+                        Fieldset::make('Foydalanuvchi')->relationship('user')
+                            ->schema([
+                                TextInput::make('last_name')->label('Familiyasi'),
+                                TextInput::make('phone')->label('Telefon raqami'),
+                                TextInput::make('email')->label('Pochta'),
+                                TextInput::make('location')->label('Manzil linki'),
+                                TextInput::make('region')->label('Viloyat'),
+                                TextInput::make('district')->label('Tuman'),
+                                TextInput::make('street')->label("Ko'cha"),
+                                TextInput::make('house')->label("Uy"),
+                                TextInput::make('post_index')->label("Zip kod"),
+                            ])->disabled(),
                         Group::make()
                             ->schema([
                                 Section::make('Buyurtma checklari')
@@ -129,20 +135,26 @@ class OrderResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('unique_id')->sortable(),
-                TextColumn::make('user_name')->label('Ismi')->sortable(),
+                TextColumn::make('unique_id')
+                    ->sortable()
+                    ->searchable()
+                    ->label('Order ID'),
+                TextColumn::make('user.unique_id')->label('User ID')->sortable(),
+                TextColumn::make('user.name')->label('Ismi')->sortable(),
                 TextColumn::make('total_price')->label('Jami narx')->sortable(),
                 TextColumn::make('getStatus.name_uz')
                     ->label('Status')
                     ->sortable()
                     ->searchable(),
+                ColorColumn::make('status_color')->label('Status Rangi'),
                 TextColumn::make('created_at')->label('Created At')->sortable(),
-                // TextColumn::make('updated_at')->label('Updated At')->sortable(),
-                // TextColumn::make('status_color')->label('Status Rangi')->sortable(),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
                     ->options(OrderStatus::pluck('name_uz', 'slug')->toArray()),
+                Tables\Filters\SelectFilter::make('user')
+                    ->relationship('user', 'name')
+                    ->label('User'),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
@@ -150,7 +162,8 @@ class OrderResource extends Resource
             ])
             ->bulkActions([
                 Tables\Actions\DeleteBulkAction::make(),
-            ]);
+            ])
+            ->defaultSort('created_at', 'desc'); // Set the default sorting here
     }
 
     public static function getRelations(): array

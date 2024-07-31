@@ -2,24 +2,22 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Resources\Shop\OrderResource\RelationManagers\OrderRelationManager;
 use App\Filament\Resources\UserResource\Pages;
-use App\Filament\Resources\UserResource\RelationManagers;
 use App\Models\User;
+use App\Models\Order;
+use App\Models\OrderStatus;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
-use PhpParser\Node\Stmt\Label;
 
 class UserResource extends Resource
 {
     protected static ?string $model = User::class;
 
     protected static ?string $label = "users";
-
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
@@ -116,7 +114,7 @@ class UserResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            OrderRelationManager::class,
         ];
     }
 
@@ -129,11 +127,11 @@ class UserResource extends Resource
         ];
     }
 
-    
     public static function getNavigationLabel(): string
     {
         return trans('users');
     }
+
     public static function getLabel(): string
     {
         return trans('users');

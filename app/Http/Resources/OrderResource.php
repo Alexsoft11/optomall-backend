@@ -22,9 +22,11 @@ class OrderResource extends JsonResource
         foreach ($this->items as $item) {
             $productDetailResponse = app(ProductController::class)->productDetailFromTaoBao(new Request(['productId' => $item['product_id'], 'lang' => $request->lang]));
             $productDetail = json_decode($productDetailResponse->getContent(), true)['detail'];
+            // return $item;
 
             $items[] = [
                 'id' => $item['id'],
+                'product_id' => $productDetail['id'],
                 'order_id' => $this->id,
                 'title' => $productDetail['title'],
                 'price' => $productDetail['price'],
