@@ -63,11 +63,11 @@ class OrderResource extends Resource
                             TextInput::make('updated_at')->label('Updated At')->disabled(),
                             Select::make('status')
                                 ->label('Status')
-                                ->options(OrderStatus::all()->pluck('name_uz', 'id'))
+                                ->options(OrderStatus::whereNotNull('name_uz')->pluck('name_uz', 'id'))
                                 ->reactive(),
                             Select::make('substatus')
                                 ->label('Sub Status')
-                                ->options(OrderSubStatus::all()->pluck('name_uz', 'id'))
+                                ->options(OrderSubStatus::whereNotNull('name_uz')->pluck('name_uz', 'id'))
                                 ->reactive(),
                         ]),
                         Section::make('Order items')
@@ -151,7 +151,7 @@ class OrderResource extends Resource
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
-                    ->options(OrderStatus::pluck('name_uz', 'slug')->toArray()),
+                    ->options(OrderStatus::pluck('name_uz', 'id')->toArray()),
                 Tables\Filters\SelectFilter::make('user')
                     ->relationship('user', 'name')
                     ->label('User'),

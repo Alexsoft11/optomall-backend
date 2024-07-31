@@ -55,12 +55,14 @@
     <div class="container">
         <h1>Уважаемый клиент,</h1>
         <p>{{ $order->getStatus->message_ru }}</p>
-        <p>Заказ: <a href="https://taobao-optom-uz.vercel.app/purchases?filter=all">{{ $order->unique_id }}</a></p>
+        <p>Заказ: <a
+                href="https://onway.uz/purchases?filter=all?orderId={{ $order->unique_id }}">{{ $order->unique_id }}</a>
+        </p>
         <p>Спасибо за покупки у нас!</p>
         <div class="signature">
             <p>С наилучшими пожеланиями,</p>
             <p>Onway.uz</p>
-        </div>
+        </div>order
     </div>
 </body>
 
