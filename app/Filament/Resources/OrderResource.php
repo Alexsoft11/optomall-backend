@@ -152,9 +152,8 @@ class OrderResource extends Resource
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
                     ->options(OrderStatus::pluck('name_uz', 'id')->toArray()),
-                Tables\Filters\SelectFilter::make('user')
-                    ->relationship('user', 'name')
-                    ->label('User'),
+                Tables\Filters\SelectFilter::make('user_id')
+                    ->options(User::pluck('name', 'id')->toArray()),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
