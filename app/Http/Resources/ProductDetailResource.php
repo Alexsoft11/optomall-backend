@@ -28,42 +28,24 @@ class ProductDetailResource extends JsonResource
      */
     public function toArray($request)
     {
-        $pictures = ProductPicture::where('product_id', $this['id'])->get();
-        $colors = ProductColor::where('product_id', $this['id'])->get();
-        $sizes = ProductSize::where('product_id', $this['id'])->get();
-        $compositions = ProductComposition::where('product_id', $this['id'])->get();
-
         $amount = Exchanges::where('currency', 'usd')->first()->amount ?? 12000;
 
-        // Retrieve original and discounted prices
-        $originalPrice = isset($this['Price']['ConvertedPriceWithoutSign'])
-            ? round($this['Price']['ConvertedPriceWithoutSign']) * $amount
-            : null;
-        $discountedPrice = isset($this['Promotions'][0]['Price']['ConvertedPriceList']['Internal']['Price'])
-            ? round($this['Promotions'][0]['Price']['ConvertedPriceList']['Internal']['Price']) * $amount
-            : null;
-
-        // Calculate discount percentage
-        $discountPercentage = $originalPrice && $discountedPrice
-            ? 100 - round((($discountedPrice / $originalPrice) * 100))
-            : null;
-
         return [
-            'id' => $this['Id'] ?? $this['id'],
-            'title' => $this['Title'] ??  $this['title_' . $this->lang],
-            'price' => $originalPrice ?? $this->price,
-            'discounted_price' => $discountedPrice,
-            'discount_percentage' => $discountPercentage,
-            'image' => $this['MainPictureUrl'] ?? url('storage/' . $this['image']),
-            'quantity' => $this['MasterQuantity'] ?? $this->quantity,
-            'description' => $this['Description'] ?? $this['description_' . $this->lang],
-            'pictures' => isset($this['Pictures']) ? $this->transformPictures($this['Pictures']) : $this->transformPictures($pictures),
-            'location' => $this['Location']['State'] ?? 'China',
-            'product_url' => $this['ExternalItemUrl'] ?? $this->product_url,
-            'videos' => $this['Videos'] ?? [],
-            'colors' => isset($this['Attributes']) ? $this->transformAttributes($this['Attributes'], ['Rang bilan saralash', 'tana rangi', 'rang']) : $this->transformEloquentAttributes($colors),
-            'sizes' => isset($this['Attributes']) ? $this->transformSizes($this['Attributes'], ["o'lcham", 'saqlash', "Ma'lumot balandligi"]) : $sizes,
-            'composition' => isset($this['Attributes']) ? $this->transformCompositions($this['Attributes'], ["Moddiy tarkibiy qism"]) : $compositions,
+            'id' => $this['num_iid'],
+            'title' => $this['title'],
+            'price' => round($this['orginal_price']),
+            'discounted_price' => round($this['price']),
+            'discount_percentage' => round((($this->resource['orginal_price'] - $this->resource['price']) / $this->resource['orginal_price']) * 100),
+            'image' => $this['pic_url'],
+            'quantity' => $this['num'],
+            'description' => str_replace(["\n", "\\"], '', $this['desc']),
+            'pictures' => $this->transformPictures($this['item_imgs']),
+            'location' => $this['location'] ?? 'China',
+            'product_url' => $this['detail_url'],
+            'videos' => $this['video'],
+            'colors' =>  $this->transformAttributes($this['props_imgs']['prop_img']),
+            // 'sizes' => isset($this['Attributes']) ? $this->transformSizes($this['Attributes'], ["o'lcham", 'saqlash', "Ma'lumot balandligi"]) : $sizes,
+            // 'composition' => isset($this['Attributes']) ? $this->transformCompositions($this['Attributes'], ["Moddiy tarkibiy qism"]) : $compositions,
             'is_liked' => false,
         ];
     }
@@ -72,8 +54,8 @@ class ProductDetailResource extends JsonResource
     {
         return is_array($pictures) ? array_map(function ($attribute) {
             return [
-                'image_url' => $attribute['Url'] ?? null,
-                'is_main' => $attribute['IsMain'] ?? null,
+                'image_url' => $attribute['url'] ?? null,
+                'is_main' => 0,
             ];
         }, $pictures) : $pictures->map(function ($picture) {
             return [
@@ -83,23 +65,42 @@ class ProductDetailResource extends JsonResource
         })->toArray();
     }
 
-    private function transformAttributes($attributes, $propertyNames)
+    private function transformAttributes($attributes)
     {
         $counter = 0;
-        return array_values(array_filter(array_map(function ($attribute) use (&$counter) {
+        // Get the keys from props_list
+        $propsListKeys = array_keys($this['props_list']);
+
+        return array_values(array_filter(array_map(function ($attribute) use (&$counter, $propsListKeys) {
+            // Ensure properties is a string
+            $property = (string) $attribute['properties'];
+
+            // Find the first key from propsListKeys that matches the property
+            $matchingKey = null;
+            foreach ($propsListKeys as $key) {
+                // Convert key to string for comparison
+                if ((string) $key === $property) {
+                    $matchingKey = $key;
+                    break;
+                }
+            }
+
+            // Get the value and remove "color:" prefix if it exists
+            $value = $matchingKey !== null ? $this['props_list'][$matchingKey] : null;
+            if ($value !== null) {
+                $value = preg_replace('/^color:\s*/i', '', $value); // Remove "color:" prefix, case-insensitive
+            }
+
             return [
                 'id' => $counter++,
                 'propertyName' => $attribute['PropertyName'] ?? null,
-                'value' => $attribute['Value'] ?? null,
-                'image_url' => $attribute['ImageUrl'] ?? null,
-                'miniImageUrl' => $attribute['MiniImageUrl'] ?? null,
-                'propertyId' => $attribute['Pid'] ?? null,
-                'valueId' => $attribute['Vid'] ?? null,
+                'value' => $value,
+                'image_url' => $attribute['url'] ?? null,
             ];
-        }, $attributes), function ($attribute) use ($propertyNames) {
-            return in_array($attribute['propertyName'], $propertyNames) && $attribute['image_url'] !== null;
-        }));
+        }, $attributes)));
     }
+
+
 
     private function transformSizes($attributes, $propertyNames)
     {
