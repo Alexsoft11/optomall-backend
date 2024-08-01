@@ -54,13 +54,8 @@ class OrderController extends Controller
      *                 @OA\Property(property="phone", type="string", example="+380671234567")
      *             ),
      *             @OA\Property(property="location", type="object",
-     *                 @OA\Property(property="name", type="string", example="Uzbekistan"),
+     *                 @OA\Property(property="addressText", type="string", example="Uzbekistan"),
      *                 @OA\Property(property="url", type="string", example="https://google.com"),
-     *                 @OA\Property(property="region", type="string"),
-     *                 @OA\Property(property="district", type="string"),
-     *                 @OA\Property(property="street", type="string"),
-     *                 @OA\Property(property="house", type="string"),
-     *                 @OA\Property(property="post_index", type="number"),
      *             ),
      *             @OA\Property(property="items", type="array", @OA\Items(
      *                 @OA\Property(property="product_id", type="string", example="1"),
@@ -102,13 +97,8 @@ class OrderController extends Controller
             'location' => 'required|array',
             'userData.name' => 'required|string',
             'userData.phone' => 'required|string',
-            'location.name' => 'required|string',
-            'location.url' => 'required|string',
-            'location.region' => 'nullable|string',
-            'location.district' => 'nullable|string',
-            'location.street' => 'nullable|string',
-            'location.house' => 'nullable|string',
-            'location.post_index' => 'nullable|integer',
+            'location.addressText' => 'required|string',
+            'location.url' => 'nullable|string',
             'items.*.product_id' => 'required|string',
             'items.*.title' => 'required|string',
             'items.*.image_url' => 'required|url',
@@ -127,13 +117,13 @@ class OrderController extends Controller
         $user = auth()->user();
 
         // Update user location fields if they are empty
-        $user->region = $user->region ?: $request->location['region'] ?? null;
-        $user->district = $user->district ?: $request->location['district'] ?? null;
-        $user->street = $user->street ?: $request->location['street'] ?? null;
-        $user->house = $user->house ?: $request->location['house'] ?? null;
-        $user->post_index = $user->post_index ?: $request->location['post_index'] ?? null;
-        $user->location = $user->location ?: $request->location['url'] ?? null;
-        $user->save();
+        // $user->region = $user->region ?: $request->location['region'] ?? null;
+        // $user->district = $user->district ?: $request->location['district'] ?? null;
+        // $user->street = $user->street ?: $request->location['street'] ?? null;
+        // $user->house = $user->house ?: $request->location['house'] ?? null;
+        // $user->post_index = $user->post_index ?: $request->location['post_index'] ?? null;
+        // $user->location = $user->location ?: $request->location['url'] ?? null;
+        // $user->save();
 
         $order = DB::transaction(function () use ($request, $user) {
             $order = Order::create([
@@ -143,11 +133,6 @@ class OrderController extends Controller
                 'user_phone' => $request->userData['phone'],
                 'location_url' => $request->location['url'],
                 'location_name' => $request->location['name'],
-                'region' => $user->region,
-                'district' => $user->district,
-                'street' => $user->street,
-                'house' => $user->house,
-                'post_index' => $user->post_index,
                 'status' => '2',
                 'substatus' => '1',
                 'status_color' => '#05ff00',
