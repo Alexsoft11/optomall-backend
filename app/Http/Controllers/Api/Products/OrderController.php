@@ -132,7 +132,7 @@ class OrderController extends Controller
                 'user_name' => $request->userData['name'],
                 'user_phone' => $request->userData['phone'],
                 'location_url' => $request->location['url'],
-                'location_name' => $request->location['name'],
+                'location_name' => $request->location['addressText'],
                 'status' => '2',
                 'substatus' => '1',
                 'status_color' => '#05ff00',
