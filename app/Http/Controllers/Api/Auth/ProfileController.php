@@ -187,13 +187,9 @@ class ProfileController extends Controller
  *     @OA\RequestBody(
  *         required=true,
  *         @OA\JsonContent(
- *             required={"region", "district", "street", "house", "post_index"},
- *             @OA\Property(property="region", type="string", example="Tashkent"),
- *             @OA\Property(property="district", type="string", example="Tashkent"),
- *             @OA\Property(property="street", type="string", example="Toshbuloq street"),
- *             @OA\Property(property="house", type="string", example="46-uy"),
- *             @OA\Property(property="post_index", type="string", example="10000"),
- *             @OA\Property(property="location", type="string", example="location_path_url"),
+ *             required={"location", "adress"},
+ *             @OA\Property(property="adress", type="string", example="adress"),
+ *             @OA\Property(property="location", type="string", example="Url"),
  *         ),
  *     ),
  *     @OA\Response(response="200", description="Location added or updated successfully"),
@@ -204,11 +200,7 @@ class ProfileController extends Controller
 public function locationForm(Request $request)
 {
     $validator = Validator::make($request->all(), [
-        'region' => 'required|string|max:255',
-        'district' => 'required|string|max:255',
-        'street' => 'required|string|max:255',
-        'house' => 'required|string|max:255',
-        'post_index' => 'required|string|max:255',
+        'adress' => 'required|string',
         'location' => 'required|url',
     ]);
 
@@ -223,11 +215,7 @@ public function locationForm(Request $request)
     }
 
     $user->update([
-        'region' => $request->region,
-        'district' => $request->district,
-        'street' => $request->street,
-        'house' => $request->house,
-        'post_index' => $request->post_index,
+        'adress' => $request->adress,
         'location' => $request->location,
     ]);
 
