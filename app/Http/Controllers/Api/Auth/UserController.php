@@ -30,6 +30,7 @@ public function user(Request $request)
         'unique_id' => $user->unique_id,
         'email' => $user->email,
         'last_name' => $user->last_name,
+        'adress' => $user->adress,
         'phone' => $user->phone,
     ], 200);
 }
