@@ -19,6 +19,7 @@ class TaobaoCategorySeeder extends Seeder
             foreach ($categories as $category) {
                 $categoryId = DB::table('taobao_categories')->insertGetId([
                     'name_en' => $category['name'],
+                    'is_active' => false,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);

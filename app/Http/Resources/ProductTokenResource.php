@@ -21,10 +21,10 @@ class ProductTokenResource extends JsonResource
         return [
             'id' => $this->resource['num_iid'],
             'title' => $this->resource['title'],
-            'price' => round($this->resource['orginal_price'] * $amount),
+            'price' => isset($this->resource['orginal_price']) ? round($this->resource['orginal_price'] * $amount) : round($this->resource['price'] * $amount),
             'image' => $this->resource['pic_url'],
             'discounted_price' => round($this->resource['promotion_price'] * $amount),
-            'discount_percent' => round((($this->resource['orginal_price'] - $this->resource['promotion_price']) / $this->resource['orginal_price']) * 100),
+            'discount_percent' => isset($this->resource['orginal_price']) ? round((($this->resource['orginal_price'] - $this->resource['promotion_price']) / $this->resource['orginal_price']) * 100) : round((($this->resource['price'] - $this->resource['promotion_price']) / $this->resource['price']) * 100),
             'is_liked' => $isLiked,
         ];
     }

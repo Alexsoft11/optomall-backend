@@ -12,12 +12,14 @@ use App\Models\ProductSize;
 class ProductDetailResource extends JsonResource
 {
     protected $lang;
+    protected $amount;
 
     public function __construct($resource, $lang = null)
     {
         parent::__construct($resource);
         $this->resource = $resource;
         $this->lang = $lang;
+        $this->amount = Exchanges::where('currency', 'usd')->first()->amount ?? 12000;
     }
 
     /**
@@ -28,7 +30,6 @@ class ProductDetailResource extends JsonResource
      */
     public function toArray($request)
     {
-        $amount = Exchanges::where('currency', 'usd')->first()->amount ?? 12000;
 
         return [
             'id' => $this['num_iid'],
@@ -43,9 +44,9 @@ class ProductDetailResource extends JsonResource
             'location' => $this['location'] ?? 'China',
             'product_url' => $this['detail_url'],
             'videos' => $this['video'],
-            'colors' =>  $this->transformAttributes($this['props_imgs']['prop_img']),
-            // 'sizes' => isset($this['Attributes']) ? $this->transformSizes($this['Attributes'], ["o'lcham", 'saqlash', "Ma'lumot balandligi"]) : $sizes,
-            // 'composition' => isset($this['Attributes']) ? $this->transformCompositions($this['Attributes'], ["Moddiy tarkibiy qism"]) : $compositions,
+            'colors' =>  $this['props_imgs']['prop_img'] ? $this->transformAttributes($this['props_imgs']['prop_img']) : [],
+            'sizes' => $this->transformSizes($this['skus']['sku']),
+            'composition' =>  $this->transformCompositions($this['props'], ["brand", "pattern", "Collar", "basic style"]),
             'is_liked' => false,
         ];
     }
@@ -71,7 +72,7 @@ class ProductDetailResource extends JsonResource
         // Get the keys from props_list
         $propsListKeys = array_keys($this['props_list']);
 
-        return array_values(array_filter(array_map(function ($attribute) use (&$counter, $propsListKeys) {
+        $transformedAttributes = array_filter(array_map(function ($attribute) use (&$counter, $propsListKeys) {
             // Ensure properties is a string
             $property = (string) $attribute['properties'];
 
@@ -97,39 +98,96 @@ class ProductDetailResource extends JsonResource
                 'value' => $value,
                 'image_url' => $attribute['url'] ?? null,
             ];
-        }, $attributes)));
+        }, $attributes));
+
+        // Remove duplicate values
+        $uniqueAttributes = array_unique($transformedAttributes, SORT_REGULAR);
+
+        // Re-index the array
+        return array_values($uniqueAttributes);
     }
 
-
-
-    private function transformSizes($attributes, $propertyNames)
+    private function transformSizes($attributes)
     {
         $counter = 0;
-        return array_values(array_filter(array_map(function ($attribute) use (&$counter) {
+
+        // Filter props_list for "size:" entries
+        $sizePropsList = array_filter($this['props_list'], function ($value) {
+            return stripos($value, 'size:') === 0;
+        });
+
+        // Get the keys from sizePropsList
+        $sizePropsListKeys = array_keys($sizePropsList);
+
+        $transformedAttributes = array_filter(array_map(function ($attribute) use (&$counter, $sizePropsListKeys) {
+            // Ensure properties is a string
+            $properties = explode(';', (string)$attribute['properties']);
+
+            // Find the first key from sizePropsListKeys that matches any property
+            $matchingKey = null;
+            foreach ($properties as $property) {
+                if (in_array($property, $sizePropsListKeys)) {
+                    $matchingKey = $property;
+                    break;
+                }
+            }
+
+            // Get the value and remove "size:" prefix if it exists
+            $value = $matchingKey !== null ? $this['props_list'][$matchingKey] : null;
+            if ($value !== null) {
+                $value = preg_replace('/^size:\s*/i', '', $value); // Remove "size:" prefix, case-insensitive
+            }
+
             return [
                 'id' => $counter++,
-                'propertyName' => $attribute['PropertyName'] ?? null,
-                'value' => $attribute['Value'] ?? null,
-                'propertyId' => $attribute['Pid'] ?? null,
-                'valueId' => $attribute['Vid'] ?? null,
+                'quantity' => $attribute['quantity'],
+                'price' => round($attribute['orginal_price'] * $this->amount),
+                'value' => $value,
+                'sku_id' => $attribute['sku_id'],
             ];
-        }, $attributes), function ($attribute) use ($propertyNames) {
-            return in_array($attribute['propertyName'], $propertyNames);
-        }));
+        }, $attributes));
+
+        // Remove entries with null values
+        $transformedAttributes = array_filter($transformedAttributes, function ($attribute) {
+            return $attribute['value'] !== null;
+        });
+
+        // Sort by value
+        usort($transformedAttributes, function ($a, $b) {
+            return strcmp($a['value'], $b['value']);
+        });
+
+        // Remove duplicate values
+        $uniqueAttributes = [];
+        foreach ($transformedAttributes as $attribute) {
+            if (!isset($uniqueAttributes[$attribute['value']])) {
+                $uniqueAttributes[$attribute['value']] = $attribute;
+            }
+        }
+
+        // Re-index the array
+        return array_values($uniqueAttributes);
     }
+
+
 
     private function transformCompositions($attributes, $propertyNames)
     {
         $counter = 0;
-        return array_values(array_filter(array_map(function ($attribute) use (&$counter) {
+
+        // Transform and filter attributes
+        $transformedAttributes = array_filter(array_map(function ($attribute) use (&$counter) {
             return [
                 'id' => $counter++,
-                'propertyName' => $attribute['PropertyName'] ?? null,
-                'value' => $attribute['Value'] ?? null,
+                'propertyName' => $attribute['name'] ?? null,
+                'value' => $attribute['value'] ?? null,
             ];
         }, $attributes), function ($attribute) use ($propertyNames) {
             return in_array($attribute['propertyName'], $propertyNames);
-        }));
+        });
+
+        // Re-index the array
+        return array_values($transformedAttributes);
     }
 
     private function transformEloquentAttributes($attributes)

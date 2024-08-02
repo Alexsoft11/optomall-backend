@@ -64,6 +64,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user-products', [OrderController::class, 'getUserProducts']);
     Route::get('/user/messages', [ListController::class, 'getUserMessages']);
     Route::get('/products-from-taobao-token', [ProductController::class, 'productsFromTaobaoToken']);
+    Route::get('/search-products-from-taobao-token', [ProductController::class, 'searchProductsFromTaobaoToken']);
 });
 
 

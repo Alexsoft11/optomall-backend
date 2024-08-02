@@ -17,13 +17,19 @@ class ProductResource extends JsonResource
     {
         $amount = Exchanges::where('currency', 'usd')->first()->amount ?? 12000;
 
+        $originalPrice = $this->resource['orginal_price'] ?? null;
+        $price = $this->resource['price'] * $amount;
+        $promotionPrice = array_key_exists('promotion_price', $this->resource) ? $this->resource['promotion_price'] : null;
+
         return [
             'id' => $this->resource['num_iid'],
             'title' => $this->resource['title'],
-            'price' => round($this->resource['orginal_price'] * $amount),
+            'price' => isset($originalPrice) ? round($originalPrice * $amount) : round($price),
             'image' => $this->resource['pic_url'],
-            'discounted_price' => round($this->resource['promotion_price'] * $amount),
-            'discount_percent' => round((($this->resource['orginal_price'] - $this->resource['promotion_price']) / $this->resource['orginal_price']) * 100),
+            'discounted_price' => round(isset($promotionPrice) ? $promotionPrice : $price),
+            'discount_percent' => isset($originalPrice)
+                ? round((($originalPrice - ($promotionPrice ?? $this->resource['price'])) / $originalPrice) * 100)
+                : round((($this->resource['price'] - ($promotionPrice ?? $this->resource['price'])) / $this->resource['price']) * 100),
             'is_liked' => false,
         ];
     }
