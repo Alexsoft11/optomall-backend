@@ -56,7 +56,7 @@
         <h1>Уважаемый клиент,</h1>
         <p>{{ $order->getStatus->message_ru }}</p>
         <p>Заказ: <a
-                href="https://onway.uz/purchases?filter=all?orderId={{ $order->unique_id }}">{{ $order->unique_id }}</a>
+                href="https://onway.uz/purchases?filter=all&orderId={{ $order->unique_id }}">{{ $order->unique_id }}</a>
         </p>
         <p>Спасибо за покупки у нас!</p>
         <div class="signature">

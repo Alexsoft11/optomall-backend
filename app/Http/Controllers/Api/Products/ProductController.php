@@ -16,6 +16,7 @@ use App\Models\Category;
 use App\Models\LikedProduct;
 use App\Models\Product;
 use App\Models\ProductCategory;
+use App\Models\TaobaoCategory;
 use App\Traits\ApiResponseHelpers;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Validator;
@@ -23,13 +24,6 @@ use Illuminate\Support\Facades\Validator;
 class ProductController extends Controller
 {
     use ApiResponseHelpers;
-
-    private $apiKey;
-
-    public function __construct()
-    {
-        $this->apiKey = "8e6d9b54-88a7-4dcc-9f2b-add4d68dbbb8";
-    }
 
     /**
      * @OA\Post(
@@ -191,54 +185,69 @@ class ProductController extends Controller
     /**
      * @OA\Get(
      *     path="/api/categories-from-taobao",
-     *     summary="Get categories from taobao",
+     *     summary="Get categories from Taobao",
      *     tags={"Products"},
-     *     @OA\Response(response="200", description="Categories from taobao"),
-     * )
-     */
-    public function categoriesFromTaoBao()
-    {
-        $categories = Category::all()->where('is_active', true);
-
-        return $this->respondWithSuccess([
-            'categories' => CategoryResource::collection($categories)
-        ]);
-    }
-
-    /**
-     * @OA\Get(
-     *     path="/api/sub-categories-from-taobao",
-     *     summary="Get subcategories from taobao",
-     *     tags={"Products"},
-     *      @OA\Parameter(
-     *         name="categoryId",
+     *     @OA\Parameter(
+     *         name="lang",
      *         in="query",
-     *         required=true,
-     *         @OA\Schema(type="string"),
-     *         description="The ID of the category"
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *             enum={"en", "uz", "ru"},
+     *             default="en"
+     *         ),
+     *         description="Language for category names"
      *     ),
-     *     @OA\Response(response="200", description="SubCategories from taobao"),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Categories from Taobao",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(
+     *                 property="categories",
+     *                 type="array",
+     *                 @OA\Items(
+     *                     type="object",
+     *                     @OA\Property(property="name", type="string"),
+     *                     @OA\Property(
+     *                         property="subcategories",
+     *                         type="array",
+     *                         @OA\Items(
+     *                             type="object",
+     *                             @OA\Property(property="name", type="string"),
+     *                             @OA\Property(
+     *                                 property="items",
+     *                                 type="array",
+     *                                 @OA\Items(type="string")
+     *                             )
+     *                         )
+     *                     )
+     *                 )
+     *             )
+     *         )
+     *     )
      * )
      */
-    public function subCategoriesFromTaoBao(Request $request)
+    public function categoriesFromTaoBao(Request $request)
     {
-        $categoryId = $request->categoryId;
+        $lang = $request->query('lang', 'en');
+        $categories = TaobaoCategory::where('is_active', true)->get();
 
-        $url = "http://otapi.net/service-json/GetCategorySubcategoryInfoList?instanceKey=06e38b86-e4a7-451e-91b3-2b40d2dd3e24&language=uz&signature=221bb03db72a7ec4680e84de68f0ec37f158fcac66693ee9cc7083e14adac06c&timestamp=20240526084418&parentCategoryId=$categoryId";
-
-        $response = Http::get($url);
-        $categories = $response->json();
-        if ($categories['ErrorCode'] == 'AccessDenied') {
-            // $subCategories = ProductCategory::where('category_id', $categoryId)->get();
-            $subCategories = [];
-
-            return $this->respondWithSuccess([
-                'sub_categories' => SubCategoryResource::collection($subCategories)
-            ]);
-        }
+        $categoriesMap = $categories->map(function ($category) use ($lang) {
+            $category->name = $category->{"name_$lang"};
+            $category->subcategories = $category->subcategories->map(function ($subcategory) use ($lang) {
+                $subcategory->name = $subcategory->{"subcategory_name_$lang"};
+                $subcategory->items = $subcategory->items->map(function ($item) use ($lang) {
+                    $item->name = $item->{"subcategory_$lang"};
+                    return $item;
+                });
+                return $subcategory;
+            });
+            return $category;
+        });
 
         return $this->respondWithSuccess([
-            'sub_categories' => SubCategoryResource::collection($categories['CategoryInfoList']['Content'])
+            'categories' => CategoryResource::collection($categoriesMap)
         ]);
     }
 
@@ -248,11 +257,17 @@ class ProductController extends Controller
      *     summary="Get products from taobao",
      *     tags={"Products"},
      *     @OA\Parameter(
-     *         name="subCategoryId",
+     *         name="subCategory",
      *         in="query",
      *         required=true,
      *         @OA\Schema(type="string"),
      *         description="The ID of the subcategory"
+     *     ),
+     *     @OA\Parameter(
+     *         name="page",
+     *         in="query",
+     *         required=false,
+     *         @OA\Schema(type="integer")
      *     ),
      *     @OA\Parameter(
      *         name="productsCount",
@@ -261,28 +276,141 @@ class ProductController extends Controller
      *         @OA\Schema(type="string"),
      *         description="The count of products"
      *     ),
+     *  @OA\Parameter(
+     *         name="lang",
+     *         in="query",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *             enum={"uz", "ru", "en"}
+     *         ),
+     *         description="Language code for the product details. Available options: uz, ru, en"
+     *     ),
      *     @OA\Response(response="200", description="Products from taobao"),
      * )
      */
     public function productsFromTaoBao(Request $request)
     {
-        $subCategoryId = $request->subCategoryId;
+        $subCategory = $request->subCategory;
+        $lang = $request->lang;
+        $page = $request->page ? $request->page : 1;
         $productsCount = $request->productsCount ? $request->productsCount : 20;
-        $url = "http://otapi.net/service-json/BatchSearchItemsFrame?instanceKey=06e38b86-e4a7-451e-91b3-2b40d2dd3e24&language=uz&signature=ede6e796a3f325d3d0a7743c7c4e7d93648c74d7c41744f1671714e327b5d52b&timestamp=20240526085107&sessionId=&xmlParameters=%3CSearchItemsParameters%3E%3CCategoryId%3E$subCategoryId%3C%2FCategoryId%3E%3C%2FSearchItemsParameters%3E&framePosition=0&frameSize=$productsCount&blockList=";
+        $url = "https://api.kongcrdv.com/taobao/api_call.php?api_name=item_search&lang=$lang&q=$subCategory&page=$page&page_size=$productsCount&key=kingdev5809@gmail.com";
 
         $response = Http::get($url);
         $products = $response->json();
-        // return $products;
-        if ($products['ErrorCode'] == 'AccessDenied') {
-            $productsFromDataBase = Product::where('product_category_id', $subCategoryId)->limit($productsCount)->get();
-
-            return $this->respondWithSuccess([
-                'products' => ProductResource::collection($productsFromDataBase)
-            ]);
-        }
 
         return $this->respondWithSuccess([
-            'products' => ProductResource::collection($products['Result']['Items']['Items']['Content'])
+            'page' => $page, 'page_size' => $productsCount, 'products' => ProductResource::collection($products['items']['item'])
+        ]);
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/products-from-taobao-token",
+     *     summary="Get products from taobao",
+     *     tags={"Products"},
+     *     security={{ "bearerAuth":{} }},
+     *     @OA\Parameter(
+     *         name="subCategory",
+     *         in="query",
+     *         required=true,
+     *         @OA\Schema(type="string"),
+     *         description="The ID of the subcategory"
+     *     ),
+     *     @OA\Parameter(
+     *         name="page",
+     *         in="query",
+     *         required=false,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Parameter(
+     *         name="productsCount",
+     *         in="query",
+     *         required=false,
+     *         @OA\Schema(type="string"),
+     *         description="The count of products"
+     *     ),
+     *  @OA\Parameter(
+     *         name="lang",
+     *         in="query",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *             enum={"uz", "ru", "en"}
+     *         ),
+     *         description="Language code for the product details. Available options: uz, ru, en"
+     *     ),
+     *     @OA\Response(response="200", description="Products from taobao"),
+     * )
+     */
+    public function productsFromTaoBaoToken(Request $request)
+    {
+        $subCategory = $request->subCategory;
+        $lang = $request->lang;
+        $page = $request->page ? $request->page : 1;
+        $productsCount = $request->productsCount ? $request->productsCount : 20;
+        $url = "https://api.kongcrdv.com/taobao/api_call.php?api_name=item_search&lang=$lang&q=$subCategory&page=$page&page_size=$productsCount&key=kingdev5809@gmail.com";
+
+        $response = Http::get($url);
+        $products = $response->json();
+
+        return $this->respondWithSuccess([
+            'page' => $page, 'page_size' => $productsCount, 'products' => ProductTokenResource::collection($products['items']['item'])
+        ]);
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/product-detail-from-taobao",
+     *     summary="Get product detail from taobao",
+     *     tags={"Products"},
+     *     @OA\Parameter(
+     *         name="productId",
+     *         in="query",
+     *         required=true,
+     *         @OA\Schema(type="string"),
+     *         description="The ID of the product to retrieve details for"
+     *     ),
+     *  @OA\Parameter(
+     *         name="provider",
+     *         in="query",
+     *         required=false,
+     *         @OA\Schema(type="string")
+     *     ),
+     *    @OA\Parameter(
+     *         name="lang",
+     *         in="query",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *             enum={"uz", "ru", "en"}
+     *         ),
+     *         description="Language code for the product details. Available options: uz, ru, en"
+     *     ),
+     *     @OA\Response(response="200", description="Product detail from taobao"),
+     * )
+     */
+    public function productDetailFromTaoBao(Request $request)
+    {
+        $productId = $request->productId;
+        $lang = $request->lang;
+        $provider = $request->provider ?? 'taobao';
+        $url = "https://api.kongcrdv.com/$provider/api_call.php?api_name=item_get&lang=$lang&num_iid=$productId&key=kingdev5809@gmail.com";
+
+        $response = Http::get($url);
+        $productDetail = $response->json();
+
+        $imageSearch = "https://kongcrdv.com/$provider/api/export_api.php?action=item_search_img&key=kingdev5809@gmail.com&imgid={$productDetail['item']['pic_url']}&lang=$lang";
+        $rand = Http::get($imageSearch);
+        $randomProducts = $rand->json();
+
+        $recommendedProducts = collect($randomProducts['data']['items']['item'])->take(5);
+        // return $recommendedProducts;
+        return $this->respondWithSuccess([
+            'detail' => new ProductDetailResource($productDetail['item']),
+            'score' => ['rating' => $productDetail['item']['seller_info']['item_score'], 'sold' => $productDetail['item']['sales']],
+            'recommended' => ProductResource::collection($recommendedProducts),
         ]);
     }
 
@@ -298,6 +426,12 @@ class ProductController extends Controller
      *         required=true,
      *         @OA\Schema(type="string"),
      *         description="The ID of the product to retrieve details for"
+     *     ),
+     * @OA\Parameter(
+     *         name="provider",
+     *         in="query",
+     *         required=false,
+     *         @OA\Schema(type="string")
      *     ),
      *     @OA\Parameter(
      *         name="lang",
@@ -316,135 +450,22 @@ class ProductController extends Controller
     public function productDetailFromTaoBaoToken(Request $request)
     {
         $productId = $request->productId;
-        $url = "http://otapi.net/service-json/BatchGetItemFullInfo?instanceKey=06e38b86-e4a7-451e-91b3-2b40d2dd3e24&language=uz&signature=a67f4af4c43ea96f880740611d680127cbdf84ddbdaab674d8c3f265df1353e0&timestamp=20240526085023&sessionId=&itemParameters=&itemId=$productId&blockList=OriginalDescription";
-        $score = "http://otapi.net/service-json/BatchGetSimplifiedItemFullInfo?instanceKey=06e38b86-e4a7-451e-91b3-2b40d2dd3e24&language=uz&signature=a67f4af4c43ea96f880740611d680127cbdf84ddbdaab674d8c3f265df1353e0&timestamp=20240526085023&sessionId=&itemParameters=&itemId=$productId&blockList=Vendor";
-        // $url1 = "http://otapi.net/service-json/BatchSearchItemsFrame?instanceKey={$this->apiKey}&language=uz&signature=e2082ad9248214795914d5f72e7a8ee835428149d23223eb00d97a67c2f9d1f6&timestamp=20240613130232&sessionId=&xmlParameters=%3CSearchItemsParameters%3E%0D%0A%0D%0A%3CCategoryId%3E121392004%3C%2FCategoryId%3E%0D%0A%3C%2FSearchItemsParameters%3E&framePosition=0&frameSize=1&blockList=";
-        // $url2 = "http://otapi.net/service-json/BatchSearchItemsFrame?instanceKey={$this->apiKey}&language=uz&signature=e2082ad9248214795914d5f72e7a8ee835428149d23223eb00d97a67c2f9d1f6&timestamp=20240613130232&sessionId=&xmlParameters=%3CSearchItemsParameters%3E%0D%0A%0D%0A%3CCategoryId%3E50000852%3C%2FCategoryId%3E%0D%0A%3C%2FSearchItemsParameters%3E&framePosition=0&frameSize=2&blockList=";
-        // $url3 = "http://otapi.net/service-json/BatchSearchItemsFrame?instanceKey={$this->apiKey}&language=uz&signature=e2082ad9248214795914d5f72e7a8ee835428149d23223eb00d97a67c2f9d1f6&timestamp=20240613130232&sessionId=&xmlParameters=%3CSearchItemsParameters%3E%0D%0A%0D%0A%3CCategoryId%3E50013189%3C%2FCategoryId%3E%0D%0A%3C%2FSearchItemsParameters%3E&framePosition=0&frameSize=1&blockList=";
+        $lang = $request->lang;
+        $provider = $request->provider ?? 'taobao';
+        $url = "https://api.kongcrdv.com/$provider/api_call.php?api_name=item_get&lang=$lang&num_iid=$productId&key=kingdev5809@gmail.com";
 
-        // $response1 = Http::get($url1);
-        // $products1 = $response1->json();
         $response = Http::get($url);
         $productDetail = $response->json();
-        $randomProducts = Product::inRandomOrder()->limit(5)->get();
-        if ($productDetail['ErrorCode'] == 'AccessDenied') {
-            $productDetailFromDataBase = Product::where('id', $productId)->first();
 
-            return $this->respondWithSuccess([
-                'detail' => new ProductDetailTokenResource($productDetailFromDataBase, $request->lang),
-                'score' => [
-                    'rating' => 4.4,
-                    'sold' => 3123,
-                ],
-                'recommended' => ProductResource::collection($randomProducts)
-            ]);
-        }
-        // $productsList1 = $products1['Result']['Items']['Items']['Content'];
+        $imageSearch = "https://kongcrdv.com/$provider/api/export_api.php?action=item_search_img&key=kingdev5809@gmail.com&imgid={$productDetail['item']['pic_url']}&lang=$lang";
+        $rand = Http::get($imageSearch);
+        $randomProducts = $rand->json();
 
-
-        // $response2 = Http::get($url2);
-        // $products2 = $response2->json();
-        // $productsList2 = $products2['Result']['Items']['Items']['Content'];
-
-        // $response3 = Http::get($url3);
-        // $products3 = $response3->json();
-        // $productsList3 = $products3['Result']['Items']['Items']['Content'];
-
-        // $mergedProducts = array_merge($productsList1, $productsList2, $productsList3);
-        // shuffle($mergedProducts);
-
-
-        // return $productDetail;
-        if ($productDetail['ErrorCode'] == 'NotFound') {
-            return $this->respondNotFound('Product not found', 404);
-        }
-        $score = Http::get($score);
-        $scoreDetail = $score->json();
-        // return $productDetail;
+        $recommendedProducts = collect($randomProducts['data']['items']['item'])->take(5);
         return $this->respondWithSuccess([
-            'detail' => new ProductDetailTokenResource($productDetail['Result']['Item']),
-            'score' => new ScoreResource($scoreDetail['Result']['Vendor']),
-            'recommended' => ProductResource::collection($randomProducts)
-        ]);
-    }
-
-    /**
-     * @OA\Get(
-     *     path="/api/product-detail-from-taobao",
-     *     summary="Get product detail from taobao",
-     *     tags={"Products"},
-     *     @OA\Parameter(
-     *         name="productId",
-     *         in="query",
-     *         required=true,
-     *         @OA\Schema(type="string"),
-     *         description="The ID of the product to retrieve details for"
-     *     ),
-     *    @OA\Parameter(
-     *         name="lang",
-     *         in="query",
-     *         required=false,
-     *         @OA\Schema(
-     *             type="string",
-     *             enum={"uz", "ru", "en"}
-     *         ),
-     *         description="Language code for the product details. Available options: uz, ru, en"
-     *     ),
-     *     @OA\Response(response="200", description="Product detail from taobao"),
-     * )
-     */
-    public function productDetailFromTaoBao(Request $request)
-    {
-        $productId = $request->productId;
-        $url = "http://otapi.net/service-json/BatchGetItemFullInfo?instanceKey=06e38b86-e4a7-451e-91b3-2b40d2dd3e24&language=uz&signature=a67f4af4c43ea96f880740611d680127cbdf84ddbdaab674d8c3f265df1353e0&timestamp=20240526085023&sessionId=&itemParameters=&itemId=$productId&blockList=OriginalDescription";
-        $score = "http://otapi.net/service-json/BatchGetSimplifiedItemFullInfo?instanceKey=06e38b86-e4a7-451e-91b3-2b40d2dd3e24&language=uz&signature=a67f4af4c43ea96f880740611d680127cbdf84ddbdaab674d8c3f265df1353e0&timestamp=20240526085023&sessionId=&itemParameters=&itemId=$productId&blockList=Vendor";
-        // $url1 = "http://otapi.net/service-json/BatchSearchItemsFrame?instanceKey={$this->apiKey}&language=uz&signature=e2082ad9248214795914d5f72e7a8ee835428149d23223eb00d97a67c2f9d1f6&timestamp=20240613130232&sessionId=&xmlParameters=%3CSearchItemsParameters%3E%0D%0A%0D%0A%3CCategoryId%3E121392004%3C%2FCategoryId%3E%0D%0A%3C%2FSearchItemsParameters%3E&framePosition=0&frameSize=1&blockList=";
-        // $url2 = "http://otapi.net/service-json/BatchSearchItemsFrame?instanceKey={$this->apiKey}&language=uz&signature=e2082ad9248214795914d5f72e7a8ee835428149d23223eb00d97a67c2f9d1f6&timestamp=20240613130232&sessionId=&xmlParameters=%3CSearchItemsParameters%3E%0D%0A%0D%0A%3CCategoryId%3E50000852%3C%2FCategoryId%3E%0D%0A%3C%2FSearchItemsParameters%3E&framePosition=0&frameSize=2&blockList=";
-        // $url3 = "http://otapi.net/service-json/BatchSearchItemsFrame?instanceKey={$this->apiKey}&language=uz&signature=e2082ad9248214795914d5f72e7a8ee835428149d23223eb00d97a67c2f9d1f6&timestamp=20240613130232&sessionId=&xmlParameters=%3CSearchItemsParameters%3E%0D%0A%0D%0A%3CCategoryId%3E50013189%3C%2FCategoryId%3E%0D%0A%3C%2FSearchItemsParameters%3E&framePosition=0&frameSize=1&blockList=";
-
-        // $response1 = Http::get($url1);
-        // $products1 = $response1->json();
-        $response = Http::get($url);
-        $productDetail = $response->json();
-        $randomProducts = Product::inRandomOrder()->limit(5)->get();
-        if ($productDetail['ErrorCode'] == 'AccessDenied') {
-            $productDetailFromDataBase = Product::where('id', $productId)->first();
-
-            return $this->respondWithSuccess([
-                'detail' => new ProductDetailResource($productDetailFromDataBase, $request->lang),
-                'score' => [
-                    'rating' => 4.4,
-                    'sold' => 3123,
-                ],
-                'recommended' => ProductResource::collection($randomProducts)
-            ]);
-        }
-        // $productsList1 = $products1['Result']['Items']['Items']['Content'];
-
-
-        // $response2 = Http::get($url2);
-        // $products2 = $response2->json();
-        // $productsList2 = $products2['Result']['Items']['Items']['Content'];
-
-        // $response3 = Http::get($url3);
-        // $products3 = $response3->json();
-        // $productsList3 = $products3['Result']['Items']['Items']['Content'];
-
-        // $mergedProducts = array_merge($productsList1, $productsList2, $productsList3);
-        // shuffle($mergedProducts);
-
-
-        // return $productDetail;
-        if ($productDetail['ErrorCode'] == 'NotFound') {
-            return $this->respondNotFound('Product not found', 404);
-        }
-        $score = Http::get($score);
-        $scoreDetail = $score->json();
-        // return $productDetail;
-        return $this->respondWithSuccess([
-            'detail' => new ProductDetailResource($productDetail['Result']['Item']),
-            'score' => new ScoreResource($scoreDetail['Result']['Vendor']),
-            'recommended' => ProductResource::collection($randomProducts)
+            'detail' => new ProductDetailTokenResource($productDetail['item']),
+            'score' => ['rating' => $productDetail['item']['seller_info']['item_score'], 'sold' => $productDetail['item']['sales']],
+            'recommended' => ProductResource::collection($recommendedProducts)
         ]);
     }
 
@@ -467,32 +488,139 @@ class ProductController extends Controller
      *         @OA\Schema(type="string"),
      *         description="The count of products"
      *     ),
+     *  @OA\Parameter(
+     *         name="page",
+     *         in="query",
+     *         required=false,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *  @OA\Parameter(
+     *         name="provider",
+     *         in="query",
+     *         required=false,
+     *         @OA\Schema(type="string")
+     *     ),
+     *  @OA\Parameter(
+     *         name="startPrice",
+     *         in="query",
+     *         required=false,
+     *         @OA\Schema(type="string")
+     *     ),
+     *  @OA\Parameter(
+     *         name="endPrice",
+     *         in="query",
+     *         required=false,
+     *         @OA\Schema(type="string")
+     *     ),
+     *  @OA\Parameter(
+     *         name="lang",
+     *         in="query",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *             enum={"uz", "ru", "en"}
+     *         ),
+     *         description="Language code for the product details. Available options: uz, ru, en"
+     *     ),
      *     @OA\Response(response="200", description="Products from taobao"),
      * )
      */
     public function searchProductsFromTaobao(Request $request)
     {
         $searchQuery = $request->searchQuery;
+        $startPrice = $request->startPrice;
+        $endPrice = $request->endPrice;
+        $page = $request->page ? $request->page : 1;
         $productsCount = $request->productsCount ? $request->productsCount : 20;
+        $provider = $request->provider ? $request->provider : 'taobao';
+        $lang = $request->lang;
 
-        $url = "http://otapi.net/service-json/BatchSearchItemsFrame?instanceKey={$this->apiKey}&language=uz&signature=f577361a7599024bbbf86517fc0f5ed3b9938c76c60fdb75a3fb66e350b702cd&timestamp=20240606182926&sessionId=&xmlParameters=%3CSearchItemsParameters%3E%3CItemTitle%3E$searchQuery%3C%2FItemTitle%3E%3C%2FSearchItemsParameters%3E&framePosition=0&frameSize=$productsCount&blockList=";
+        $url = "https://api.kongcrdv.com/$provider/api_call.php?api_name=item_search&lang=$lang&key=kingdev5809@gmail.com&q=$searchQuery&start_price=$startPrice&end_price=$endPrice&page=$page&page_size=$productsCount";
 
         $response = Http::get($url);
         $products = $response->json();
-
-        if ($products['ErrorCode'] == 'AccessDenied') {
-            $productsFromDatabase = Product::where('title', 'like', '%' . $searchQuery . '%')
-                ->limit($productsCount)
-                ->get();
-
-            return $this->respondWithSuccess([
-                'products' => ProductResource::collection($productsFromDatabase)
-            ]);
-        }
-
+        // return $products;
 
         return $this->respondWithSuccess([
-            'products' => ProductResource::collection($products['Result']['Items']['Items']['Content'])
+            'products' => ProductResource::collection($products['items']['item'])
+        ]);
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/search-products-from-taobao-token",
+     *     summary="Search products by title.",
+     *     tags={"Products"},
+     *     security={{ "bearerAuth":{} }},
+     *     @OA\Parameter(
+     *         name="searchQuery",
+     *         in="query",
+     *         required=true,
+     *         @OA\Schema(type="string"),
+     *         description="Search products by title."
+     *     ),
+     *     @OA\Parameter(
+     *         name="productsCount",
+     *         in="query",
+     *         required=false,
+     *         @OA\Schema(type="string"),
+     *         description="The count of products"
+     *     ),
+     *  @OA\Parameter(
+     *         name="page",
+     *         in="query",
+     *         required=false,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *  @OA\Parameter(
+     *         name="provider",
+     *         in="query",
+     *         required=false,
+     *         @OA\Schema(type="string")
+     *     ),
+     *  @OA\Parameter(
+     *         name="startPrice",
+     *         in="query",
+     *         required=false,
+     *         @OA\Schema(type="string")
+     *     ),
+     *  @OA\Parameter(
+     *         name="endPrice",
+     *         in="query",
+     *         required=false,
+     *         @OA\Schema(type="string")
+     *     ),
+     *  @OA\Parameter(
+     *         name="lang",
+     *         in="query",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *             enum={"uz", "ru", "en"}
+     *         ),
+     *         description="Language code for the product details. Available options: uz, ru, en"
+     *     ),
+     *     @OA\Response(response="200", description="Products from taobao"),
+     * )
+     */
+    public function searchProductsFromTaobaoToken(Request $request)
+    {
+        $searchQuery = $request->searchQuery;
+        $startPrice = $request->startPrice;
+        $endPrice = $request->endPrice;
+        $page = $request->page ? $request->page : 1;
+        $productsCount = $request->productsCount ? $request->productsCount : 20;
+        $provider = $request->provider ? $request->provider : 'taobao';
+        $lang = $request->lang;
+
+        $url = "https://api.kongcrdv.com/$provider/api_call.php?api_name=item_search&lang=$lang&key=kingdev5809@gmail.com&q=$searchQuery&start_price=$startPrice&end_price=$endPrice&page=$page&page_size=$productsCount";
+
+        $response = Http::get($url);
+        $products = $response->json();
+        // return $products;
+
+        return $this->respondWithSuccess([
+            'products' => ProductTokenResource::collection($products['items']['item'])
         ]);
     }
 
@@ -503,93 +631,47 @@ class ProductController extends Controller
      *     @OA\Parameter(
      *         name="query",
      *         in="query",
-     *         description="Top or Recommended or Discount",
+     *         description="Top or Popular",
      *         required=true,
      *         @OA\Schema(
      *             type="string",
-     *             enum={"Top", "Recommended", "Discount"}
+     *             enum={"热销", "推荐"}
      *         )
+     *     ),
+     *    @OA\Parameter(
+     *         name="productsCount",
+     *         in="query",
+     *         required=false,
+     *         @OA\Schema(type="string"),
+     *         description="The count of products"
+     *     ),
+     *  @OA\Parameter(
+     *         name="page",
+     *         in="query",
+     *         required=false,
+     *         @OA\Schema(type="integer")
      *     ),
      *     tags={"Products"},
      *     @OA\Response(response="200", description="Products from taobao"),
      * )
      */
 
-    public function products()
+    public function products(Request $request)
     {
-        $query = request()->query('query');
-        $productCount = rand(10, 100);
-        $productsFromDatabase = Product::limit($productCount)->get()->shuffle();
-        // return $productsFromDatabase;
-        if ($query == 'Top') {
+        // Retrieve the query parameters
+        $query = $request->input('query');
+        $lang = $request->input('lang');
+        $productsCount = $request->input('productsCount');
+        $page = $request->input('page');
 
-            // $url = "http://otapi.net/service-json/BatchSearchItemsFrame?instanceKey={$this->apiKey}&language=uz&signature=e2082ad9248214795914d5f72e7a8ee835428149d23223eb00d97a67c2f9d1f6&timestamp=20240613130232&sessionId=&xmlParameters=%3CSearchItemsParameters%3E%0D%0A%0D%0A%3CCategoryId%3E121392004%3C%2FCategoryId%3E%0D%0A%3C%2FSearchItemsParameters%3E&framePosition=0&frameSize=10&blockList=";
-            // $url1 = "http://otapi.net/service-json/BatchSearchItemsFrame?instanceKey={$this->apiKey}&language=uz&signature=e2082ad9248214795914d5f72e7a8ee835428149d23223eb00d97a67c2f9d1f6&timestamp=20240613130232&sessionId=&xmlParameters=%3CSearchItemsParameters%3E%0D%0A%0D%0A%3CCategoryId%3E50000852%3C%2FCategoryId%3E%0D%0A%3C%2FSearchItemsParameters%3E&framePosition=0&frameSize=50&blockList=";
-            // $url2 = "http://otapi.net/service-json/BatchSearchItemsFrame?instanceKey={$this->apiKey}&language=uz&signature=e2082ad9248214795914d5f72e7a8ee835428149d23223eb00d97a67c2f9d1f6&timestamp=20240613130232&sessionId=&xmlParameters=%3CSearchItemsParameters%3E%0D%0A%0D%0A%3CCategoryId%3E50013189%3C%2FCategoryId%3E%0D%0A%3C%2FSearchItemsParameters%3E&framePosition=0&frameSize=40&blockList=";
+        $url = "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=$productsCount&q=$query&lang=$lang";
 
-            // $response = Http::get($url);
-            // $products = $response->json();
-            // return $products;
-            // $productsList = $products['Result']['Items']['Items']['Content'];
+        $response = Http::get($url);
+        $products = $response->json();
 
-            // $response1 = Http::get($url1);
-            // $products1 = $response1->json();
-            // $productsList1 = $products1['Result']['Items']['Items']['Content'];
-
-            // $response2 = Http::get($url2);
-            // $products2 = $response2->json();
-            // $productsList2 = $products2['Result']['Items']['Items']['Content'];
-
-            // $mergedProducts = array_merge($productsList, $productsList1, $productsList2);
-            // shuffle($mergedProducts);
-
-            return $this->respondWithSuccess([
-                'products' => ProductResource::collection($productsFromDatabase)
-            ]);
-        } else if ($query == 'Recommended') {
-
-            // $url = "http://otapi.net/service-json/BatchSearchItemsFrame?instanceKey={$this->apiKey}&language=uz&signature=e2082ad9248214795914d5f72e7a8ee835428149d23223eb00d97a67c2f9d1f6&timestamp=20240613130232&sessionId=&xmlParameters=%3CSearchItemsParameters%3E%0D%0A%0D%0A%3CCategoryId%3E50010167%3C%2FCategoryId%3E%0D%0A%3C%2FSearchItemsParameters%3E&framePosition=0&frameSize=$productCount&blockList=";
-            // $url1 = "http://otapi.net/service-json/BatchSearchItemsFrame?instanceKey={$this->apiKey}&language=uz&signature=e2082ad9248214795914d5f72e7a8ee835428149d23223eb00d97a67c2f9d1f6&timestamp=20240613130232&sessionId=&xmlParameters=%3CSearchItemsParameters%3E%0D%0A%0D%0A%3CCategoryId%3E50000852%3C%2FCategoryId%3E%0D%0A%3C%2FSearchItemsParameters%3E&framePosition=0&frameSize=$productCount&blockList=";
-
-            // $response = Http::get($url);
-            // $products = $response->json();
-            // $productsList = $products['Result']['Items']['Items']['Content'];
-
-            // $response1 = Http::get($url1);
-            // $products1 = $response1->json();
-            // $productsList1 = $products1['Result']['Items']['Items']['Content'];
-
-            // $mergedProducts = array_merge($productsList, $productsList1);
-            // shuffle($mergedProducts);
-
-            return $this->respondWithSuccess([
-                'products' => ProductResource::collection($productsFromDatabase)
-            ]);
-        } else {
-
-            // $url = "http://otapi.net/service-json/BatchSearchItemsFrame?instanceKey={$this->apiKey}&language=en&signature=85c20a117ee63be63b4690ce3784948afcda244cb4d6c61446424cfe7494ce73&timestamp=20240616064555&sessionId=&xmlParameters=%3CSearchItemsParameters%3E%0D%0A%3CItemTitle%3Eiphone%3C%2FItemTitle%3E%0D%0A%3CFeatures%3E%0D%0A+++++%3CFeature+Name%3D%22Discount%22%3Etrue%3C%2FFeature%3E%0D%0A%3C%2FFeatures%3E%0D%0A%3C%2FSearchItemsParameters%3E&framePosition=0&frameSize=$productCount&blockList=AvailableSearchMethods";
-            // $url1 = "http://otapi.net/service-json/BatchSearchItemsFrame?instanceKey={$this->apiKey}&language=en&signature=85c20a117ee63be63b4690ce3784948afcda244cb4d6c61446424cfe7494ce73&timestamp=20240616064555&sessionId=&xmlParameters=%3CSearchItemsParameters%3E%0D%0A%3CItemTitle%3EFutbolka%3C%2FItemTitle%3E%0D%0A%3CFeatures%3E%0D%0A+++++%3CFeature+Name%3D%22Discount%22%3Etrue%3C%2FFeature%3E%0D%0A%3C%2FFeatures%3E%0D%0A%3C%2FSearchItemsParameters%3E&framePosition=0&frameSize=$productCount&blockList=AvailableSearchMethods";
-            // $url2 = "http://otapi.net/service-json/BatchSearchItemsFrame?instanceKey={$this->apiKey}&language=en&signature=85c20a117ee63be63b4690ce3784948afcda244cb4d6c61446424cfe7494ce73&timestamp=20240616064555&sessionId=&xmlParameters=%3CSearchItemsParameters%3E%0D%0A%3CItemTitle%3Eoshxona%3C%2FItemTitle%3E%0D%0A%3CFeatures%3E%0D%0A+++++%3CFeature+Name%3D%22Discount%22%3Etrue%3C%2FFeature%3E%0D%0A%3C%2FFeatures%3E%0D%0A%3C%2FSearchItemsParameters%3E&framePosition=0&frameSize=$productCount&blockList=AvailableSearchMethods";
-
-            // $response = Http::get($url);
-            // $products = $response->json();
-            // $productsList = $products['Result']['Items']['Items']['Content'];
-
-            // $response1 = Http::get($url1);
-            // $products1 = $response1->json();
-            // $productsList1 = $products1['Result']['Items']['Items']['Content'];
-
-            // $response2 = Http::get($url2);
-            // $products2 = $response2->json();
-            // $productsList2 = $products2['Result']['Items']['Items']['Content'];
-
-            // $mergedProducts = array_merge($productsList, $productsList1, $productsList2);
-            // shuffle($mergedProducts);
-
-            return $this->respondWithSuccess([
-                'products' => ProductResource::collection($productsFromDatabase)
-            ]);
-        }
+        return $this->respondWithSuccess([
+            'products' => ProductResource::collection($products['items']['item']),
+        ]);
     }
 
     /**
@@ -600,147 +682,48 @@ class ProductController extends Controller
      *     @OA\Parameter(
      *         name="query",
      *         in="query",
-     *         description="Top or Recommended or Discount",
+     *         description="Top or Popular",
      *         required=true,
      *         @OA\Schema(
      *             type="string",
-     *             enum={"Top", "Recommended", "Discount"}
+     *             enum={"热销", "推荐"}
      *         )
+     *     ),
+     *  @OA\Parameter(
+     *         name="productsCount",
+     *         in="query",
+     *         required=false,
+     *         @OA\Schema(type="string"),
+     *         description="The count of products"
+     *     ),
+     *  @OA\Parameter(
+     *         name="page",
+     *         in="query",
+     *         required=false,
+     *         @OA\Schema(type="integer")
      *     ),
      *     tags={"Products"},
      *     @OA\Response(response="200", description="Products from taobao"),
      * )
      */
 
-    public function productsToken()
+    public function productsToken(Request $request)
     {
-        $query = request()->query('query');
-        $productCount = rand(10, 100);
-        $productsFromDatabase = Product::limit($productCount)->get()->shuffle();
-        // return $productsFromDatabase;
-        if ($query == 'Top') {
+        // Retrieve the query parameters
+        $query = $request->input('query');
+        $lang = $request->input('lang');
+        $productsCount = $request->input('productsCount');
+        $page = $request->input('page');
 
-            // $url = "http://otapi.net/service-json/BatchSearchItemsFrame?instanceKey={$this->apiKey}&language=uz&signature=e2082ad9248214795914d5f72e7a8ee835428149d23223eb00d97a67c2f9d1f6&timestamp=20240613130232&sessionId=&xmlParameters=%3CSearchItemsParameters%3E%0D%0A%0D%0A%3CCategoryId%3E121392004%3C%2FCategoryId%3E%0D%0A%3C%2FSearchItemsParameters%3E&framePosition=0&frameSize=10&blockList=";
-            // $url1 = "http://otapi.net/service-json/BatchSearchItemsFrame?instanceKey={$this->apiKey}&language=uz&signature=e2082ad9248214795914d5f72e7a8ee835428149d23223eb00d97a67c2f9d1f6&timestamp=20240613130232&sessionId=&xmlParameters=%3CSearchItemsParameters%3E%0D%0A%0D%0A%3CCategoryId%3E50000852%3C%2FCategoryId%3E%0D%0A%3C%2FSearchItemsParameters%3E&framePosition=0&frameSize=50&blockList=";
-            // $url2 = "http://otapi.net/service-json/BatchSearchItemsFrame?instanceKey={$this->apiKey}&language=uz&signature=e2082ad9248214795914d5f72e7a8ee835428149d23223eb00d97a67c2f9d1f6&timestamp=20240613130232&sessionId=&xmlParameters=%3CSearchItemsParameters%3E%0D%0A%0D%0A%3CCategoryId%3E50013189%3C%2FCategoryId%3E%0D%0A%3C%2FSearchItemsParameters%3E&framePosition=0&frameSize=40&blockList=";
-
-            // $response = Http::get($url);
-            // $products = $response->json();
-            // return $products;
-            // $productsList = $products['Result']['Items']['Items']['Content'];
-
-            // $response1 = Http::get($url1);
-            // $products1 = $response1->json();
-            // $productsList1 = $products1['Result']['Items']['Items']['Content'];
-
-            // $response2 = Http::get($url2);
-            // $products2 = $response2->json();
-            // $productsList2 = $products2['Result']['Items']['Items']['Content'];
-
-            // $mergedProducts = array_merge($productsList, $productsList1, $productsList2);
-            // shuffle($mergedProducts);
-
-            return $this->respondWithSuccess([
-                'products' => ProductTokenResource::collection($productsFromDatabase)
-            ]);
-        } else if ($query == 'Recommended') {
-
-            // $url = "http://otapi.net/service-json/BatchSearchItemsFrame?instanceKey={$this->apiKey}&language=uz&signature=e2082ad9248214795914d5f72e7a8ee835428149d23223eb00d97a67c2f9d1f6&timestamp=20240613130232&sessionId=&xmlParameters=%3CSearchItemsParameters%3E%0D%0A%0D%0A%3CCategoryId%3E50010167%3C%2FCategoryId%3E%0D%0A%3C%2FSearchItemsParameters%3E&framePosition=0&frameSize=$productCount&blockList=";
-            // $url1 = "http://otapi.net/service-json/BatchSearchItemsFrame?instanceKey={$this->apiKey}&language=uz&signature=e2082ad9248214795914d5f72e7a8ee835428149d23223eb00d97a67c2f9d1f6&timestamp=20240613130232&sessionId=&xmlParameters=%3CSearchItemsParameters%3E%0D%0A%0D%0A%3CCategoryId%3E50000852%3C%2FCategoryId%3E%0D%0A%3C%2FSearchItemsParameters%3E&framePosition=0&frameSize=$productCount&blockList=";
-
-            // $response = Http::get($url);
-            // $products = $response->json();
-            // $productsList = $products['Result']['Items']['Items']['Content'];
-
-            // $response1 = Http::get($url1);
-            // $products1 = $response1->json();
-            // $productsList1 = $products1['Result']['Items']['Items']['Content'];
-
-            // $mergedProducts = array_merge($productsList, $productsList1);
-            // shuffle($mergedProducts);
-
-            return $this->respondWithSuccess([
-                'products' => ProductTokenResource::collection($productsFromDatabase)
-            ]);
-        } else {
-
-            // $url = "http://otapi.net/service-json/BatchSearchItemsFrame?instanceKey={$this->apiKey}&language=en&signature=85c20a117ee63be63b4690ce3784948afcda244cb4d6c61446424cfe7494ce73&timestamp=20240616064555&sessionId=&xmlParameters=%3CSearchItemsParameters%3E%0D%0A%3CItemTitle%3Eiphone%3C%2FItemTitle%3E%0D%0A%3CFeatures%3E%0D%0A+++++%3CFeature+Name%3D%22Discount%22%3Etrue%3C%2FFeature%3E%0D%0A%3C%2FFeatures%3E%0D%0A%3C%2FSearchItemsParameters%3E&framePosition=0&frameSize=$productCount&blockList=AvailableSearchMethods";
-            // $url1 = "http://otapi.net/service-json/BatchSea rchItemsFrame?instanceKey={$this->apiKey}&language=en&signature=85c20a117ee63be63b4690ce3784948afcda244cb4d6c61446424cfe7494ce73&timestamp=20240616064555&sessionId=&xmlParameters=%3CSearchItemsParameters%3E%0D%0A%3CItemTitle%3EFutbolka%3C%2FItemTitle%3E%0D%0A%3CFeatures%3E%0D%0A+++++%3CFeature+Name%3D%22Discount%22%3Etrue%3C%2FFeature%3E%0D%0A%3C%2FFeatures%3E%0D%0A%3C%2FSearchItemsParameters%3E&framePosition=0&frameSize=$productCount&blockList=AvailableSearchMethods";
-            // $url2 = "http://otapi.net/service-json/BatchSearchItemsFrame?instanceKey={$this->apiKey}&language=en&signature=85c20a117ee63be63b4690ce3784948afcda244cb4d6c61446424cfe7494ce73&timestamp=20240616064555&sessionId=&xmlParameters=%3CSearchItemsParameters%3E%0D%0A%3CItemTitle%3Eoshxona%3C%2FItemTitle%3E%0D%0A%3CFeatures%3E%0D%0A+++++%3CFeature+Name%3D%22Discount%22%3Etrue%3C%2FFeature%3E%0D%0A%3C%2FFeatures%3E%0D%0A%3C%2FSearchItemsParameters%3E&framePosition=0&frameSize=$productCount&blockList=AvailableSearchMethods";
-
-            // $response = Http::get($url);
-            // $products = $response->json();
-            // $productsList = $products['Result']['Items']['Items']['Content'];
-
-            // $response1 = Http::get($url1);
-            // $products1 = $response1->json();
-            // $productsList1 = $products1['Result']['Items']['Items']['Content'];
-
-            // $response2 = Http::get($url2);
-            // $products2 = $response2->json();
-            // $productsList2 = $products2['Result']['Items']['Items']['Content'];
-
-            // $mergedProducts = array_merge($productsList, $productsList1, $productsList2);
-            // shuffle($mergedProducts);
-
-            return $this->respondWithSuccess([
-                'products' => ProductTokenResource::collection($productsFromDatabase)
-            ]);
-        }
-    }
-
-    /**
-     * @OA\Get(
-     *     path="/api/get-prices",
-     *     summary="Get prices.",
-     *     tags={"Products"},
-     *     @OA\Parameter(
-     *         name="productId",
-     *         in="query",
-     *         required=true,
-     *         example="766876725459",
-     *         @OA\Schema(type="string"),
-     *     ),
-     *     @OA\Parameter(
-     *         name="propertyId",
-     *         in="query",
-     *         required=true,
-     *         example="12304035",
-     *         @OA\Schema(type="string"),
-     *     ),
-     *     @OA\Parameter(
-     *         name="valueId",
-     *         in="query",
-     *         required=true,
-     *         example="25484125",
-     *         @OA\Schema(type="string"),
-     *     ),
-     *     @OA\Response(response="200", description="Get prices"),
-     * )
-     */
-
-    public function getPrices(Request $request)
-    {
-        $productId = $request->productId;
-        $propertyId = $request->propertyId;
-        $valueId = $request->valueId;
-
-        $url = "http://otapi.net/service-json/BatchGetSimplifiedItemConfigurationInfo?instanceKey={$this->apiKey}&language=uz&signature=6fa06217364cb1b7343ed4cfefec0f4a93ae41cbdfdd3304e93d387543af88a5&timestamp=20240620095346&sessionId=&itemParameters=&itemId=$productId&xmlRequest=%3CRequest%3E%3CCurrent%3E%3CProperty+Id%3D%22$propertyId%22+ValueId%3D%22$valueId%22+%2F%3E%3C%2FCurrent%3E%3C%2FRequest%3E&blockList=AdditionalPrices";
+        $url = "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=$productsCount&q=$query&lang=$lang";
 
         $response = Http::get($url);
-        $prices = $response->json();
+        $products = $response->json();
 
-        if (isset($prices['Result']['Configuration']['Current'])) {
-            $quantity = $prices['Result']['Configuration']['Current']['AvailableQuantity'];
-            $price = $prices['Result']['Configuration']['Current']['Price']['Min'];
-
-            return $this->respondWithSuccess([
-                'price' => $price,
-                'quantity' => $quantity,
-            ]);
-        }
+        return $this->respondWithSuccess([
+            'products' => ProductResource::collection($products['items']['item']),
+        ]);
     }
-
 
     /**
      * @OA\Get(
