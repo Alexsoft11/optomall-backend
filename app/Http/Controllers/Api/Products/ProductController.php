@@ -419,7 +419,10 @@ class ProductController extends Controller
             $rand = Http::get($imageSearchUrl);
             $randomProducts = $rand->json();
         }
-
+        // return $randomProducts;
+        // if (!isset($randomProducts['data']['items']['item'])) {
+        //     return response()->json(['error' => 'Product not found'], 404);
+        // }
         $recommendedProducts = collect($randomProducts['data']['items']['item'])->take(5);
 
         return $this->respondWithSuccess([
@@ -775,6 +778,12 @@ class ProductController extends Controller
      *         @OA\Schema(type="string"),
      *         description="The count of products"
      *     ),
+     *    @OA\Parameter(
+     *         name="lang",
+     *         in="query",
+     *         required=false,
+     *         @OA\Schema(type="string"),
+     *     ),
      *  @OA\Parameter(
      *         name="page",
      *         in="query",
@@ -798,9 +807,10 @@ class ProductController extends Controller
 
         $response = Http::get($url);
         $products = $response->json();
+        // return $products;
 
         return $this->respondWithSuccess([
-            'products' => ProductResource::collection($products['items']['item']),
+            'products' => ProductResource::collection($products['data']['items']['item']),
         ]);
     }
 
@@ -825,6 +835,12 @@ class ProductController extends Controller
      *         required=false,
      *         @OA\Schema(type="string"),
      *         description="The count of products"
+     *     ),
+     * @OA\Parameter(
+     *         name="lang",
+     *         in="query",
+     *         required=false,
+     *         @OA\Schema(type="string"),
      *     ),
      *  @OA\Parameter(
      *         name="page",
@@ -851,7 +867,7 @@ class ProductController extends Controller
         $products = $response->json();
 
         return $this->respondWithSuccess([
-            'products' => ProductResource::collection($products['items']['item']),
+            'products' => ProductResource::collection($products['data']['items']['item']),
         ]);
     }
 
