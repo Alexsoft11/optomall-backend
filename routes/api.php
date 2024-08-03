@@ -33,6 +33,7 @@ Route::get('/product-detail-from-taobao', [ProductController::class, 'productDet
 Route::get('/get-comments', [ListController::class, 'getComments']);
 Route::get('additional-categories', [ProductController::class, 'categories']);
 Route::get('additional-products', [ProductController::class, 'additionalProducts']);
+Route::post('/image-search', [ProductController::class, 'imageSearch']);
 
 
 Route::get('/products', [ProductController::class, 'products']);

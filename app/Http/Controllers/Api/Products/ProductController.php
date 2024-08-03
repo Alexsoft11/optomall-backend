@@ -19,6 +19,7 @@ use App\Models\ProductCategory;
 use App\Models\TaobaoCategory;
 use App\Traits\ApiResponseHelpers;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
 class ProductController extends Controller
@@ -658,6 +659,98 @@ class ProductController extends Controller
 
         return $this->respondWithSuccess([
             'products' => ProductTokenResource::collection($products['items']['item'])
+        ]);
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/api/image-search",
+     *     summary="Search for products based on the uploaded image",
+     *     tags={"Products"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\MediaType(
+     *             mediaType="multipart/form-data",
+     *             @OA\Schema(
+     *                 type="object",
+     *                 @OA\Property(
+     *                     property="image",
+     *                     type="string",
+     *                     format="binary",
+     *                     description="The image to upload and search for"
+     *                 ),
+     *                 @OA\Property(
+     *                     property="provider",
+     *                     type="string",
+     *                     example="taobao",
+     *                     description="The provider for the search"
+     *                 ),
+     *                 @OA\Property(
+     *                     property="lang",
+     *                     type="string",
+     *                     example="en",
+     *                     description="The language for the search"
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="No items found",
+     *         @OA\JsonContent(
+     *             @OA\Property(
+     *                 property="error",
+     *                 type="string",
+     *                 example="No items found",
+     *                 description="Error message"
+     *             )
+     *         )
+     *     )
+     * )
+     */
+    public function imageSearch(Request $request)
+    {
+        // Validate the incoming request
+        $request->validate([
+            'image' => 'required|image|max:2048', // Validate the image file
+        ]);
+
+        // Store the uploaded image
+        $imagePath = $request->file('image')->store('images', 'public');
+        $imageUrl = url(Storage::url($imagePath));
+
+        // Define the providers
+        $providers = ['taobao', '1688'];
+        $provider = $request->provider ?? $providers[0]; // Default to the first provider
+
+        // Function to perform the image search
+        $performSearch = function ($provider) use ($imageUrl, $request) {
+            $imageSearchUrl = "https://kongcrdv.com/$provider/api/export_api.php?action=item_search_img&key=kingdev5809@gmail.com&imgid=$imageUrl&lang={$request->lang}";
+            $response = Http::get($imageSearchUrl);
+            return $response->json();
+        };
+
+        // First attempt with the chosen provider
+        $searchResults = $performSearch($provider);
+
+        // Check if search results are empty and try the alternative provider if needed
+        if (!isset($searchResults['data']['items']['item']) || empty($searchResults['data']['items']['item'])) {
+            $alternateProvider = $provider === 'taobao' ? '1688' : 'taobao';
+            $searchResults = $performSearch($alternateProvider);
+
+            // Check if search results are still empty
+            if (!isset($searchResults['data']['items']['item']) || empty($searchResults['data']['items']['item'])) {
+                // Delete the uploaded image before returning the error response
+                Storage::delete($imagePath);
+                return response()->json(['error' => 'No items found'], 404);
+            }
+        }
+
+        // Delete the uploaded image after successful processing
+        Storage::delete($imagePath);
+
+        return response()->json([
+            'products' => ProductResource::collection($searchResults['data']['items']['item']),
         ]);
     }
 
