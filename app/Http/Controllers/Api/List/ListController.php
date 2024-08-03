@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\List;
 
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use App\Http\Resources\UserMessageResource;
 use App\Models\Question;
 use App\Models\Comment;
 use App\Models\Order;
@@ -287,10 +288,9 @@ class ListController extends Controller
 
         // Retrieve the user's messages
         $messages = UserMessage::where('user_id', $user->id)->get();
-
         return response()->json([
             'success' => true,
-            'messages' => $messages,
+            'messages' => UserMessageResource::collection($messages),
         ]);
     }
 }
