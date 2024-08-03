@@ -169,7 +169,6 @@ class ProductController extends Controller
         $likedProductsArray = $likedProducts->map(function ($product) use ($lang) {
             $productDetailResponse = $this->productDetailFromTaoBao(new Request(['productId' => $product->product_id, 'lang' => $lang]));
             $productDetail = json_decode($productDetailResponse->getContent(), true)['detail'];
-            return $productDetail;
 
             return [
                 'id' => $product->id,
