@@ -49,7 +49,7 @@ class ProductDetailTokenResource extends JsonResource
             'videos' => $this['video'],
             'colors' => isset($this['props_imgs']) ? $this->transformAttributes($this['props_imgs']['prop_img']) : $this->transformAttributes($this['prop_imgs']['prop_img']),
             'sizes' => $this->transformSizes($this['skus']['sku']),
-            'composition' =>  $this->transformCompositions($this['props'], ["brand", "pattern", "Collar", "basic style"]),
+            'composition' =>  $this['props'],
             'is_liked' => $isLiked,
         ];
     }
