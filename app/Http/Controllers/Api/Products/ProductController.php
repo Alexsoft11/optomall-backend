@@ -87,17 +87,17 @@ class ProductController extends Controller
                 $likedProduct->delete();
                 $messages[] = "Product ID {$productId} successfully removed";
             } else {
-                $productDetailResponse = $this->productDetailFromTaoBao(new Request(['productId' => $productId, 'lang' => 'uz']));
-                $productDetail = json_decode($productDetailResponse->getContent(), true)['detail'];
-                // return $productDetail;
+                // $productDetailResponse = $this->productDetailFromTaoBao(new Request(['productId' => $productId, 'lang' => 'uz']));
+                // return $productDetailResponse;
+                // $productDetail = json_decode($productDetailResponse->getContent(), true)['detail'];
                 LikedProduct::create([
                     'user_id' => $userId,
                     'product_id' => $productId,
-                    'title_uz' => $productDetail['title'],
-                    'title_en' => $productDetail['title'],
-                    'title_ru' => $productDetail['title'],
-                    'image' => $productDetail['image'],
-                    'price' => $productDetail['price'],
+                    'title_uz' => 'tit',
+                    'title_en' => 'tit',
+                    'title_ru' => 'tit',
+                    'image' => 'ok',
+                    'price' => 'ok',
                 ]);
             }
         }
@@ -169,6 +169,7 @@ class ProductController extends Controller
         $likedProductsArray = $likedProducts->map(function ($product) use ($lang) {
             $productDetailResponse = $this->productDetailFromTaoBao(new Request(['productId' => $product->product_id, 'lang' => $lang]));
             $productDetail = json_decode($productDetailResponse->getContent(), true)['detail'];
+            return $productDetail;
 
             return [
                 'id' => $product->id,
@@ -419,11 +420,12 @@ class ProductController extends Controller
             $rand = Http::get($imageSearchUrl);
             $randomProducts = $rand->json();
         }
-        // return $randomProducts;
-        // if (!isset($randomProducts['data']['items']['item'])) {
-        //     return response()->json(['error' => 'Product not found'], 404);
-        // }
-        $recommendedProducts = collect($randomProducts['data']['items']['item'])->take(5);
+
+        // Prepare recommended products
+        $recommended = [];
+        if (isset($randomProducts['data']['items']['item']) && !empty($randomProducts['data']['items']['item'])) {
+            $recommended = ProductTokenResource::collection(collect($randomProducts['data']['items']['item'])->take(5));
+        }
 
         return $this->respondWithSuccess([
             'detail' => new ProductDetailResource($productDetail['item']),
@@ -431,7 +433,7 @@ class ProductController extends Controller
                 'rating' => $productDetail['item']['seller_info']['item_score'] ?? 4.6,
                 'sold' => $productDetail['item']['sales']
             ],
-            'recommended' => ProductResource::collection($recommendedProducts),
+            'recommended' => $recommended,
         ]);
     }
 
@@ -498,7 +500,11 @@ class ProductController extends Controller
             $randomProducts = $rand->json();
         }
 
-        $recommendedProducts = collect($randomProducts['data']['items']['item'])->take(5);
+        // Prepare recommended products
+        $recommended = [];
+        if (isset($randomProducts['data']['items']['item']) && !empty($randomProducts['data']['items']['item'])) {
+            $recommended = ProductTokenResource::collection(collect($randomProducts['data']['items']['item'])->take(5));
+        }
 
         return $this->respondWithSuccess([
             'detail' => new ProductDetailTokenResource($productDetail['item']),
@@ -506,7 +512,7 @@ class ProductController extends Controller
                 'rating' => $productDetail['item']['seller_info']['item_score'] ?? 4.6,
                 'sold' => $productDetail['item']['sales']
             ],
-            'recommended' => ProductTokenResource::collection($recommendedProducts),
+            'recommended' => ProductTokenResource::collection($recommended),
         ]);
     }
 

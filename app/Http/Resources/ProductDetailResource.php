@@ -37,7 +37,7 @@ class ProductDetailResource extends JsonResource
             'price' => round($this['orginal_price']),
             'discounted_price' => round($this['price']),
             'discount_percentage' => round((($this->resource['orginal_price'] - $this->resource['price']) / $this->resource['orginal_price']) * 100),
-            'image' => $this['pic_url'],
+            'image' => preg_replace('/^\/\//', 'https://', $this['pic_url']),
             'quantity' => $this['num'],
             'description' => str_replace(["\n", "\\"], '', $this['desc']),
             'pictures' => $this->transformPictures($this['item_imgs']),
@@ -55,7 +55,7 @@ class ProductDetailResource extends JsonResource
     {
         return is_array($pictures) ? array_map(function ($attribute) {
             return [
-                'image_url' => $attribute['url'] ?? null,
+                'image_url' => preg_replace('/^\/\//', 'https://', $attribute['url']) ?? null,
                 'is_main' => 0,
             ];
         }, $pictures) : $pictures->map(function ($picture) {
