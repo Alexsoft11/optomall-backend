@@ -44,7 +44,7 @@ class ProductDetailResource extends JsonResource
             'location' => $this['location'] ?? 'China',
             'product_url' => $this['detail_url'],
             'videos' => $this['video'],
-            'colors' =>  $this['props_imgs']['prop_img'] ? $this->transformAttributes($this['props_imgs']['prop_img']) : [],
+            'colors' => isset($this['props_imgs']) ? $this->transformAttributes($this['props_imgs']['prop_img']) : $this->transformAttributes($this['prop_imgs']['prop_img']),
             'sizes' => $this->transformSizes($this['skus']['sku']),
             'composition' =>  $this->transformCompositions($this['props'], ["brand", "pattern", "Collar", "basic style"]),
             'is_liked' => false,
@@ -69,10 +69,14 @@ class ProductDetailResource extends JsonResource
     private function transformAttributes($attributes)
     {
         $counter = 0;
+
+        // Array of prefixes to consider
+        $prefixes = ['color:', 'цвет:', 'rang:'];
+
         // Get the keys from props_list
         $propsListKeys = array_keys($this['props_list']);
 
-        $transformedAttributes = array_filter(array_map(function ($attribute) use (&$counter, $propsListKeys) {
+        $transformedAttributes = array_filter(array_map(function ($attribute) use (&$counter, $propsListKeys, $prefixes) {
             // Ensure properties is a string
             $property = (string) $attribute['properties'];
 
@@ -86,10 +90,15 @@ class ProductDetailResource extends JsonResource
                 }
             }
 
-            // Get the value and remove "color:" prefix if it exists
+            // Get the value and remove the prefix if it exists
             $value = $matchingKey !== null ? $this['props_list'][$matchingKey] : null;
             if ($value !== null) {
-                $value = preg_replace('/^color:\s*/i', '', $value); // Remove "color:" prefix, case-insensitive
+                foreach ($prefixes as $prefix) {
+                    if (stripos($value, $prefix) === 0) {
+                        $value = preg_replace('/^' . preg_quote($prefix, '/') . '\s*/i', '', $value); // Remove prefix, case-insensitive
+                        break;
+                    }
+                }
             }
 
             return [
@@ -111,15 +120,23 @@ class ProductDetailResource extends JsonResource
     {
         $counter = 0;
 
-        // Filter props_list for "size:" entries
-        $sizePropsList = array_filter($this['props_list'], function ($value) {
-            return stripos($value, 'size:') === 0;
+        // Array of prefixes to consider
+        $prefixes = ['size:', 'hajmi:', 'размер:'];
+
+        // Filter props_list for entries with any of the prefixes
+        $sizePropsList = array_filter($this['props_list'], function ($value) use ($prefixes) {
+            foreach ($prefixes as $prefix) {
+                if (stripos($value, $prefix) === 0) {
+                    return true;
+                }
+            }
+            return false;
         });
 
         // Get the keys from sizePropsList
         $sizePropsListKeys = array_keys($sizePropsList);
 
-        $transformedAttributes = array_filter(array_map(function ($attribute) use (&$counter, $sizePropsListKeys) {
+        $transformedAttributes = array_filter(array_map(function ($attribute) use (&$counter, $sizePropsListKeys, $prefixes) {
             // Ensure properties is a string
             $properties = explode(';', (string)$attribute['properties']);
 
@@ -132,16 +149,21 @@ class ProductDetailResource extends JsonResource
                 }
             }
 
-            // Get the value and remove "size:" prefix if it exists
+            // Get the value and remove the prefix if it exists
             $value = $matchingKey !== null ? $this['props_list'][$matchingKey] : null;
             if ($value !== null) {
-                $value = preg_replace('/^size:\s*/i', '', $value); // Remove "size:" prefix, case-insensitive
+                foreach ($prefixes as $prefix) {
+                    if (stripos($value, $prefix) === 0) {
+                        $value = preg_replace('/^' . preg_quote($prefix, '/') . '\s*/i', '', $value); // Remove prefix, case-insensitive
+                        break;
+                    }
+                }
             }
 
             return [
                 'id' => $counter++,
                 'quantity' => $attribute['quantity'],
-                'price' => round($attribute['orginal_price'] * $this->amount),
+                'price' => round($attribute['orginal_price'] ?? $attribute['price'] * $this->amount),
                 'value' => $value,
                 'sku_id' => $attribute['sku_id'],
             ];
@@ -204,68 +226,3 @@ class ProductDetailResource extends JsonResource
         })->toArray();
     }
 }
-
-
-// namespace App\Http\Resources;
-
-// use App\Models\ProductColor;
-// use App\Models\ProductComposition;
-// use App\Models\ProductPicture;
-// use App\Models\ProductSize;
-// use App\Models\ProductVideo;
-// use Illuminate\Http\Resources\Json\JsonResource;
-
-// class ProductDetailResource extends JsonResource
-// {
-//     /**
-//      * Transform the resource into an array.
-//      *
-//      * @param \Illuminate\Http\Request $request
-//      * @return array
-//      */
-
-
-//     public function toArray($request)
-//     {
-//         $pictures = ProductPicture::where('product_id', $this->id)->get();
-//         $videos = ProductVideo::where('product_id', $this->id)->get();
-//         $colors = ProductColor::where('product_id', $this->id)->get();
-//         $sizes = ProductSize::where('product_id', $this->id)->get();
-//         $compositions = ProductComposition::where('product_id', $this->id)->get();
-
-//         return [
-//             'id' => $this->id,
-//             'product_category_id' => $this->product_category_id,
-//             'title' => $this->title,
-//             'price' => $this->price,
-//             'image' => isset($this->resource['image']) && strpos($this->resource['image'], 'https') === 0 ? $this->resource['image'] : 'https://backend.cjsaam.site/storage/' . ($this->resource['image'] ?? $this['image']),
-//             'location' => $this->location,
-//             'product_url' => $this->product_url,
-//             'description' => $this->description,
-//             'quantity' => $this->quantity,
-//             'discount_percent' => $this->discount_percent,
-//             'discounted_price' => $this->discounted_price,
-//             'pictures' => $pictures,
-//             'videos' => $videos,
-//             'colors' => $colors->map(function ($color) {
-//                 return [
-//                     'id' => $color->color_id,
-//                     'product_id' => $color->product_id,
-//                     'property_name' => $color->property_name,
-//                     'value' => $color->value,
-//                     'image_url' => $color->image_url,
-//                     'mini_image_url' => $color->mini_image_url,
-//                 ];
-//             }),
-//             'sizes' => $sizes->map(function ($size) {
-//                 return [
-//                     'id' => $size->size_id,
-//                     'product_id' => $size->product_id,
-//                     'property_name' => $size->property_name,
-//                     'value' => $size->value,
-//                 ];
-//             }),
-//             'compositions' => $compositions,
-//         ];
-//     }
-// }

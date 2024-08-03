@@ -401,18 +401,37 @@ class ProductController extends Controller
         $response = Http::get($url);
         $productDetail = $response->json();
 
-        $imageSearch = "https://kongcrdv.com/$provider/api/export_api.php?action=item_search_img&key=kingdev5809@gmail.com&imgid={$productDetail['item']['pic_url']}&lang=$lang";
-        $rand = Http::get($imageSearch);
+        // Check if product detail contains item
+        if (!isset($productDetail['item'])) {
+            return response()->json(['error' => 'Product not found'], 404);
+        }
+
+        $imageSearchProvider = $provider;
+        $imageSearchUrl = "https://kongcrdv.com/$imageSearchProvider/api/export_api.php?action=item_search_img&key=kingdev5809@gmail.com&imgid={$productDetail['item']['pic_url']}&lang=$lang";
+        $rand = Http::get($imageSearchUrl);
         $randomProducts = $rand->json();
 
+        // Check if randomProducts contains data.items.item
+        if (!isset($randomProducts['data']['items']['item']) || empty($randomProducts['data']['items']['item'])) {
+            $imageSearchProvider = $provider === 'taobao' ? '1688' : 'taobao';
+            $imageSearchUrl = "https://kongcrdv.com/$imageSearchProvider/api/export_api.php?action=item_search_img&key=kingdev5809@gmail.com&imgid={$productDetail['item']['pic_url']}&lang=$lang";
+            $rand = Http::get($imageSearchUrl);
+            $randomProducts = $rand->json();
+        }
+
         $recommendedProducts = collect($randomProducts['data']['items']['item'])->take(5);
-        // return $recommendedProducts;
+
         return $this->respondWithSuccess([
             'detail' => new ProductDetailResource($productDetail['item']),
-            'score' => ['rating' => $productDetail['item']['seller_info']['item_score'], 'sold' => $productDetail['item']['sales']],
+            'score' => [
+                'rating' => $productDetail['item']['seller_info']['item_score'] ?? 4.6,
+                'sold' => $productDetail['item']['sales']
+            ],
             'recommended' => ProductResource::collection($recommendedProducts),
         ]);
     }
+
+
 
     /**
      * @OA\Get(
@@ -457,15 +476,33 @@ class ProductController extends Controller
         $response = Http::get($url);
         $productDetail = $response->json();
 
-        $imageSearch = "https://kongcrdv.com/$provider/api/export_api.php?action=item_search_img&key=kingdev5809@gmail.com&imgid={$productDetail['item']['pic_url']}&lang=$lang";
-        $rand = Http::get($imageSearch);
+        // Check if product detail contains item
+        if (!isset($productDetail['item'])) {
+            return response()->json(['error' => 'Product not found'], 404);
+        }
+
+        $imageSearchProvider = $provider;
+        $imageSearchUrl = "https://kongcrdv.com/$imageSearchProvider/api/export_api.php?action=item_search_img&key=kingdev5809@gmail.com&imgid={$productDetail['item']['pic_url']}&lang=$lang";
+        $rand = Http::get($imageSearchUrl);
         $randomProducts = $rand->json();
 
+        // Check if randomProducts contains data.items.item
+        if (!isset($randomProducts['data']['items']['item']) || empty($randomProducts['data']['items']['item'])) {
+            $imageSearchProvider = $provider === 'taobao' ? '1688' : 'taobao';
+            $imageSearchUrl = "https://kongcrdv.com/$imageSearchProvider/api/export_api.php?action=item_search_img&key=kingdev5809@gmail.com&imgid={$productDetail['item']['pic_url']}&lang=$lang";
+            $rand = Http::get($imageSearchUrl);
+            $randomProducts = $rand->json();
+        }
+
         $recommendedProducts = collect($randomProducts['data']['items']['item'])->take(5);
+
         return $this->respondWithSuccess([
             'detail' => new ProductDetailTokenResource($productDetail['item']),
-            'score' => ['rating' => $productDetail['item']['seller_info']['item_score'], 'sold' => $productDetail['item']['sales']],
-            'recommended' => ProductResource::collection($recommendedProducts)
+            'score' => [
+                'rating' => $productDetail['item']['seller_info']['item_score'] ?? 4.6,
+                'sold' => $productDetail['item']['sales']
+            ],
+            'recommended' => ProductTokenResource::collection($recommendedProducts),
         ]);
     }
 

@@ -25,11 +25,11 @@ class ProductResource extends JsonResource
             'id' => $this->resource['num_iid'],
             'title' => $this->resource['title'],
             'price' => isset($originalPrice) ? round($originalPrice * $amount) : round($price),
-            'image' => $this->resource['pic_url'],
-            'discounted_price' => round(isset($promotionPrice) ? $promotionPrice : $price),
+            'discounted_price' => round(isset($promotionPrice) ? $promotionPrice * $amount : $price),
             'discount_percent' => isset($originalPrice)
                 ? round((($originalPrice - ($promotionPrice ?? $this->resource['price'])) / $originalPrice) * 100)
                 : round((($this->resource['price'] - ($promotionPrice ?? $this->resource['price'])) / $this->resource['price']) * 100),
+            'image' => $this->resource['pic_url'],
             'is_liked' => false,
         ];
     }
