@@ -58,6 +58,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/success-orders', [OrderController::class, 'getSuccessOrders']);
     Route::post('/liked-product', [ProductController::class, 'addLikedProduct']);
     Route::get('/liked-products', [ProductController::class, 'getLikedProducts']);
+    Route::get('/liked-products-id', [ProductController::class, 'getLikedProductsId']);
     Route::get('/product-detail-from-taobao-token', [ProductController::class, 'productDetailFromTaoBaoToken']);
     Route::get('additional-products-token', [ProductController::class, 'additionalProductsToken']);
     Route::get('additional-categories-token', [ProductController::class, 'categoriesToken']);

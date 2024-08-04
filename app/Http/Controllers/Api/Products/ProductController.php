@@ -185,6 +185,39 @@ class ProductController extends Controller
 
     /**
      * @OA\Get(
+     *     path="/api/liked-products-id",
+     *     tags={"Liked products"},
+     *     summary="Get liked products id",
+     *     description="Retrieve the list of liked products for the authenticated user",
+     *     operationId="getLikedProductsId",
+     *     security={{ "bearerAuth":{} }},
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthorized",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Unauthenticated")
+     *         )
+     *     )
+     * )
+     */
+    public function getLikedProductsId(Request $request)
+    {
+        $user = auth()->user();
+
+        if (!$user) {
+            return response()->json(['message' => 'Unauthenticated'], 401);
+        }
+
+        // Retrieve the liked products for the authenticated user
+        $likedProducts = LikedProduct::where('user_id', $user->id)->pluck('product_id');
+
+        // Return the list of product IDs as a JSON response
+        return response()->json($likedProducts, 200);
+    }
+
+    /**
+     * @OA\Get(
      *     path="/api/categories-from-taobao",
      *     summary="Get categories from Taobao",
      *     tags={"Products"},
