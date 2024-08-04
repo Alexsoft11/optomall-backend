@@ -838,25 +838,30 @@ class ProductController extends Controller
         $query = $request->input('query');
         $lang = $request->input('lang');
         $page = $request->input('page');
+        $productsCount = $request->input('productsCount') ?? 20;
 
         // Define the URLs based on the query parameter
-        $urls = match ($query) {
-            "热销" => [
-                "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=20&q=shirt&lang=$lang",
-                "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=10&q=suits&lang=$lang",
-                "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=20&q=shoes&lang=$lang"
-            ],
-            "推荐" => [
-                "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=20&q=trainers&lang=$lang",
-                "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=10&q=jeans&lang=$lang",
-                "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=20&q=dresses&lang=$lang"
-            ],
-            default => [
-                "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=20&q=school&lang=$lang",
-                "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=10&q=smartphones&lang=$lang",
-                "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=20&q=cases&lang=$lang"
-            ]
-        };
+        if ($query === "discount") {
+            $urls = [
+                "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=$productsCount&q=shirt&lang=$lang",
+                "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=$productsCount&q=suits&lang=$lang",
+                "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=$productsCount&q=shoes&lang=$lang"
+            ];
+        } elseif ($query === "top") {
+            $urls = [
+                "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=$productsCount&q=trainers&lang=$lang",
+                "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=$productsCount&q=jeans&lang=$lang",
+                "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=$productsCount&q=dresses&lang=$lang"
+            ];
+        } elseif ($query === "recomend") {
+            $urls = [
+                "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=$productsCount&q=school&lang=$lang",
+                "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=$productsCount&q=smartphones&lang=$lang",
+                "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=$productsCount&q=cases&lang=$lang"
+            ];
+        } else {
+            $urls = [];
+        }
 
         // Make asynchronous requests to all URLs
         $responses = collect($urls)->map(fn ($url) => Http::get($url));
@@ -921,25 +926,30 @@ class ProductController extends Controller
         $query = $request->input('query');
         $lang = $request->input('lang');
         $page = $request->input('page');
+        $productsCount = $request->input('productsCount') ?? 20;
 
         // Define the URLs based on the query parameter
-        $urls = match ($query) {
-            "discount" => [
-                "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=20&q=shirt&lang=$lang",
-                "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=10&q=suits&lang=$lang",
-                "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=20&q=shoes&lang=$lang"
-            ],
-            "top" => [
-                "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=20&q=trainers&lang=$lang",
-                "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=10&q=jeans&lang=$lang",
-                "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=20&q=dresses&lang=$lang"
-            ],
-            "recomend" => [
-                "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=20&q=school&lang=$lang",
-                "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=10&q=smartphones&lang=$lang",
-                "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=20&q=cases&lang=$lang"
-            ]
-        };
+        if ($query === "discount") {
+            $urls = [
+                "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=$productsCount&q=shirt&lang=$lang",
+                "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=$productsCount&q=suits&lang=$lang",
+                "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=$productsCount&q=shoes&lang=$lang"
+            ];
+        } elseif ($query === "top") {
+            $urls = [
+                "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=$productsCount&q=trainers&lang=$lang",
+                "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=$productsCount&q=jeans&lang=$lang",
+                "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=$productsCount&q=dresses&lang=$lang"
+            ];
+        } elseif ($query === "recomend") {
+            $urls = [
+                "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=$productsCount&q=school&lang=$lang",
+                "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=$productsCount&q=smartphones&lang=$lang",
+                "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=$productsCount&q=cases&lang=$lang"
+            ];
+        } else {
+            $urls = [];
+        }
 
         // Make asynchronous requests to all URLs
         $responses = collect($urls)->map(fn ($url) => Http::get($url));
