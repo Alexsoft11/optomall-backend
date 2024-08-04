@@ -119,7 +119,7 @@ class ProductDetailResource extends JsonResource
                 'id' => $counter++,
                 'propertyName' => $attribute['PropertyName'] ?? null,
                 'value' => $value,
-                'image_url' => preg_replace('/^\/\//', 'https://', $attribute['url']) ?? null,
+                'image_url' => isset($attribute['url']) ? preg_replace('/^http:\/\//', 'https://', $attribute['url']) : null,
             ];
         }, $attributes));
 
