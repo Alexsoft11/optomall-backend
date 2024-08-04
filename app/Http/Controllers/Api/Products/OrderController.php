@@ -551,6 +551,75 @@ class OrderController extends Controller
         return response()->json(['orders' => OrderResource::collection($orders)], 200);
     }
 
+    /**
+     * @OA\Get(
+     *     path="/api/get-order-items",
+     *     tags={"Order"},
+     *     summary="Get order items for authenticated user",
+     *     description="Retrieve order items created by the authenticated user",
+     *     security={{ "bearerAuth":{} }},
+     *  @OA\Parameter(
+     *              name="lang",
+     *              in="query",
+     *              required=false,
+     *              @OA\Schema(
+     *                  type="string",
+     *                     enum={"uz", "ru", "en"}
+     *              ),
+     *              description="Language code for the product details. Available options: uz, ru, en"
+     *          ),
+     *  @OA\Parameter(
+     *         name="order_id",
+     *         in="query",
+     *         required=true,
+     *         @OA\Schema(type="integer", example=1),
+     *         description="ID of the order"
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthorized",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Unauthorized"),
+     *         ),
+     *     )
+     * )
+     */
+    public function getOrderItems(Request $request)
+    {
+        $user = $request->user();
+
+        // Fetch orders for the user
+        $orders = Order::where('user_id', $user->id)->get();
+        $items = [];
+
+        // Iterate over each order
+        foreach ($orders as $order) {
+            // Iterate over each item in the order
+            foreach ($order->items as $item) {
+                // Fetch product details
+                $productDetailResponse = app(ProductController::class)->productDetailFromTaoBao(new Request([
+                    'productId' => $item['product_id'],
+                    'lang' => $request->lang
+                ]));
+                $productDetail = json_decode($productDetailResponse->getContent(), true)['detail'];
+
+                // Add enriched item to the items array
+                $items[] = [
+                    'id' => $item['id'],
+                    'product_id' => $productDetail['id'],
+                    'order_id' => $order->id,
+                    'title' => $productDetail['title'],
+                    'price' => $productDetail['price'],
+                    'image_url' => $productDetail['image'],
+                ];
+            }
+        }
+
+        // Return the enriched items
+        return response()->json(['items' => $items], 200);
+    }
+
 
     /**
      * @OA\Get(

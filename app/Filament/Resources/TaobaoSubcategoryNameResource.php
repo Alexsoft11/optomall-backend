@@ -26,9 +26,9 @@ class TaobaoSubcategoryNameResource extends Resource
         return $form
             ->schema([
                 Select::make('taobao_category_id')
-                ->relationship('taobaoCategory', 'name_en')
-                ->label('Category')
-                ->required(),
+                    ->relationship('category', 'name_en')
+                    ->label('Category')
+                    ->required(),
                 TextInput::make('subcategory_name_uz')->label('Subcategory Name (UZ)')->nullable(),
                 TextInput::make('subcategory_name_en')->label('Subcategory Name (EN)')->nullable(),
                 TextInput::make('subcategory_name_ru')->label('Subcategory Name (RU)')->nullable(),
@@ -39,7 +39,7 @@ class TaobaoSubcategoryNameResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('taobaoCategory.name_en')->label('Category'),
+                Tables\Columns\TextColumn::make('category.name_en')->label('Category'),
                 Tables\Columns\TextColumn::make('subcategory_name_uz')->label('Subcategory Name (UZ)'),
                 Tables\Columns\TextColumn::make('subcategory_name_en')->label('Subcategory Name (EN)'),
                 Tables\Columns\TextColumn::make('subcategory_name_ru')->label('Subcategory Name (RU)'),

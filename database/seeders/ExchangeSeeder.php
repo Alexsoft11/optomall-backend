@@ -14,7 +14,7 @@ class ExchangeSeeder extends Seeder
     {
         $exchanges = [
             ['currency' => 'kg', 'amount' => '10000'],
-            ['currency' => 'usd', 'amount' => '10000'],
+            ['currency' => 'yuan', 'amount' => '10000'],
             ['currency' => 'product_percent', 'amount' => '10000'],
         ];
 

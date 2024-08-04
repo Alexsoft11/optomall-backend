@@ -37,7 +37,7 @@ class ProductSeeder extends Seeder
     public function run(): void
     {
         $counter = 1;
-        $amount = Exchanges::where('currency', 'usd')->first()->amount ?? 12000;
+        $amount = Exchanges::where('currency', 'yuan')->first()->amount ?? 1800;
 
         $url = "http://otapi.net/service-json/BatchGetItemFullInfo?instanceKey={$this->apiKey}&language=uz&signature=a67f4af4c43ea96f880740611d680127cbdf84ddbdaab674d8c3f265df1353e0&timestamp=20240526085023&sessionId=&itemParameters=&itemId=808807124248&blockList=";
 

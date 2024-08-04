@@ -50,6 +50,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/post-comment', [ListController::class, 'postComment']);
     Route::get('/orders', [OrderController::class, 'getUserOrders']);
     Route::get('/get-orders', [OrderController::class, 'getOrders']);
+    Route::get('/get-order-items', [OrderController::class, 'getOrderItems']);
     Route::get('/get-order', [OrderController::class, 'getOrder']);
     Route::get('/get-cargo', [OrderController::class, 'getCargo']);
     Route::put('/add', [OrderController::class, 'updateBasketItemSizeQuantity']);

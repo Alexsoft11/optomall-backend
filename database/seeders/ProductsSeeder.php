@@ -16,7 +16,7 @@ class ProductsSeeder extends Seeder
      */
     public function run(): void
     {
-        $amount = Exchanges::where('currency', 'usd')->first()->amount ?? 12000;
+        $amount = Exchanges::where('currency', 'yuan')->first()->amount ?? 1800;
 
 
 
