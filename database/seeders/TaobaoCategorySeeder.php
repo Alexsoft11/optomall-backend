@@ -22,6 +22,7 @@ class TaobaoCategorySeeder extends Seeder
                     'name_uz' => $category['name'],
                     'name_ru' => $category['name'],
                     'name_en' => $category['name'],
+                    'unique' => $category['name'],
                     'is_active' => false,
                 ]);
 
@@ -31,6 +32,7 @@ class TaobaoCategorySeeder extends Seeder
                         'subcategory_name_en' => $subcategory['name'],
                         'subcategory_name_uz' => $subcategory['name'],
                         'subcategory_name_ru' => $subcategory['name'],
+                        'unique' => $subcategory['name'],
                     ]);
 
                     foreach ($subcategory['items'] as $item) {
@@ -39,6 +41,7 @@ class TaobaoCategorySeeder extends Seeder
                             'subcategory_en' => $item,
                             'subcategory_uz' => $item,
                             'subcategory_ru' => $item,
+                            'unique' => $item,
                         ]);
                     }
                 }

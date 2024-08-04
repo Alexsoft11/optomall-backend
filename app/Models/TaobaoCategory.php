@@ -15,6 +15,7 @@ class TaobaoCategory extends Model
         'name_uz',
         'name_en',
         'name_ru',
+        'unique',
         'slug',
         'is_active',
     ];

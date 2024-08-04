@@ -16,6 +16,7 @@ class TaobaoSubcategory extends Model
         'subcategory_uz',
         'subcategory_en',
         'subcategory_ru',
+        'unique',
         'slug',
     ];
 

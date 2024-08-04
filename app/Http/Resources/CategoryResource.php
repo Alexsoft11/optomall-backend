@@ -18,7 +18,7 @@ class CategoryResource extends JsonResource
 
         return [
             'name' => $this->{"name_$lang"},
-            'slug' => $this->slug,
+            'slug' => $this->unique,
             'subcategories' => SubcategoryResource::collection($this->subcategories),
         ];
     }
@@ -38,11 +38,11 @@ class SubcategoryResource extends JsonResource
 
         return [
             'name' => $this->{"subcategory_name_$lang"},
-            'slug' => $this->slug,
+            'slug' => $this->unique,
             'items' => $this->items->map(function ($item) use ($lang) {
                 return [
                     'name' => $item->{"subcategory_$lang"},
-                    'slug' => $item->slug,
+                    'slug' => $item->unique,
                 ];
             }),
         ];

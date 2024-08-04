@@ -264,7 +264,7 @@ class ProductController extends Controller
      */
     public function categoriesFromTaoBao(Request $request)
     {
-        $categories = TaobaoCategory::where('is_active', false)->get();
+        $categories = TaobaoCategory::where('is_active', true)->get();
 
         return $this->respondWithSuccess([
             'categories' => CategoryResource::collection($categories)
