@@ -18,6 +18,21 @@ class OrderResource extends JsonResource
     public function toArray($request)
     {
         $kgPrice = Exchanges::where('currency', 'kg')->first();
+        $items = [];
+        foreach ($this->items as $item) {
+            // $productDetailResponse = app(ProductController::class)->productDetailFromTaoBao(new Request(['productId' => $item['product_id'], 'lang' => $request->lang]));
+            // $productDetail = json_decode($productDetailResponse->getContent(), true)['detail'];
+            // // return $item;
+
+            $items[] = [
+                'id' => $item['id'],
+                'product_id' => $item['product_id'],
+                'order_id' => $this->id,
+                'title' => $item['title'],
+                'price' => $item['price'],
+                'image_url' => $item['image_url'],
+            ];
+        }
 
         return [
             'unique_id' => $this->unique_id,
@@ -44,6 +59,7 @@ class OrderResource extends JsonResource
             'kg' => $this->kg,
             'cargo_price' => $this->kg * $kgPrice->amount ?? 0,
             'created_at' => $this->created_at,
+            'items' => $items,
         ];
     }
 }
