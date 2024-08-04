@@ -122,7 +122,7 @@ class ProductDetailTokenResource extends JsonResource
                 'id' => $counter++,
                 'propertyName' => $attribute['PropertyName'] ?? null,
                 'value' => $value,
-                'image_url' => $attribute['url'] ?? null,
+                'image_url' => preg_replace('/^\/\//', 'https://', $attribute['url']) ?? null,
             ];
         }, $attributes));
 
