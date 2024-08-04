@@ -14,8 +14,11 @@ class CategoryResource extends JsonResource
      */
     public function toArray($request)
     {
+        $lang = $request->query('lang', 'en');
+
         return [
-            'name' => $this->name,
+            'name' => $this->{"name_$lang"},
+            'slug' => $this->slug,
             'subcategories' => SubcategoryResource::collection($this->subcategories),
         ];
     }
@@ -31,9 +34,17 @@ class SubcategoryResource extends JsonResource
      */
     public function toArray($request)
     {
+        $lang = $request->query('lang', 'en');
+
         return [
-            'name' => $this->name,
-            'items' => $this->items->pluck('name'),
+            'name' => $this->{"subcategory_name_$lang"},
+            'slug' => $this->slug,
+            'items' => $this->items->map(function ($item) use ($lang) {
+                return [
+                    'name' => $item->{"subcategory_$lang"},
+                    'slug' => $item->slug,
+                ];
+            }),
         ];
     }
 }
