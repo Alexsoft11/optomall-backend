@@ -30,7 +30,7 @@ class OrderResource extends JsonResource
                 'order_id' => $this->id,
                 'title' => $item['title'],
                 'price' => $item['price'],
-                'image_url' => $item['image_url'],
+                'image_url' => url('storage/' . $item['image_url']),
             ];
         }
 
