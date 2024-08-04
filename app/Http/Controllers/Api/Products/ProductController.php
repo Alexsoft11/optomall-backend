@@ -804,8 +804,7 @@ class ProductController extends Controller
      *         description="Top or Popular",
      *         required=true,
      *         @OA\Schema(
-     *             type="string",
-     *             enum={"热销", "推荐"}
+     *             type="string"
      *         )
      *     ),
      *    @OA\Parameter(
