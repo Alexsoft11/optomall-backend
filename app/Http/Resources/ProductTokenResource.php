@@ -16,7 +16,7 @@ class ProductTokenResource extends JsonResource
     public function toArray($request)
     {
         $amount = Exchanges::where('currency', 'usd')->first()->amount ?? 12000;
-        $isLiked = auth()->check() && auth()->user()->likedProducts()->where('product_id', $this->resource['num_iid'])->exists();
+        // $isLiked = auth()->check() && auth()->user()->likedProducts()->where('product_id', $this->resource['num_iid'])->exists();
         $price = $this->resource['price'] * $amount;
         $promotionPrice = array_key_exists('promotion_price', $this->resource) ? $this->resource['promotion_price'] : null;
 
@@ -29,7 +29,7 @@ class ProductTokenResource extends JsonResource
                 ? round((($originalPrice - ($promotionPrice ?? $this->resource['price'])) / $originalPrice) * 100)
                 : round((($this->resource['price'] - ($promotionPrice ?? $this->resource['price'])) / $this->resource['price']) * 100),
             'image' => $this->resource['pic_url'],
-            'is_liked' => $isLiked,
+            // 'is_liked' => $isLiked,
         ];
     }
 }

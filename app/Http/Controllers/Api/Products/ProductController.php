@@ -231,24 +231,10 @@ class ProductController extends Controller
      */
     public function categoriesFromTaoBao(Request $request)
     {
-        $lang = $request->query('lang', 'en');
-        $categories = TaobaoCategory::where('is_active', true)->get();
-
-        $categoriesMap = $categories->map(function ($category) use ($lang) {
-            $category->name = $category->{"name_$lang"};
-            $category->subcategories = $category->subcategories->map(function ($subcategory) use ($lang) {
-                $subcategory->name = $subcategory->{"subcategory_name_$lang"};
-                $subcategory->items = $subcategory->items->map(function ($item) use ($lang) {
-                    $item->name = $item->{"subcategory_$lang"};
-                    return $item;
-                });
-                return $subcategory;
-            });
-            return $category;
-        });
+        $categories = TaobaoCategory::where('is_active', false)->get();
 
         return $this->respondWithSuccess([
-            'categories' => CategoryResource::collection($categoriesMap)
+            'categories' => CategoryResource::collection($categories)
         ]);
     }
 
