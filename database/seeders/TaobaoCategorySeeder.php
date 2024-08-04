@@ -19,6 +19,8 @@ class TaobaoCategorySeeder extends Seeder
 
             foreach ($categories as $category) {
                 $taobaoCategory = TaobaoCategory::create([
+                    'name_uz' => $category['name'],
+                    'name_ru' => $category['name'],
                     'name_en' => $category['name'],
                     'is_active' => false,
                 ]);
@@ -27,12 +29,16 @@ class TaobaoCategorySeeder extends Seeder
                     $taobaoSubcategoryName = TaobaoSubcategoryName::create([
                         'taobao_category_id' => $taobaoCategory->id,
                         'subcategory_name_en' => $subcategory['name'],
+                        'subcategory_name_uz' => $subcategory['name'],
+                        'subcategory_name_ru' => $subcategory['name'],
                     ]);
 
                     foreach ($subcategory['items'] as $item) {
                         TaobaoSubcategory::create([
                             'taobao_subcategory_name_id' => $taobaoSubcategoryName->id,
                             'subcategory_en' => $item,
+                            'subcategory_uz' => $item,
+                            'subcategory_ru' => $item,
                         ]);
                     }
                 }
