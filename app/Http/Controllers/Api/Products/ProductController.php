@@ -568,7 +568,7 @@ class ProductController extends Controller
      *     @OA\Parameter(
      *         name="searchQuery",
      *         in="query",
-     *         required=true,
+     *         required=false,
      *         @OA\Schema(type="string"),
      *         description="Search products by title."
      *     ),
@@ -603,6 +603,12 @@ class ProductController extends Controller
      *         required=false,
      *         @OA\Schema(type="string")
      *     ),
+     * @OA\Parameter(
+     *         name="imageUrl",
+     *         in="query",
+     *         required=false,
+     *         @OA\Schema(type="string")
+     *     ),
      *  @OA\Parameter(
      *         name="lang",
      *         in="query",
@@ -612,6 +618,7 @@ class ProductController extends Controller
      *             enum={"uz", "ru", "en"}
      *         ),
      *         description="Language code for the product details. Available options: uz, ru, en"
+     *  
      *     ),
      *     @OA\Response(response="200", description="Products from taobao"),
      * )
@@ -625,15 +632,37 @@ class ProductController extends Controller
         $productsCount = $request->productsCount ? $request->productsCount : 20;
         $provider = $request->provider ? $request->provider : 'taobao';
         $lang = $request->lang;
+        $imageUrl = $request->imageUrl;
 
-        $url = "https://api.kongcrdv.com/$provider/api_call.php?api_name=item_search&lang=$lang&key=kingdev5809@gmail.com&q=$searchQuery&start_price=$startPrice&end_price=$endPrice&page=$page&page_size=$productsCount";
+        if ($imageUrl) {
+            // If imageUrl has a value, make an additional API call
+            $imageUrlApi = "https://kongcrdv.com/$provider/api/export_api.php?action=item_search_img&key=kingdev5809@gmail.com&imgid=$imageUrl&lang=$lang";
+            $imageResponse = Http::get($imageUrlApi);
+            $imageProducts = $imageResponse->json();
+            // return $imageProducts;
 
-        $response = Http::get($url);
-        $products = $response->json();
-        // return $products;
+            // Initialize the product data with image products
+            if (!isset($imageProducts['items']['item'])) {
+                return response()->json(['error' => 'Products not found'], 404);
+            }
+            $productData = $imageProducts['items']['item'];
+        } else {
+            // Define the base URL for the product search
+            $url = "https://api.kongcrdv.com/$provider/api_call.php?api_name=item_search&lang=$lang&key=kingdev5809@gmail.com&q=$searchQuery&start_price=$startPrice&end_price=$endPrice&page=$page&page_size=$productsCount";
 
+            // Make the initial API call
+            $response = Http::get($url);
+            $products = $response->json();
+            if (!isset($products['items']['item'])) {
+                return response()->json(['error' => 'Products not found'], 404);
+            }
+            // Initialize the product data
+            $productData = $products['items']['item'];
+        }
+
+        // Return the final response
         return $this->respondWithSuccess([
-            'products' => ProductResource::collection($products['items']['item'])
+            'products' => ProductResource::collection($productData)
         ]);
     }
 
@@ -732,18 +761,6 @@ class ProductController extends Controller
      *                     format="binary",
      *                     description="The image to upload and search for"
      *                 ),
-     *                 @OA\Property(
-     *                     property="provider",
-     *                     type="string",
-     *                     example="taobao",
-     *                     description="The provider for the search"
-     *                 ),
-     *                 @OA\Property(
-     *                     property="lang",
-     *                     type="string",
-     *                     example="en",
-     *                     description="The language for the search"
-     *                 )
      *             )
      *         )
      *     ),
@@ -772,39 +789,9 @@ class ProductController extends Controller
         $imagePath = $request->file('image')->store('images', 'public');
         $imageUrl = url(Storage::url($imagePath));
 
-        // Define the providers
-        $providers = ['taobao', '1688'];
-        $provider = $request->provider ?? $providers[0]; // Default to the first provider
-
-        // Function to perform the image search
-        $performSearch = function ($provider) use ($imageUrl, $request) {
-            $imageSearchUrl = "https://kongcrdv.com/$provider/api/export_api.php?action=item_search_img&key=kingdev5809@gmail.com&imgid=$imageUrl&lang={$request->lang}";
-            $response = Http::get($imageSearchUrl);
-            return $response->json();
-        };
-
-        // First attempt with the chosen provider
-        $searchResults = $performSearch($provider);
-
-        // Check if search results are empty and try the alternative provider if needed
-        if (!isset($searchResults['data']['items']['item']) || empty($searchResults['data']['items']['item'])) {
-            $alternateProvider = $provider === 'taobao' ? '1688' : 'taobao';
-            $searchResults = $performSearch($alternateProvider);
-
-            // Check if search results are still empty
-            if (!isset($searchResults['data']['items']['item']) || empty($searchResults['data']['items']['item'])) {
-                // Delete the uploaded image before returning the error response
-                Storage::delete($imagePath);
-                return response()->json(['error' => 'No items found'], 404);
-            }
-        }
-
-        // Delete the uploaded image after successful processing
-        Storage::delete($imagePath);
-
-        return response()->json([
-            'products' => ProductResource::collection($searchResults['data']['items']['item']),
-        ]);
+        return  [
+            'url' => $imageUrl,
+        ];
     }
 
     /**
@@ -850,19 +837,44 @@ class ProductController extends Controller
         // Retrieve the query parameters
         $query = $request->input('query');
         $lang = $request->input('lang');
-        $productsCount = $request->input('productsCount');
         $page = $request->input('page');
 
-        $url = "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=$productsCount&q=$query&lang=$lang";
+        // Define the URLs based on the query parameter
+        $urls = match ($query) {
+            "热销" => [
+                "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=20&q=shirt&lang=$lang",
+                "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=10&q=suits&lang=$lang",
+                "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=20&q=shoes&lang=$lang"
+            ],
+            "推荐" => [
+                "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=20&q=trainers&lang=$lang",
+                "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=10&q=jeans&lang=$lang",
+                "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=20&q=dresses&lang=$lang"
+            ],
+            default => [
+                "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=20&q=school&lang=$lang",
+                "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=10&q=smartphones&lang=$lang",
+                "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=20&q=cases&lang=$lang"
+            ]
+        };
 
-        $response = Http::get($url);
-        $products = $response->json();
-        // return $products;
+        // Make asynchronous requests to all URLs
+        $responses = collect($urls)->map(fn ($url) => Http::get($url));
+
+        // Merge the results into one array, handle potential errors
+        $products = $responses->reduce(function ($carry, $response) {
+            if ($response->successful()) {
+                $items = $response->json()['data']['items']['item'] ?? [];
+                return array_merge($carry, $items);
+            }
+            return $carry;
+        }, []);
 
         return $this->respondWithSuccess([
-            'products' => ProductResource::collection($products['data']['items']['item']),
+            'products' => ProductResource::collection($products),
         ]);
     }
+
 
     /**
      * @OA\Get(
@@ -908,18 +920,44 @@ class ProductController extends Controller
         // Retrieve the query parameters
         $query = $request->input('query');
         $lang = $request->input('lang');
-        $productsCount = $request->input('productsCount');
         $page = $request->input('page');
 
-        $url = "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=$productsCount&q=$query&lang=$lang";
+        // Define the URLs based on the query parameter
+        $urls = match ($query) {
+            "热销" => [
+                "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=20&q=shirt&lang=$lang",
+                "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=10&q=suits&lang=$lang",
+                "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=20&q=shoes&lang=$lang"
+            ],
+            "推荐" => [
+                "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=20&q=trainers&lang=$lang",
+                "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=10&q=jeans&lang=$lang",
+                "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=20&q=dresses&lang=$lang"
+            ],
+            default => [
+                "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=20&q=school&lang=$lang",
+                "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=10&q=smartphones&lang=$lang",
+                "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=20&q=cases&lang=$lang"
+            ]
+        };
 
-        $response = Http::get($url);
-        $products = $response->json();
+        // Make asynchronous requests to all URLs
+        $responses = collect($urls)->map(fn ($url) => Http::get($url));
+
+        // Merge the results into one array, handle potential errors
+        $products = $responses->reduce(function ($carry, $response) {
+            if ($response->successful()) {
+                $items = $response->json()['data']['items']['item'] ?? [];
+                return array_merge($carry, $items);
+            }
+            return $carry;
+        }, []);
 
         return $this->respondWithSuccess([
-            'products' => ProductResource::collection($products['data']['items']['item']),
+            'products' => ProductDetailResource::collection($products),
         ]);
     }
+
 
     /**
      * @OA\Get(
