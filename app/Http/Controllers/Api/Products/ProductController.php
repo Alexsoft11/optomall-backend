@@ -924,17 +924,17 @@ class ProductController extends Controller
 
         // Define the URLs based on the query parameter
         $urls = match ($query) {
-            "热销" => [
+            "discount" => [
                 "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=20&q=shirt&lang=$lang",
                 "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=10&q=suits&lang=$lang",
                 "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=20&q=shoes&lang=$lang"
             ],
-            "推荐" => [
+            "top" => [
                 "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=20&q=trainers&lang=$lang",
                 "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=10&q=jeans&lang=$lang",
                 "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=20&q=dresses&lang=$lang"
             ],
-            default => [
+            "recomend" => [
                 "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=20&q=school&lang=$lang",
                 "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=10&q=smartphones&lang=$lang",
                 "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=20&q=cases&lang=$lang"
