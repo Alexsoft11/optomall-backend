@@ -18,6 +18,7 @@ use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\ToggleButtons;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -65,10 +66,7 @@ class OrderResource extends Resource
                                 ->label('Status')
                                 ->options(OrderStatus::whereNotNull('name_uz')->pluck('name_uz', 'id'))
                                 ->reactive(),
-                            Select::make('substatus')
-                                ->label('Sub Status')
-                                ->options(OrderSubStatus::whereNotNull('name_uz')->pluck('name_uz', 'id'))
-                                ->reactive(),
+                            Toggle::make('is_paid'),
                         ]),
                         Section::make('Order items')
                             ->headerActions([

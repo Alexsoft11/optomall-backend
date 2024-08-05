@@ -43,13 +43,7 @@ class OrderResource extends JsonResource
                 'en' => $this->getStatus->name_en ?? null
             ],
             'status_color' => $this->getStatus->color ?? null,
-            'substatus' => [
-                'uz' => $this->getSubStatus->name_uz ?? null,
-                'ru' => $this->getSubStatus->name_ru ?? null,
-                'en' => $this->getSubStatus->name_en ?? null,
-            ],
-            'substatus_color' => $this->getSubStatus->color ?? null,
-            'substatus_slug' => $this->getSubStatus->slug ?? null,
+            'isPaid' => $this->is_paid,
             'total_price' => $this->total_price,
             'user_name' => $this->user_name,
             'user_phone' => $this->user_phone,
