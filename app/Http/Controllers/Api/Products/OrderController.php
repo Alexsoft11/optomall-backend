@@ -322,7 +322,6 @@ class OrderController extends Controller
      *     )
      * )
      */
-
     public function addCheck(Request $request)
     {
         // Validate request data
@@ -342,50 +341,51 @@ class OrderController extends Controller
             return response()->json(['message' => 'Order not found'], 404);
         }
 
-        // Transaction block
-        $result = DB::transaction(function () use ($request, $order) {
-            // Check for OrderCheck limit
-            if (OrderCheck::where('order_id', $request->order_id)->count() > 4) {
-                throw new \Exception('Order checks limit reached');
-            }
+        try {
+            // Transaction block
+            $result = DB::transaction(function () use ($request, $order) {
+                // Check for OrderCheck limit
+                if (OrderCheck::where('order_id', $request->order_id)->count() > 4) {
+                    throw new \Exception('Order checks limit reached');
+                }
 
-            // Create income record
-            Income::create([
-                'user_id' => auth()->user()->id,
-                'order_id' => $request->order_id,
-                'amount' => $order->total_price,
-                'type' => $request->type,
-            ]);
+                // Create income record
+                Income::create([
+                    'user_id' => auth()->user()->id,
+                    'order_id' => $request->order_id,
+                    'amount' => $order->total_price,
+                    'type' => $request->type,
+                ]);
 
-            // Find the appropriate card number
-            $cardNumber = CardNumber::orderBy('money', 'desc')
-                ->where('type', $request->type)
-                ->where('is_active', 1)
-                ->first();
+                // Find the appropriate card number
+                $cardNumber = CardNumber::orderBy('money', 'desc')
+                    ->where('type', $request->type)
+                    ->where('is_active', 1)
+                    ->first();
 
-            if (!$cardNumber) {
-                throw new \Exception('No active card number found');
-            }
+                if (!$cardNumber) {
+                    throw new \Exception('No active card number found');
+                }
 
-            // Create order check
-            $orderCheck = OrderCheck::create([
-                'order_id' => $request->order_id,
-                'image' => $request->image->store('order_checks', 'public'), // Store the image and save the path
-                'card_number_id' => $cardNumber->id,
-            ]);
+                // Create order check
+                $orderCheck = OrderCheck::create([
+                    'order_id' => $request->order_id,
+                    'image' => $request->image->store('order_checks', 'public'), // Store the image and save the path
+                    'card_number_id' => $cardNumber->id,
+                ]);
 
-            // Update order status
-            $order->update(['status' => "6", 'substatus' => null]);
-            $order->save();
+                // Update order status
+                $order->status = "6";
+                $order->substatus = null;
+                $order->save();
 
-            return $orderCheck;
-        });
+                return $orderCheck;
+            });
 
-        if ($result instanceof \Exception) {
-            return response()->json(['message' => $result->getMessage()], 400);
+            return response()->json(['message' => 'Order check created successfully', 'order' => $result], 201);
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 400);
         }
-
-        return response()->json(['message' => 'Order check created successfully', 'order' => $result], 201);
     }
 
 
