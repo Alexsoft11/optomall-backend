@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api\Products;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\CategoryResource;
+use App\Http\Resources\ProductDetailDatabase;
+use App\Http\Resources\ProductDetailDatabaseToken;
 use App\Http\Resources\ProductDetailResource;
 use App\Http\Resources\ProductDetailTokenResource;
 use OpenApi\Annotations as OA;
@@ -418,53 +420,50 @@ class ProductController extends Controller
         $provider = $request->provider ?? 'taobao';
 
         // Function to get product details
-        $getProductDetails = function ($provider) use ($productId, $lang) {
-            $url = "https://api.kongcrdv.com/$provider/api_call.php?api_name=item_get&lang=$lang&num_iid=$productId&key=kingdev5809@gmail.com";
-            return Http::get($url)->json();
-        };
+        $url = "https://api.kongcrdv.com/$provider/api_call.php?api_name=item_get&lang=$lang&num_iid=$productId&key=kingdev5809@gmail.com";
 
         // Try to get product details with the initial provider
-        $productDetail = $getProductDetails($provider);
+        $productDetail = Http::get($url)->json();
 
         // If product not found, switch the provider
         if (!isset($productDetail['item'])) {
-            $provider = $provider === 'taobao' ? '1688' : 'taobao';
-            $productDetail = $getProductDetails($provider);
-
-            // If still not found, return 404 response
             if (!isset($productDetail['item'])) {
                 return response()->json(['error' => 'Product not found'], 404);
             }
         }
 
-        // Function to get random products
-        $getRandomProducts = function ($provider, $pic_url, $lang) {
-            $imageSearchUrl = "https://kongcrdv.com/$provider/api/export_api.php?action=item_search_img&key=kingdev5809@gmail.com&imgid=$pic_url&lang=$lang";
-            return Http::get($imageSearchUrl)->json();
-        };
+        // // Function to get random products
+        // $getRandomProducts = function ($provider, $pic_url, $lang) {
+        //     $imageSearchUrl = "https://kongcrdv.com/$provider/api/export_api.php?action=item_search_img&key=kingdev5809@gmail.com&imgid=$pic_url&lang=$lang";
+        //     return Http::get($imageSearchUrl)->json();
+        // };
 
-        // Try to get random products with the initial provider
-        $randomProducts = $getRandomProducts($provider, $productDetail['item']['pic_url'], $lang);
+        // // Try to get random products with the initial provider
+        // $randomProducts = $getRandomProducts($provider, $productDetail['item']['pic_url'], $lang);
 
-        // If random products not found, switch the provider
-        if (!isset($randomProducts['data']['items']['item']) || empty($randomProducts['data']['items']['item'])) {
-            $imageSearchProvider = $provider === 'taobao' ? '1688' : 'taobao';
-            $randomProducts = $getRandomProducts($imageSearchProvider, $productDetail['item']['pic_url'], $lang);
-        }
+        // // If random products not found, switch the provider
+        // if (!isset($randomProducts['data']['items']['item']) || empty($randomProducts['data']['items']['item'])) {
+        //     $imageSearchProvider = $provider === 'taobao' ? '1688' : 'taobao';
+        //     $randomProducts = $getRandomProducts($imageSearchProvider, $productDetail['item']['pic_url'], $lang);
+        // }
 
         // Prepare recommended products
-        $recommended = [];
-        if (isset($randomProducts['data']['items']['item']) && !empty($randomProducts['data']['items']['item'])) {
-            $recommended = ProductTokenResource::collection(collect($randomProducts['data']['items']['item'])->take(5));
+        // $recommended = ProductTokenResource::collection(collect($randomProducts['data']['items']['item'])->take(5));
+        $productDatabase = Product::where('taobao_id', $productId)->first();
+
+        if ($provider == 'local') {
+            $product = new ProductDetailDatabase($productDatabase, $lang);
+        } else {
+            $product = new ProductDetailResource($productDetail['item']);
         }
 
         return $this->respondWithSuccess([
-            'detail' => new ProductDetailResource($productDetail['item']),
+            'detail' => $product,
             'score' => [
                 'rating' => $productDetail['item']['seller_info']['item_score'] ?? 4.6,
                 'sold' => $productDetail['item']['sales']
             ],
-            'recommended' => $recommended,
+            // 'recommended' => $recommended,
         ]);
     }
 
@@ -510,53 +509,50 @@ class ProductController extends Controller
         $provider = $request->provider ?? 'taobao';
 
         // Function to get product details
-        $getProductDetails = function ($provider) use ($productId, $lang) {
-            $url = "https://api.kongcrdv.com/$provider/api_call.php?api_name=item_get&lang=$lang&num_iid=$productId&key=kingdev5809@gmail.com";
-            return Http::get($url)->json();
-        };
+        $url = "https://api.kongcrdv.com/$provider/api_call.php?api_name=item_get&lang=$lang&num_iid=$productId&key=kingdev5809@gmail.com";
 
         // Try to get product details with the initial provider
-        $productDetail = $getProductDetails($provider);
+        $productDetail = Http::get($url)->json();
 
         // If product not found, switch the provider
         if (!isset($productDetail['item'])) {
-            $provider = $provider === 'taobao' ? '1688' : 'taobao';
-            $productDetail = $getProductDetails($provider);
-
-            // If still not found, return 404 response
             if (!isset($productDetail['item'])) {
                 return response()->json(['error' => 'Product not found'], 404);
             }
         }
 
-        // Function to get random products
-        $getRandomProducts = function ($provider, $pic_url, $lang) {
-            $imageSearchUrl = "https://kongcrdv.com/$provider/api/export_api.php?action=item_search_img&key=kingdev5809@gmail.com&imgid=$pic_url&lang=$lang";
-            return Http::get($imageSearchUrl)->json();
-        };
+        // // Function to get random products
+        // $getRandomProducts = function ($provider, $pic_url, $lang) {
+        //     $imageSearchUrl = "https://kongcrdv.com/$provider/api/export_api.php?action=item_search_img&key=kingdev5809@gmail.com&imgid=$pic_url&lang=$lang";
+        //     return Http::get($imageSearchUrl)->json();
+        // };
 
-        // Try to get random products with the initial provider
-        $randomProducts = $getRandomProducts($provider, $productDetail['item']['pic_url'], $lang);
+        // // Try to get random products with the initial provider
+        // $randomProducts = $getRandomProducts($provider, $productDetail['item']['pic_url'], $lang);
 
-        // If random products not found, switch the provider
-        if (!isset($randomProducts['data']['items']['item']) || empty($randomProducts['data']['items']['item'])) {
-            $imageSearchProvider = $provider === 'taobao' ? '1688' : 'taobao';
-            $randomProducts = $getRandomProducts($imageSearchProvider, $productDetail['item']['pic_url'], $lang);
-        }
+        // // If random products not found, switch the provider
+        // if (!isset($randomProducts['data']['items']['item']) || empty($randomProducts['data']['items']['item'])) {
+        //     $imageSearchProvider = $provider === 'taobao' ? '1688' : 'taobao';
+        //     $randomProducts = $getRandomProducts($imageSearchProvider, $productDetail['item']['pic_url'], $lang);
+        // }
 
         // Prepare recommended products
-        $recommended = [];
-        if (isset($randomProducts['data']['items']['item']) && !empty($randomProducts['data']['items']['item'])) {
-            $recommended = ProductTokenResource::collection(collect($randomProducts['data']['items']['item'])->take(5));
+        // $recommended = ProductTokenResource::collection(collect($randomProducts['data']['items']['item'])->take(5));
+        $productDatabase = Product::where('taobao_id', $productId)->first();
+
+        if ($provider == 'local') {
+            $product = new ProductDetailDatabaseToken($productDatabase, $lang);
+        } else {
+            $product = new ProductDetailTokenResource($productDetail['item']);
         }
 
         return $this->respondWithSuccess([
-            'detail' => new ProductDetailTokenResource($productDetail['item']),
+            'detail' => $product,
             'score' => [
                 'rating' => $productDetail['item']['seller_info']['item_score'] ?? 4.6,
                 'sold' => $productDetail['item']['sales']
             ],
-            'recommended' => ProductTokenResource::collection($recommended),
+            // 'recommended' => $recommended,
         ]);
     }
 
@@ -566,7 +562,7 @@ class ProductController extends Controller
      *     summary="Search products by title.",
      *     tags={"Products"},
      *     @OA\Parameter(
-     *         name="searchQuery",
+     *         name="value",
      *         in="query",
      *         required=false,
      *         @OA\Schema(type="string"),
@@ -625,7 +621,7 @@ class ProductController extends Controller
      */
     public function searchProductsFromTaobao(Request $request)
     {
-        $searchQuery = $request->searchQuery;
+        $value = $request->value;
         $startPrice = $request->startPrice;
         $endPrice = $request->endPrice;
         $page = $request->page ? $request->page : 1;
@@ -648,7 +644,7 @@ class ProductController extends Controller
             $productData = $imageProducts['items']['item'];
         } else {
             // Define the base URL for the product search
-            $url = "https://api.kongcrdv.com/$provider/api_call.php?api_name=item_search&lang=$lang&key=kingdev5809@gmail.com&q=$searchQuery&start_price=$startPrice&end_price=$endPrice&page=$page&page_size=$productsCount";
+            $url = "https://api.kongcrdv.com/$provider/api_call.php?api_name=item_search&lang=$lang&key=kingdev5809@gmail.com&q=$value&start_price=$startPrice&end_price=$endPrice&page=$page&page_size=$productsCount";
 
             // Make the initial API call
             $response = Http::get($url);
@@ -673,7 +669,7 @@ class ProductController extends Controller
      *     tags={"Products"},
      *     security={{ "bearerAuth":{} }},
      *     @OA\Parameter(
-     *         name="searchQuery",
+     *         name="value",
      *         in="query",
      *         required=true,
      *         @OA\Schema(type="string"),
@@ -725,22 +721,43 @@ class ProductController extends Controller
      */
     public function searchProductsFromTaobaoToken(Request $request)
     {
-        $searchQuery = $request->searchQuery;
+        $value = $request->value;
         $startPrice = $request->startPrice;
         $endPrice = $request->endPrice;
         $page = $request->page ? $request->page : 1;
         $productsCount = $request->productsCount ? $request->productsCount : 20;
         $provider = $request->provider ? $request->provider : 'taobao';
         $lang = $request->lang;
+        $imageUrl = $request->imageUrl;
 
-        $url = "https://api.kongcrdv.com/$provider/api_call.php?api_name=item_search&lang=$lang&key=kingdev5809@gmail.com&q=$searchQuery&start_price=$startPrice&end_price=$endPrice&page=$page&page_size=$productsCount";
+        if ($imageUrl) {
+            // If imageUrl has a value, make an additional API call
+            $imageUrlApi = "https://kongcrdv.com/$provider/api/export_api.php?action=item_search_img&key=kingdev5809@gmail.com&imgid=$imageUrl&lang=$lang";
+            $imageResponse = Http::get($imageUrlApi);
+            $imageProducts = $imageResponse->json();
+            // return $imageProducts;
 
-        $response = Http::get($url);
-        $products = $response->json();
-        // return $products;
+            // Initialize the product data with image products
+            if (!isset($imageProducts['items']['item'])) {
+                return response()->json(['error' => 'Products not found'], 404);
+            }
+            $productData = $imageProducts['items']['item'];
+        } else {
+            // Define the base URL for the product search
+            $url = "https://api.kongcrdv.com/$provider/api_call.php?api_name=item_search&lang=$lang&key=kingdev5809@gmail.com&q=$value&start_price=$startPrice&end_price=$endPrice&page=$page&page_size=$productsCount";
+
+            // Make the initial API call
+            $response = Http::get($url);
+            $products = $response->json();
+            if (!isset($products['items']['item'])) {
+                return response()->json(['error' => 'Products not found'], 404);
+            }
+            // Initialize the product data
+            $productData = $products['items']['item'];
+        }
 
         return $this->respondWithSuccess([
-            'products' => ProductTokenResource::collection($products['items']['item'])
+            'products' => ProductTokenResource::collection($productData)
         ]);
     }
 
