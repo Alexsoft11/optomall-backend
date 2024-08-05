@@ -738,10 +738,10 @@ class ProductController extends Controller
             // return $imageProducts;
 
             // Initialize the product data with image products
-            if (!isset($imageProducts['items']['item'])) {
+            if (!isset($imageProducts['data']['items']['item'])) {
                 return response()->json(['error' => 'Products not found'], 404);
             }
-            $productData = $imageProducts['items']['item'];
+            $productData = $imageProducts['data']['items']['item'];
         } else {
             // Define the base URL for the product search
             $url = "https://api.kongcrdv.com/$provider/api_call.php?api_name=item_search&lang=$lang&key=kingdev5809@gmail.com&q=$value&start_price=$startPrice&end_price=$endPrice&page=$page&page_size=$productsCount";
