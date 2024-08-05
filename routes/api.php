@@ -12,6 +12,9 @@ use App\Http\Controllers\Api\Products\ProductController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
+
+Route::middleware('throttle:1200,60')->group(function () {
+
 Route::post('register', [AuthController::class, 'register']);
 Route::get('verify-email/{token}', [AuthController::class, 'verifyEmail']);
 Route::post('/personal-data', [AuthController::class, 'personalData']);
@@ -76,4 +79,6 @@ Route::middleware('auth:sanctum')->prefix('profile')->group(function () {
     Route::post('/update-name', [ProfileController::class, 'updateName']);
     Route::post('/update-phone', [ProfileController::class, 'updatePhone']);
     Route::post('/update-password', [ProfileController::class, 'updatePassword']);
+});
+
 });
