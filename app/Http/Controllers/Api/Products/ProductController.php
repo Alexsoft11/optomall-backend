@@ -515,11 +515,6 @@ class ProductController extends Controller
         $productDetail = Http::get($url)->json();
 
         // If product not found, switch the provider
-        if (!isset($productDetail['item'])) {
-            if (!isset($productDetail['item'])) {
-                return response()->json(['error' => 'Product not found'], 404);
-            }
-        }
 
         // // Function to get random products
         // $getRandomProducts = function ($provider, $pic_url, $lang) {
@@ -538,11 +533,16 @@ class ProductController extends Controller
 
         // Prepare recommended products
         // $recommended = ProductTokenResource::collection(collect($randomProducts['data']['items']['item'])->take(5));
-        $productDatabase = Product::where('taobao_id', $productId)->first();
+        $productDatabase = Product::where('id', $productId)->first();
 
         if ($provider == 'local') {
             $product = new ProductDetailDatabaseToken($productDatabase, $lang);
         } else {
+            if (!isset($productDetail['item'])) {
+                if (!isset($productDetail['item'])) {
+                    return response()->json(['error' => 'Product not found'], 404);
+                }
+            }
             $product = new ProductDetailTokenResource($productDetail['item']);
         }
 
@@ -550,7 +550,7 @@ class ProductController extends Controller
             'detail' => $product,
             'score' => [
                 'rating' => $productDetail['item']['seller_info']['item_score'] ?? 4.6,
-                'sold' => $productDetail['item']['sales']
+                'sold' => $productDetail['item']['sales'] ?? 1000,
             ],
             // 'recommended' => $recommended,
         ]);
