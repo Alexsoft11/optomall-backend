@@ -12,7 +12,7 @@ class ProductResource extends JsonResource
     public function __construct($resource)
     {
         parent::__construct($resource);
-        $this->percent = Exchanges::where('currency', 'product_percent')->first()->amount;
+        $this->percent = Exchanges::where('currency', 'product_percent')->first()->amount ?? 0;
     }
 
     /**
@@ -26,35 +26,42 @@ class ProductResource extends JsonResource
         $amount = Exchanges::where('currency', 'yuan')->first()->amount ?? 1800;
 
         $originalPrice = $this->resource['orginal_price'] ?? null;
-        $price = $this->resource['price'] * $amount;
-        $promotionPrice = array_key_exists('promotion_price', $this->resource) ? $this->resource['promotion_price'] : null;
+        $price = $this->resource['price'];
+        $promotionPrice = $this->resource['promotion_price'] ?? null;
+
+        // Calculate the actual prices
+        $calculatedPrice = $this->calculatePrice($price, $amount);
+        $calculatedPromotionPrice = $promotionPrice ? $this->calculatePrice($promotionPrice, $amount) : null;
+
+        // Calculate the discount percentage
+        $discountPercent = $originalPrice
+            ? round((($originalPrice - ($promotionPrice ?? $price)) / $originalPrice) * 100)
+            : 0;
 
         return [
             'id' => $this->resource['num_iid'],
             'title' => $this->resource['title'],
             'price' => isset($originalPrice)
                 ? round($this->addPercentToPrice($originalPrice, $amount, $this->percent))
-                : round($this->addPercentToPrice($price, $amount, $this->percent)),
-            'discounted_price' => round(isset($promotionPrice)
-                ? $this->addPercentToPrice($promotionPrice, $amount, $this->percent)
-                : $this->addPercentToPrice($price, $amount, $this->percent)),
-            'discount_percent' => isset($originalPrice)
-                ? round((($originalPrice - ($promotionPrice ?? $this->resource['price'])) / $originalPrice) * 100)
-                : round((($this->resource['price'] - ($promotionPrice ?? $this->resource['price'])) / $this->resource['price']) * 100),
+                : round($this->addPercentToPrice($calculatedPrice, $amount, $this->percent)),
+            'discounted_price' => round($calculatedPromotionPrice
+                ? $this->addPercentToPrice($calculatedPromotionPrice, $amount, $this->percent)
+                : $this->addPercentToPrice($calculatedPrice, $amount, $this->percent)),
+            'discount_percent' => $discountPercent,
             'image' => $this->resource['pic_url'],
             'is_liked' => false,
         ];
     }
 
+    private function calculatePrice($price, $amount)
+    {
+        return $price * $amount;
+    }
+
     private function addPercentToPrice($price, $amount, $percent = 0)
     {
-        // Convert the price to the target currency
-        $priceInTargetCurrency = $price * $amount;
-
-        // Calculate the amount to add based on the percentage
-        $additionalAmount = $priceInTargetCurrency * ($percent / 100);
-
-        // Return the price with the percentage added
-        return $priceInTargetCurrency + $additionalAmount;
+        // The price is already in the target currency
+        $additionalAmount = $price * ($percent / 100);
+        return $price + $additionalAmount;
     }
 }
