@@ -679,7 +679,7 @@ class OrderController extends Controller
                             'size_id' => $size->id ?? null,
                             'color' => $colorDetail['value'] ?? null,
                             'quantity' => $size->quantity ?? 1,
-                            'image_url' => $colorDetail['image_url'] ?? null,
+                            'image_url' => preg_replace('/^\/\//', 'https://', $colorDetail['url']) ?? null,
                             'price' => $productDetail['price'] ?? null,
                             'product_url' => $productDetail['product_url'] ?? null,
                         ];
