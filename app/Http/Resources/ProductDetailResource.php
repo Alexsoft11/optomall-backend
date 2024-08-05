@@ -36,8 +36,8 @@ class ProductDetailResource extends JsonResource
         return [
             'id' => $this['num_iid'],
             'title' => $this['title'],
-            'price' => round($this->addPercentToPrice($this['orginal_price'], $this->amount, $this->percent)),
-            'discounted_price' => round($this->addPercentToPrice($this['price'], $this->amount, $this->percent)),
+            'price' => round($this->addPercentToPrice($this['price'], $this->amount, $this->percent)),
+            'discounted_price' => round($this->addPercentToPrice($this['orginal_price'], $this->amount, $this->percent)),
             'discount_percentage' => round((($this->resource['orginal_price'] - $this->resource['price']) / $this->resource['orginal_price']) * 100),
             'image' => preg_replace('/^\/\//', 'https://', $this['pic_url']),
             'quantity' => $this['num'],
