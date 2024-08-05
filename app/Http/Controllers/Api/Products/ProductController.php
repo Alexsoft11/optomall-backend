@@ -449,7 +449,7 @@ class ProductController extends Controller
 
         // Prepare recommended products
         // $recommended = ProductTokenResource::collection(collect($randomProducts['data']['items']['item'])->take(5));
-        $productDatabase = Product::where('taobao_id', $productId)->first();
+        $productDatabase = Product::where('id', $productId)->first();
 
         if ($provider == 'local') {
             $product = new ProductDetailDatabase($productDatabase, $lang);
