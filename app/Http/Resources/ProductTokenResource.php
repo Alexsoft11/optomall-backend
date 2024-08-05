@@ -25,7 +25,6 @@ class ProductTokenResource extends JsonResource
     {
         $amount = Exchanges::where('currency', 'yuan')->first()->amount ?? 1800;
 
-        $originalPrice = $this->resource['orginal_price'] ?? null;
         $price = $this->resource['price'];
         $promotionPrice = $this->resource['promotion_price'] ?? null;
         // $isLiked = auth()->check() && auth()->user()->likedProducts()->where('product_id', $this->resource['num_iid'])->exists();
@@ -34,19 +33,17 @@ class ProductTokenResource extends JsonResource
         $calculatedPromotionPrice = $promotionPrice ? $this->calculatePrice($promotionPrice, $amount) : null;
 
         // Calculate the discount percentage
-        $discountPercent = $originalPrice
-            ? round((($originalPrice - ($promotionPrice ?? $price)) / $originalPrice) * 100)
+        $discountPercent = $promotionPrice
+            ? round((($price - $promotionPrice) / $price) * 100)
             : 0;
 
         return [
             'id' => $this->resource['num_iid'],
             'title' => $this->resource['title'],
-            'price' => isset($originalPrice)
-                ? round($this->addPercentToPrice($originalPrice, $amount, $this->percent))
-                : round($this->addPercentToPrice($calculatedPrice, $amount, $this->percent)),
+            'price' => round($this->addPercentToPrice($calculatedPrice, $this->percent)),
             'discounted_price' => round($calculatedPromotionPrice
-                ? $this->addPercentToPrice($calculatedPromotionPrice, $amount, $this->percent)
-                : $this->addPercentToPrice($calculatedPrice, $amount, $this->percent)),
+                ? $this->addPercentToPrice($calculatedPromotionPrice, $this->percent)
+                : $this->addPercentToPrice($calculatedPrice, $this->percent)),
             'discount_percent' => $discountPercent,
             'image' => $this->resource['pic_url'],
             'is_liked' => false,
@@ -58,9 +55,8 @@ class ProductTokenResource extends JsonResource
         return $price * $amount;
     }
 
-    private function addPercentToPrice($price, $amount, $percent = 0)
+    private function addPercentToPrice($price, $percent = 0)
     {
-        // The price is already in the target currency
         $additionalAmount = $price * ($percent / 100);
         return $price + $additionalAmount;
     }
