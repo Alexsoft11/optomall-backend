@@ -85,7 +85,7 @@ class ProductDetailResource extends JsonResource
         $counter = 0;
 
         // Array of prefixes to consider
-        $prefixes = ['color:', 'цвет:', 'rang:'];
+        $prefixes = ['color:', 'цвет:', 'rang:', "rangi bo'yicha saralash:"];
 
         // Get the keys from props_list
         $propsListKeys = array_keys($this['props_list']);
@@ -179,7 +179,7 @@ class ProductDetailResource extends JsonResource
             return [
                 'id' => $counter++,
                 'quantity' => $attribute['quantity'],
-                'price' => round($attribute['orginal_price'] ?? $attribute['price'] * $this->amount),
+                'price' => round($this->addPercentToPrice($attribute['price'], $this->amount, $this->percent)),
                 'value' => $value,
                 'sku_id' => $attribute['sku_id'],
             ];

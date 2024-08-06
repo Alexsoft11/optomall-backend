@@ -88,7 +88,7 @@ class ProductDetailTokenResource extends JsonResource
         $counter = 0;
 
         // Array of prefixes to consider
-        $prefixes = ['color:', 'цвет:', 'rang:'];
+        $prefixes = ['color:', 'цвет:', 'rang:', "rangi bo'yicha saralash:", "Цветовая классификация:", "sort by color:"];
 
         // Get the keys from props_list
         $propsListKeys = array_keys($this['props_list']);
