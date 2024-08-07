@@ -14,6 +14,7 @@ use App\Models\Exchanges;
 use App\Models\Income;
 use App\Models\Order;
 use App\Models\OrderCheck;
+use App\Models\OrderGroup;
 use App\Models\OrderItem;
 use App\Models\OrderStatus;
 use App\Models\Product;
@@ -122,13 +123,21 @@ class OrderController extends Controller
         }
 
         $user = auth()->user();
-
         $items = collect($request->items); // Convert array to collection
         $groupedItems = $items->groupBy('seller_id'); // Group by seller_id
 
         $orders = [];
+        $orderGroup = null;
 
-        DB::transaction(function () use ($groupedItems, $request, $user, &$orders) {
+        DB::transaction(function () use ($groupedItems, $request, $user, &$orders, &$orderGroup) {
+            // Create a single OrderGroup
+            $orderGroup = OrderGroup::create([
+                'status' => '2', // Adjust status as needed
+                'total_price' => $request->total_price,
+                'user_id' => $user->id,
+                'is_paid' => false,
+            ]);
+
             foreach ($groupedItems as $sellerId => $items) {
                 $order = Order::create([
                     'user_id' => $user->id,
@@ -142,7 +151,8 @@ class OrderController extends Controller
                     'status' => '2',
                     'substatus' => '1',
                     'status_color' => '#05ff00',
-                    'is_checking' => false
+                    'is_checking' => false,
+                    'order_group_id' => $orderGroup->id, // Associate the order with the single OrderGroup
                 ]);
 
                 $client = new Client();
@@ -193,22 +203,22 @@ class OrderController extends Controller
                     }
                 }
 
-                // Check if the order requires checking
-                if (OrderCheck::where('order_id', $order->id)->exists()) {
-                    $order->is_checking = true;
-                    $order->save();
-                }
+                // // Check if the order requires checking
+                // if (OrderCheck::where('order_id', $order->id)->exists()) {
+                //     $order->is_checking = true;
+                //     $order->save();
+                // }
 
                 $orders[] = $order; // Add order to orders array
             }
         });
 
-        // Convert orders to an array of order IDs
+        // Convert orders to an array of IDs
         $orderIds = array_map(function ($order) {
             return $order->id;
         }, $orders);
 
-        return response()->json(['message' => 'order_created_successfully', 'orders' => $orderIds], 201);
+        return response()->json(['message' => 'order_created_successfully', 'orders' => $orderIds, 'order_group' => $orderGroup->id], 201);
     }
 
 

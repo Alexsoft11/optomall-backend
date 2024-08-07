@@ -427,7 +427,7 @@ class ProductController extends Controller
 
         // Try to get product details with the initial provider
         $productDetail = $getProductDetails($provider);
-
+        return $productDetail;
         // If product not found, switch the provider
         if (!isset($productDetail['item'])) {
             $provider = $provider === 'taobao' ? '1688' : 'taobao';
