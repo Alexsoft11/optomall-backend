@@ -48,7 +48,7 @@ class OrderController extends Controller
      *         required=true,
      *         description="Order details",
      *         @OA\JsonContent(
-     *             required={"items", "userData", "location", "total_price"},
+     *             required={"items", "userData", "location", "total_price", "provider"},
      *             @OA\Property(property="userData", type="object", 
      *                 @OA\Property(property="name", type="string", example="John"),
      *                 @OA\Property(property="phone", type="string", example="+380671234567")
@@ -65,7 +65,9 @@ class OrderController extends Controller
      *                 @OA\Property(property="color", type="string", example="black"),
      *                 @OA\Property(property="size", type="string", example="xl"),
      *                 @OA\Property(property="size_id", type="number", example="4"),
-     *                 @OA\Property(property="price", type="number", example="4.99")
+     *                 @OA\Property(property="price", type="number", example="4.99"),
+     *                 @OA\Property(property="seller_id", type="string", example="2"),
+     *                 @OA\Property(property="provider", type="string", example="taobao")
      *             )),
      *             @OA\Property(property="total_price", type="number", example="50.99")
      *         )
@@ -76,7 +78,10 @@ class OrderController extends Controller
      *         @OA\JsonContent(
      *             type="object",
      *             @OA\Property(property="message", type="string", example="Order created successfully"),
-     *             @OA\Property(property="order_id", type="integer", example="1")
+     *             @OA\Property(property="orders", type="array", @OA\Items(
+     *                 @OA\Property(property="order_id", type="integer", example="1"),
+     *                 @OA\Property(property="seller_id", type="string", example="2")
+     *             ))
      *         )
      *     ),
      *     @OA\Response(
@@ -107,7 +112,9 @@ class OrderController extends Controller
             'items.*.size' => 'required|string',
             'items.*.size_id' => 'required|integer',
             'items.*.price' => 'required|numeric|min:0',
-            'total_price' => 'required|numeric|min:0'
+            'items.*.seller_id' => 'nullable|string',
+            'items.*.provider' => 'nullable|string',
+            'total_price' => 'nullable|numeric|min:0',
         ]);
 
         if ($validator->fails()) {
@@ -116,91 +123,92 @@ class OrderController extends Controller
 
         $user = auth()->user();
 
-        // Update user location fields if they are empty
-        // $user->region = $user->region ?: $request->location['region'] ?? null;
-        // $user->district = $user->district ?: $request->location['district'] ?? null;
-        // $user->street = $user->street ?: $request->location['street'] ?? null;
-        // $user->house = $user->house ?: $request->location['house'] ?? null;
-        // $user->post_index = $user->post_index ?: $request->location['post_index'] ?? null;
-        // $user->location = $user->location ?: $request->location['url'] ?? null;
-        // $user->save();
+        $items = collect($request->items); // Convert array to collection
+        $groupedItems = $items->groupBy('seller_id'); // Group by seller_id
 
-        $order = DB::transaction(function () use ($request, $user) {
-            $order = Order::create([
-                'user_id' => $user->id,
-                'total_price' => $request->total_price,
-                'user_name' => $request->userData['name'],
-                'user_phone' => $request->userData['phone'],
-                'location_url' => $request->location['url'],
-                'location_name' => $request->location['addressText'],
-                'status' => '2',
-                'substatus' => '1',
-                'status_color' => '#05ff00',
-                'is_checking' => false
-            ]);
+        $orders = [];
 
-            $client = new Client();
-
-            foreach ($request->items as $item) {
-                // Fetch product details (adjust this part according to your logic)
-                $productDetailResponse = $this->productController->productDetailFromTaoBao(new Request(['productId' => $item['product_id'], 'lang' => 'ru']));
-                $productDetail = json_decode($productDetailResponse->getContent(), true)['detail'];
-
-                // Download image and save to storage
-                $url = $item['image_url'];
-
-                // Generate a random filename
-                $randomName = Str::random(40) . '.' . pathinfo($url, PATHINFO_EXTENSION);
-                $imagePath = 'order_images/' . $randomName;
-
-                // Using Guzzle to download the image
-                $response = $client->get($url);
-                Storage::disk('public')->put($imagePath, $response->getBody());
-
-                OrderItem::create([
-                    'order_id' => $order->id,
-                    'product_id' => $item['product_id'],
-                    'title' => $productDetail['title'],
-                    'image_url' => $imagePath,
-                    'quantity' => $item['quantity'],
-                    'price' => $item['price'],
-                    'color' => $item['color'],
-                    'size' => $item['size'],
-                    'product_url' => 'ok.com',
+        DB::transaction(function () use ($groupedItems, $request, $user, &$orders) {
+            foreach ($groupedItems as $sellerId => $items) {
+                $order = Order::create([
+                    'user_id' => $user->id,
+                    'total_price' => $request->total_price,
+                    'seller_id' => $sellerId,
+                    'provider' => $items->first()['provider'], // Use the provider from the first item
+                    'user_name' => $request->userData['name'],
+                    'user_phone' => $request->userData['phone'],
+                    'location_url' => $request->location['url'],
+                    'location_name' => $request->location['addressText'],
+                    'status' => '2',
+                    'substatus' => '1',
+                    'status_color' => '#05ff00',
+                    'is_checking' => false
                 ]);
 
-                // Remove basket items associated with the size_id and color_id
-                $basketItemSize = BasketItemSize::where('id', $item['size_id'])->first();
-                if ($basketItemSize) {
-                    $basketId = $basketItemSize->basket_id;
-                    $basketItemSize->delete();
+                $client = new Client();
 
-                    // Remove associated BasketItemColor
-                    $basketItemColor = BasketItemColor::where('id', $basketItemSize['color_id'])->first();
-                    if ($basketItemColor) {
-                        $basketItemColor->delete();
-                    }
+                foreach ($items as $item) {
+                    // Fetch product details (adjust this part according to your logic)
+                    $productDetailResponse = $this->productController->productDetailFromTaoBao(new Request(['productId' => $item['product_id'], 'lang' => 'ru']));
+                    $productDetail = json_decode($productDetailResponse->getContent(), true)['detail'];
 
-                    // Check if the basket has no more sizes or colors, then delete the basket
-                    if (
-                        !BasketItemSize::where('basket_id', $basketId)->exists() &&
-                        !BasketItemColor::where('id', $basketItemSize['color_id'])->exists()
-                    ) {
-                        Basket::where('id', $basketId)->delete();
+                    // Download image and save to storage
+                    $url = $item['image_url'];
+                    $randomName = Str::random(40) . '.' . pathinfo($url, PATHINFO_EXTENSION);
+                    $imagePath = 'order_images/' . $randomName;
+                    $response = $client->get($url);
+                    Storage::disk('public')->put($imagePath, $response->getBody());
+
+                    OrderItem::create([
+                        'order_id' => $order->id,
+                        'product_id' => $item['product_id'],
+                        'title' => $productDetail['title'],
+                        'image_url' => $imagePath,
+                        'quantity' => $item['quantity'],
+                        'price' => $item['price'],
+                        'color' => $item['color'],
+                        'size' => $item['size'],
+                        'product_url' => 'ok.com',
+                    ]);
+
+                    // Remove basket items associated with the size_id and color_id
+                    $basketItemSize = BasketItemSize::where('id', $item['size_id'])->first();
+                    if ($basketItemSize) {
+                        $basketId = $basketItemSize->basket_id;
+                        $basketItemSize->delete();
+
+                        // Remove associated BasketItemColor
+                        $basketItemColor = BasketItemColor::where('id', $basketItemSize['color_id'])->first();
+                        if ($basketItemColor) {
+                            $basketItemColor->delete();
+                        }
+
+                        // Check if the basket has no more sizes or colors, then delete the basket
+                        if (
+                            !BasketItemSize::where('basket_id', $basketId)->exists() &&
+                            !BasketItemColor::where('id', $basketItemSize['color_id'])->exists()
+                        ) {
+                            Basket::where('id', $basketId)->delete();
+                        }
                     }
                 }
-            }
 
-            // Check if the order requires checking
-            if (OrderCheck::where('order_id', $order->id)->exists()) {
-                $order->is_checking = true;
-                $order->save();
-            }
+                // Check if the order requires checking
+                if (OrderCheck::where('order_id', $order->id)->exists()) {
+                    $order->is_checking = true;
+                    $order->save();
+                }
 
-            return $order;
+                $orders[] = $order; // Add order to orders array
+            }
         });
 
-        return response()->json(['message' => 'order_created_successfully', 'order_id' => $order->id], 201);
+        // Convert orders to an array of order IDs
+        $orderIds = array_map(function ($order) {
+            return $order->id;
+        }, $orders);
+
+        return response()->json(['message' => 'order_created_successfully', 'orders' => $orderIds], 201);
     }
 
 
@@ -407,6 +415,8 @@ class OrderController extends Controller
      *             @OA\Items(
      *                 required={"product_id", "sizes"},
      *                 @OA\Property(property="product_id", type="string", example="1"),
+     *                 @OA\Property(property="seller_id", type="string", example="22"),
+     *                 @OA\Property(property="provider", type="string", example="taobao"),
      *                 @OA\Property(property="sizes", type="array", @OA\Items(
      *                     @OA\Property(property="value", type="string", example="xl"),
      *                     @OA\Property(property="quantity", type="integer", example="2"),
@@ -437,6 +447,8 @@ class OrderController extends Controller
     {
         $validator = Validator::make($request->all(), [
             '*.product_id' => 'required|string',
+            '*.seller_id' => 'required|string',
+            '*.provider' => 'required|string',
             '*.sizes' => 'required|array',
             '*.sizes.*.value' => 'required|string',
             '*.sizes.*.quantity' => 'required|integer|min:1',
@@ -453,6 +465,8 @@ class OrderController extends Controller
             $basket = Basket::create([
                 'user_id' => auth()->user()->id,
                 'product_id' => $item['product_id'],
+                'seller_id' => $item['seller_id'],
+                'provider' => $item['provider'],
             ]);
 
             foreach ($item['sizes'] as $size) {
@@ -674,6 +688,8 @@ class OrderController extends Controller
                         $result[] = [
                             'id' => $basket['id'],
                             'product_id' => "{$productDetail['id']}" ?? null,
+                            'seller_id' => $basket['seller_id'],
+                            'provider' => $basket['provider'],
                             'title' => $productDetail['title'] ?? null,
                             'size' => $size->name ?? null,
                             'size_id' => $size->id ?? null,

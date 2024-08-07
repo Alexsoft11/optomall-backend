@@ -36,7 +36,9 @@ class Order extends Model
         'substatus_color',
         'substatus_slug',
         'kg',
-        'unique_id'
+        'unique_id',
+        'seller_id',
+        'provider'
     ];
 
 

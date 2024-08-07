@@ -657,7 +657,7 @@ class ProductController extends Controller
 
         if ($imageUrl) {
             // If imageUrl has a value, make an additional API call
-            $imageUrlApi = "https://kongcrdv.com/$provider/api/export_api.php?action=item_search_img&key=kingdev5809@gmail.com&imgid=$imageUrl&lang=$lang";
+            $imageUrlApi = "https://kongcrdv.com/$provider/api/export_api.php?action=item_search_img&key=kingdev5809@gmail.com&imgid=$imageUrl&lang=$lang&page=$page&page_size=$productsCount";
             $imageResponse = Http::get($imageUrlApi);
             $imageProducts = $imageResponse->json();
             // return $imageProducts;
