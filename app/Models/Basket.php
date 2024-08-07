@@ -11,22 +11,20 @@ class Basket extends Model
     protected $fillable = [
         'user_id',
         'product_id',
+        'title',
+        'price',
+        'color',
+        'quantity',
+        'max_quantity',
+        'size',
+        'image_url',
         'seller_id',
         'provider',
+        'skuId',
     ];
 
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
-    }
-
-    public function sizes(): HasMany
-    {
-        return $this->hasMany(BasketItemSize::class);
-    }
-
-    public function colors(): HasMany
-    {
-        return $this->hasMany(BasketItemColor::class);
     }
 }
