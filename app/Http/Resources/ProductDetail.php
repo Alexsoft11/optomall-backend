@@ -73,13 +73,14 @@ class ProductDetail extends JsonResource
             $propertiesArray = [];
 
             foreach ($propertyDetails as $detail) {
-                $imageUrl = $this->findAttributeUrl($attributes, $detail['colorId']);
+                $imageUrl = $this->findAttributeUrl($attributes, $detail['propertySec']);
                 $propertiesArray[] = [
                     'name' => $detail['name'],
                     'value' => $detail['value'],
                     'displayName' => $detail['displayName'],
                     'displayValue' => $detail['displayValue'],
                     'imageUrl' => $imageUrl,
+                    'property_id' => $detail['propertyFir'] . ":" . $detail['propertySec'],
                 ];
             }
 
@@ -125,7 +126,8 @@ class ProductDetail extends JsonResource
                 $results[] = [
                     'name' => $parts[2],
                     'value' => $parts[3],
-                    'colorId' => $parts[1],
+                    'propertyFir' => $parts[0],
+                    'propertySec' => $parts[1],
                     'displayName' => $parts[2],
                     'displayValue' => $parts[3],
                 ];
