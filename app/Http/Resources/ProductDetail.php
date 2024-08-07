@@ -3,7 +3,6 @@
 namespace App\Http\Resources;
 
 use App\Models\Exchanges;
-use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class ProductDetail extends JsonResource
@@ -18,21 +17,17 @@ class ProductDetail extends JsonResource
         $this->resource = $resource;
         $this->lang = $lang;
         $this->amount = Exchanges::where('currency', 'yuan')->first()->amount ?? 1800;
-        $this->percent = Exchanges::where('currency', 'product_percent')->first()->amount;
+        $this->percent = Exchanges::where('currency', 'product_percent')->first()->amount ?? 0;
     }
-    /**
-     * Transform the resource into an array.
-     *
-     * @return array<string, mixed>
-     */
-    public function toArray(Request $request): array
+
+    public function toArray($request)
     {
         return [
             'id' => $this['num_iid'],
             'title' => $this['title'],
             'price' => round($this->addPercentToPrice($this['price'], $this->amount, $this->percent)),
             'discounted_price' => round($this->addPercentToPrice($this['orginal_price'], $this->amount, $this->percent)),
-            'discount_percentage' => round((($this->resource['orginal_price'] - $this->resource['price']) / $this->resource['orginal_price']) * 100),
+            'discount_percentage' => round((($this['orginal_price'] - $this['price']) / $this['orginal_price']) * 100),
             'image' => preg_replace('/^\/\//', 'https://', $this['pic_url']),
             'quantity' => $this['num'],
             'description' => str_replace(["\n", "\\"], '', $this['desc']),
@@ -40,23 +35,16 @@ class ProductDetail extends JsonResource
             'location' => $this['location'] ?? 'China',
             'product_url' => $this['detail_url'],
             'videos' => $this['video'],
-            'colors_images' => $this['props_imgs']['prop_img'] ?? $this['prop_imgs']['prop_img'],
-            'skus' => $this['skus']['sku'],
-            'props_list' => $this['props_list'],
-            'composition' =>  $this['props'],
+            'skus' => $this->transformSkus($this['prop_imgs']['prop_img'] ?? [], $this['skus']['sku']),
+            'composition' => $this['props'],
             'is_liked' => false,
         ];
     }
 
     private function addPercentToPrice($priceInYuan, $amount, $percent = 0)
     {
-        // Convert the price from yuan to sum
         $priceInSum = $priceInYuan * $amount;
-
-        // Calculate the amount to add based on the percentage
         $additionalAmount = $priceInSum * ($percent / 100);
-
-        // Return the price with the percentage added
         return $priceInSum + $additionalAmount;
     }
 
@@ -73,5 +61,76 @@ class ProductDetail extends JsonResource
                 'is_main' => $picture->is_main,
             ];
         })->toArray();
+    }
+
+    private function transformSkus($propImgs, $skus)
+    {
+        $attributes = $this->transformAttributes($propImgs);
+
+        return array_map(function ($sku) use ($attributes) {
+            // return $attributes;
+            $propertyDetails = $this->extractPropertiesDetails($sku['properties_name']);
+            $propertiesArray = [];
+
+            foreach ($propertyDetails as $detail) {
+                $imageUrl = $this->findAttributeUrl($attributes, $detail['colorId']);
+                $propertiesArray[] = [
+                    'name' => $detail['name'],
+                    'value' => $detail['value'],
+                    'displayName' => $detail['displayName'],
+                    'displayValue' => $detail['displayValue'],
+                    'imageUrl' => $imageUrl,
+                ];
+            }
+
+            return [
+                'quantity' => $sku['quantity'],
+                'sku_id' => $sku['sku_id'],
+                'price' => round($this->addPercentToPrice($sku['price'], $this->amount, $this->percent)),
+                'properties' => $propertiesArray,
+            ];
+        }, $skus);
+    }
+
+    private function transformAttributes($attributes)
+    {
+        return array_map(function ($attribute) {
+            return [
+                'properties' => $attribute['properties'],
+                'url' => preg_replace('/^\/\//', 'https://', $attribute['url']),
+            ];
+        }, $attributes);
+    }
+
+    private function findAttributeUrl($attributes, $colorId)
+    {
+        // return $attributes;
+        foreach ($attributes as $attribute) {
+            if ($attribute['properties'] == '1627207:' . $colorId) {
+                return $attribute['url'];
+            }
+        }
+        return null;
+    }
+
+    private function extractPropertiesDetails($properties_name)
+    {
+        $properties = explode(';', $properties_name);
+        $results = [];
+
+        foreach ($properties as $property) {
+            $parts = explode(':', $property);
+            if (isset($parts[2]) && isset($parts[3])) {
+                $results[] = [
+                    'name' => $parts[2],
+                    'value' => $parts[3],
+                    'colorId' => $parts[1],
+                    'displayName' => $parts[2],
+                    'displayValue' => $parts[3],
+                ];
+            }
+        }
+
+        return $results;
     }
 }
