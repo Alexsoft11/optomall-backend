@@ -17,23 +17,6 @@ return new class extends Migration
             $table->string('product_id');
             $table->timestamps();
         });
-
-        Schema::create('basket_item_sizes', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('basket_id')->constrained('baskets')->onDelete('cascade');
-            $table->string('name');
-            $table->integer('quantity');
-            $table->string('color_id');
-            $table->timestamps();
-        });
-
-        Schema::create('basket_item_colors', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('basket_id')->constrained('baskets')->onDelete('cascade');
-            $table->string('name');
-            $table->string('image');
-            $table->timestamps();
-        });
     }
 
     /**
@@ -41,8 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('basket_item_sizes');
-        Schema::dropIfExists('basket_item_colors');
         Schema::dropIfExists('baskets');
     }
 };

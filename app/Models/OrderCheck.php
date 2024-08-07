@@ -10,13 +10,13 @@ class OrderCheck extends Model
     use HasFactory;
 
     protected $fillable = [
-        'order_id',
+        'order_group_id',
         'image',
         'card_number_id'
     ];
 
     public function order()
     {
-        return $this->belongsTo(Order::class, 'order_id');
+        return $this->belongsTo(OrderGroup::class, 'order_group_id');
     }
 }

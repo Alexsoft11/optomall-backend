@@ -36,7 +36,10 @@ class Order extends Model
         'substatus_color',
         'substatus_slug',
         'kg',
-        'unique_id'
+        'unique_id',
+        'seller_id',
+        'provider',
+        'order_group_id'
     ];
 
 
@@ -84,14 +87,14 @@ class Order extends Model
         return $this->belongsTo(User::class, 'user_id');
     }
 
+    public function orderGroup()
+    {
+        return $this->belongsTo(OrderGroup::class, 'order_group_id');
+    }
+
     public function items()
     {
         return $this->hasMany(OrderItem::class);
-    }
-
-    public function checks()
-    {
-        return $this->hasMany(OrderCheck::class);
     }
 
     public function comments()
