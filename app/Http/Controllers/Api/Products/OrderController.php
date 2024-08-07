@@ -182,26 +182,6 @@ class OrderController extends Controller
                         'product_url' => 'ok.com',
                     ]);
 
-                    // Remove basket items associated with the size_id and color_id
-                    $basketItemSize = BasketItemSize::where('id', $item['size_id'])->first();
-                    if ($basketItemSize) {
-                        $basketId = $basketItemSize->basket_id;
-                        $basketItemSize->delete();
-
-                        // Remove associated BasketItemColor
-                        $basketItemColor = BasketItemColor::where('id', $basketItemSize['color_id'])->first();
-                        if ($basketItemColor) {
-                            $basketItemColor->delete();
-                        }
-
-                        // Check if the basket has no more sizes or colors, then delete the basket
-                        if (
-                            !BasketItemSize::where('basket_id', $basketId)->exists() &&
-                            !BasketItemColor::where('id', $basketItemSize['color_id'])->exists()
-                        ) {
-                            Basket::where('id', $basketId)->delete();
-                        }
-                    }
                 }
 
                 // // Check if the order requires checking
