@@ -187,9 +187,9 @@ class ProfileController extends Controller
  *     @OA\RequestBody(
  *         required=true,
  *         @OA\JsonContent(
- *             required={"location", "adress"},
- *             @OA\Property(property="adress", type="string", example="adress"),
- *             @OA\Property(property="location", type="string", example="Url"),
+ *             @OA\Property(property="region", type="string", example="example.region"),
+ *             @OA\Property(property="district", type="string", example="Olmazor"),
+ *             @OA\Property(property="adress", type="string", example="Rakat maxalla"),
  *         ),
  *     ),
  *     @OA\Response(response="200", description="Location added or updated successfully"),
@@ -200,8 +200,9 @@ class ProfileController extends Controller
 public function locationForm(Request $request)
 {
     $validator = Validator::make($request->all(), [
-        'adress' => 'required|string',
-        'location' => 'required|url',
+        'region' => 'nullable|string',
+        'district' => 'nullable|string',
+        'adress' => 'nullable|string',
     ]);
 
     if ($validator->fails()) {
@@ -215,8 +216,10 @@ public function locationForm(Request $request)
     }
 
     $user->update([
+        'region' => $request->region,
+        'district' => $request->district,
         'adress' => $request->adress,
-        'location' => $request->location,
+
     ]);
 
     return response()->json(['message' => 'location_added_successfully'], 200);
