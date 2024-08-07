@@ -8,6 +8,7 @@ use App\Models\ProductColor;
 use App\Models\ProductComposition;
 use App\Models\ProductPicture;
 use App\Models\ProductSize;
+use Illuminate\Support\Facades\Date;
 
 class ProductDetailResource extends JsonResource
 {
@@ -46,11 +47,31 @@ class ProductDetailResource extends JsonResource
             'location' => $this['location'] ?? 'China',
             'product_url' => $this['detail_url'],
             'videos' => $this['video'],
-            'colors' => isset($this['props_imgs']) ? $this->transformAttributes($this['props_imgs']['prop_img']) : $this->transformAttributes($this['prop_imgs']['prop_img']),
+            'colors' => $this->getColors($this['props_imgs'] ?? null, $this['prop_imgs'] ?? null, $this['pic_url']),
             'sizes' => $this->transformSizes($this['skus']['sku']),
             'composition' =>  $this['props'],
             'is_liked' => false,
         ];
+    }
+
+    private function getColors($propsImgs, $propImgs, $picUrl)
+    {
+        $counter = 1;
+
+        if (isset($propsImgs['prop_img']) && !empty($propsImgs['prop_img'])) {
+            return $this->transformAttributes($propsImgs['prop_img']);
+        } elseif (isset($propImgs['prop_img']) && !empty($propImgs['prop_img'])) {
+            return $this->transformAttributes($propImgs['prop_img']);
+        } else {
+            return [
+                [
+                    'id' => $counter++,
+                    'propertyName' => 'color',
+                    'value' => 'black',
+                    'image_url' => preg_replace('/^\/\//', 'https://', $picUrl),
+                ]
+            ];
+        }
     }
 
     private function addPercentToPrice($priceInYuan, $amount, $percent = 0)

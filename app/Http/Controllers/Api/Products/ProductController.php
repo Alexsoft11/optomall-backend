@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Products;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\CategoryResource;
+use App\Http\Resources\ProductDetail;
 use App\Http\Resources\ProductDetailDatabase;
 use App\Http\Resources\ProductDetailDatabaseToken;
 use App\Http\Resources\ProductDetailResource;
@@ -379,6 +380,104 @@ class ProductController extends Controller
 
         return $this->respondWithSuccess([
             'page' => $page, 'page_size' => $productsCount, 'products' => ProductTokenResource::collection($products['items']['item'])
+        ]);
+    }
+    /**
+     * @OA\Get(
+     *     path="/api/product-detail",
+     *     summary="Get product detail from taobao",
+     *     tags={"Products"},
+     *     @OA\Parameter(
+     *         name="productId",
+     *         in="query",
+     *         required=true,
+     *         @OA\Schema(type="string"),
+     *         description="The ID of the product to retrieve details for"
+     *     ),
+     *  @OA\Parameter(
+     *         name="provider",
+     *         in="query",
+     *         required=false,
+     *         @OA\Schema(type="string")
+     *     ),
+     *    @OA\Parameter(
+     *         name="lang",
+     *         in="query",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *             enum={"uz", "ru", "en"}
+     *         ),
+     *         description="Language code for the product details. Available options: uz, ru, en"
+     *     ),
+     *     @OA\Response(response="200", description="Product detail from taobao"),
+     * )
+     */
+    public function productDetail(Request $request)
+    {
+        $productId = $request->productId;
+        $lang = $request->lang;
+        $provider = $request->provider ?? 'taobao';
+
+        // Function to get product details
+        $getProductDetails = function ($provider) use ($productId, $lang) {
+            $url = "https://api.kongcrdv.com/$provider/api_call.php?api_name=item_get&lang=$lang&num_iid=$productId&key=kingdev5809@gmail.com";
+            return Http::get($url)->json();
+        };
+
+        // Try to get product details with the initial provider
+        $productDetail = $getProductDetails($provider);
+        // return $productDetail;
+        // If product not found, switch the provider
+        if (!isset($productDetail['item'])) {
+            $provider = $provider === 'taobao' ? '1688' : 'taobao';
+            $productDetail = $getProductDetails($provider);
+
+            // If still not found, return 404 response
+            if (!isset($productDetail['item'])) {
+                return response()->json(['error' => 'Product not found'], 404);
+            }
+        }
+
+        // If product not found, switch the provider
+
+        // // Function to get random products
+        // $getRandomProducts = function ($provider, $pic_url, $lang) {
+        //     $imageSearchUrl = "https://kongcrdv.com/$provider/api/export_api.php?action=item_search_img&key=kingdev5809@gmail.com&imgid=$pic_url&lang=$lang";
+        //     return Http::get($imageSearchUrl)->json();
+        // };
+
+        // // Try to get random products with the initial provider
+        // $randomProducts = $getRandomProducts($provider, $productDetail['item']['pic_url'], $lang);
+
+        // // If random products not found, switch the provider
+        // if (!isset($randomProducts['data']['items']['item']) || empty($randomProducts['data']['items']['item'])) {
+        //     $imageSearchProvider = $provider === 'taobao' ? '1688' : 'taobao';
+        //     $randomProducts = $getRandomProducts($imageSearchProvider, $productDetail['item']['pic_url'], $lang);
+        // }
+
+        // Prepare recommended products
+        // $recommended = ProductTokenResource::collection(collect($randomProducts['data']['items']['item'])->take(5));
+        $productDatabase = Product::where('id', $productId)->first();
+
+        if ($provider == 'local') {
+            $product = new ProductDetailDatabase($productDatabase, $lang);
+        } else {
+            if (!isset($productDetail['item'])) {
+                if (!isset($productDetail['item'])) {
+                    return response()->json(['error' => 'Product not found'], 404);
+                }
+            }
+            $product = new ProductDetail($productDetail['item']);
+        }
+
+        return $this->respondWithSuccess([
+            'detail' => $product,
+            'score' => [
+                'rating' => $productDetail['item']['seller_info']['item_score'] ?? 4.6,
+                'sold' => $productDetail['item']['sales'] ?? 1000,
+            ],
+            // 'recommended' => $recommended,
         ]);
     }
 
