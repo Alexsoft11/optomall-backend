@@ -87,6 +87,7 @@ class ProductDetail extends JsonResource
                 'quantity' => $sku['quantity'],
                 'sku_id' => $sku['sku_id'],
                 'price' => round($this->addPercentToPrice($sku['price'], $this->amount, $this->percent)),
+                'properties_ids' => $sku['properties'],
                 'properties' => $propertiesArray,
             ];
         }, $skus);
