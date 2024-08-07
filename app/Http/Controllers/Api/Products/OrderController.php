@@ -56,8 +56,9 @@ class OrderController extends Controller
      *                 @OA\Property(property="phone", type="string", example="+380671234567")
      *             ),
      *             @OA\Property(property="location", type="object",
-     *                 @OA\Property(property="addressText", type="string", example="Uzbekistan"),
-     *                 @OA\Property(property="url", type="string", example="https://google.com"),
+     *                 @OA\Property(property="region", type="string", example="Toshkent shahar"),
+     *                 @OA\Property(property="district", type="string", example="Yakkasaroy tunani"),
+     *                 @OA\Property(property="adress", type="string", example="Rakat mahalla"),
      *             ),
      *             @OA\Property(property="items", type="array", @OA\Items(
      *                 @OA\Property(property="product_id", type="string", example="1"),
@@ -104,8 +105,9 @@ class OrderController extends Controller
             'location' => 'required|array',
             'userData.name' => 'required|string',
             'userData.phone' => 'required|string',
-            'location.addressText' => 'required|string',
-            'location.url' => 'nullable|string',
+            'location.region' => 'required|string',
+            'location.district' => 'required|string',
+            'location.adress' => 'nullable|string',
             'items.*.product_id' => 'required|string',
             'items.*.title' => 'required|string',
             'items.*.image_url' => 'required|url',
@@ -132,7 +134,7 @@ class OrderController extends Controller
 
         DB::transaction(function () use ($groupedItems, $request, $user, &$orders, &$orderGroup) {
             // Create a single OrderGroup
-            $orderGroup = OrderGroup::create([
+             $orderGroup = OrderGroup::create([
                 'status' => '2', // Adjust status as needed
                 'total_price' => $request->total_price,
                 'user_id' => $user->id,

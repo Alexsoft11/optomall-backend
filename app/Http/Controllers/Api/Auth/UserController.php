@@ -32,6 +32,9 @@ public function user(Request $request)
         'last_name' => $user->last_name,
         'adress' => $user->adress,
         'phone' => $user->phone,
+        'region' => $user->region,
+        'district' => $user->district
+        
     ], 200);
 }
 }
