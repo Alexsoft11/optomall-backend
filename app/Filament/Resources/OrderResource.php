@@ -31,11 +31,11 @@ class OrderResource extends Resource
 {
     protected static ?string $model = Order::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-shopping-cart';
+    // protected static ?string $navigationIcon = 'heroicon-o-shopping-cart';
 
-    protected static ?string $navigationLabel = "orders";
+    // protected static ?string $navigationLabel = "orders";
 
-    protected static ?string $label = "orders";
+    // protected static ?string $label = "orders";
 
     public static function form(Form $form): Form
     {
@@ -62,11 +62,7 @@ class OrderResource extends Resource
                             TextInput::make('total_price')->label('Jami narxi')->disabled(),
                             TextInput::make('created_at')->label('Created At')->disabled(),
                             TextInput::make('updated_at')->label('Updated At')->disabled(),
-                            Select::make('status')
-                                ->label('Status')
-                                ->options(OrderStatus::whereNotNull('name_uz')->pluck('name_uz', 'id'))
-                                ->reactive(),
-                            Toggle::make('is_paid'),
+
                         ]),
                         Section::make('Order items')
                             ->headerActions([
@@ -97,9 +93,13 @@ class OrderResource extends Resource
                                         TextInput::make('delivery_time')->label("Yetkazib berish vaqti"),
                                         TextInput::make('kg')->label("Kargo og'irligi"),
                                     ]),
-                            ])
-                    ])
-                    ->columnSpan(['lg' => fn (?Order $record) => $record === null ? 3 : 2]),
+                            ]),
+                        Select::make('status')
+                            ->label('Status')
+                            ->options(OrderStatus::whereNotNull('name_uz')->pluck('name_uz', 'id'))
+                            ->reactive(),
+                        Toggle::make('is_paid'),
+                    ])->columnSpan(['lg' => fn (?Order $record) => $record === null ? 3 : 2]),
                 Section::make()
                     ->schema([
                         Forms\Components\Placeholder::make('created_at')

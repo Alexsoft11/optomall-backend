@@ -35,12 +35,17 @@ class OrderGroupResource extends Resource
     {
         return $form
             ->schema([
-                Select::make('status')
-                    ->label('Status')
-                    ->options(OrderStatus::whereNotNull('name_uz')->pluck('name_uz', 'id'))
-                    ->reactive(),
+
                 TextInput::make('total_price')->label('Jami narxi')->disabled(),
-                Toggle::make('is_paid'),
+                Fieldset::make('Foydalanuvchi')->relationship('user')
+                    ->schema([
+                        TextInput::make('last_name')->label('Familiyasi'),
+                        TextInput::make('phone')->label('Telefon raqami'),
+                        TextInput::make('email')->label('Pochta'),
+                        TextInput::make('location')->label('Manzil linki'),
+                        TextInput::make('region')->label('Viloyat'),
+                        TextInput::make('district')->label('Tuman'),
+                    ])->disabled()->columnSpan(['sm' => 2]),
                 Group::make()
                     ->schema([
                         Section::make('Buyurtma checklari')
@@ -51,15 +56,12 @@ class OrderGroupResource extends Resource
                             ]),
                     ])
                     ->disabled(),
-                Fieldset::make('Foydalanuvchi')->relationship('user')
-                    ->schema([
-                        TextInput::make('last_name')->label('Familiyasi'),
-                        TextInput::make('phone')->label('Telefon raqami'),
-                        TextInput::make('email')->label('Pochta'),
-                        TextInput::make('location')->label('Manzil linki'),
-                        TextInput::make('region')->label('Viloyat'),
-                        TextInput::make('district')->label('Tuman'),
-                    ])->disabled()->columnSpan(['sm' => 2]),
+                Select::make('status')
+                    ->label('Status')
+                    ->options(OrderStatus::whereNotNull('name_uz')->pluck('name_uz', 'id'))
+                    ->reactive(),
+                Toggle::make('is_paid'),
+
             ]);
     }
 
