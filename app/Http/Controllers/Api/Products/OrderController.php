@@ -701,7 +701,7 @@ class OrderController extends Controller
         $items = [];
         $baskets = Basket::where('user_id', $user->id)->with('basketItems')->get();
 
-        return response()->json(BasketResource::collection($baskets));
+        return response()->json(BasketResource::collection($baskets) ?? [], 200);
     }
 
     /**
