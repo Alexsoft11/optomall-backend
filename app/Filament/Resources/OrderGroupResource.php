@@ -2,16 +2,19 @@
 
 namespace App\Filament\Resources;
 
-use App\Enums\OrderStatus;
 use App\Filament\Resources\OrderGroupResource\Pages;
 use App\Filament\Resources\OrderGroupResource\RelationManagers;
+use App\Filament\Resources\Shop\OrderResource\RelationManagers\OrderGroupRelationManager;
 use App\Models\OrderGroup;
+use App\Models\OrderStatus;
 use Filament\Forms;
+use Filament\Forms\Components\Fieldset;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Group;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -36,6 +39,7 @@ class OrderGroupResource extends Resource
                     ->label('Status')
                     ->options(OrderStatus::whereNotNull('name_uz')->pluck('name_uz', 'id'))
                     ->reactive(),
+                TextInput::make('total_price')->label('Jami narxi')->disabled(),
                 Toggle::make('is_paid'),
                 Group::make()
                     ->schema([
@@ -47,6 +51,15 @@ class OrderGroupResource extends Resource
                             ]),
                     ])
                     ->disabled(),
+                Fieldset::make('Foydalanuvchi')->relationship('user')
+                    ->schema([
+                        TextInput::make('last_name')->label('Familiyasi'),
+                        TextInput::make('phone')->label('Telefon raqami'),
+                        TextInput::make('email')->label('Pochta'),
+                        TextInput::make('location')->label('Manzil linki'),
+                        TextInput::make('region')->label('Viloyat'),
+                        TextInput::make('district')->label('Tuman'),
+                    ])->disabled()->columnSpan(['sm' => 2]),
             ]);
     }
 
@@ -81,7 +94,7 @@ class OrderGroupResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            OrderGroupRelationManager::class,
         ];
     }
 

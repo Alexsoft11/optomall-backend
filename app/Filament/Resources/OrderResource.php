@@ -89,9 +89,6 @@ class OrderResource extends Resource
                                 TextInput::make('location')->label('Manzil linki'),
                                 TextInput::make('region')->label('Viloyat'),
                                 TextInput::make('district')->label('Tuman'),
-                                TextInput::make('street')->label("Ko'cha"),
-                                TextInput::make('house')->label("Uy"),
-                                TextInput::make('post_index')->label("Zip kod"),
                             ])->disabled(),
                         Group::make()
                             ->schema([
@@ -164,22 +161,6 @@ class OrderResource extends Resource
         return Repeater::make('items')
             ->relationship()
             ->schema([
-                FileUpload::make('image_url')->disk('public')->columnSpan([
-                    'lg' => 10,
-                ]),
-                TextInput::make('title')->columnSpan([
-                    'md' => 6,
-                ]),
-
-                TextInput::make('quantity')
-                    ->label('Quantity')
-                    ->numeric()
-                    ->default(1)
-                    ->columnSpan([
-                        'md' => 2,
-                    ])
-                    ->required(),
-
                 TextInput::make('price')
                     ->label('Unit Price')
                     ->disabled()
@@ -196,6 +177,23 @@ class OrderResource extends Resource
                 TextInput::make('size')->label("O'lcham")->columnSpan([
                     'md' => 3,
                 ]),
+                FileUpload::make('image_url')->disk('public')->columnSpan([
+                    'lg' => 3,
+                ]),
+                TextInput::make('title')->columnSpan([
+                    'md' => 4,
+                ]),
+
+                TextInput::make('quantity')
+                    ->label('Quantity')
+                    ->numeric()
+                    ->default(1)
+                    ->columnSpan([
+                        'md' => 2,
+                    ])
+                    ->required(),
+
+
             ])
             ->extraItemActions([
                 Action::make('openProduct')
@@ -204,13 +202,12 @@ class OrderResource extends Resource
                     ->url(function (array $arguments, Repeater $component): ?string {
                         $itemData = $component->getRawItemState($arguments['item']);
 
-                        $product = Product::find($itemData['id']);
-
-                        if (!$product) {
+                        // Ensure product_url exists
+                        if (empty($itemData['product_url'])) {
                             return null;
                         }
 
-                        return ProductResource::getUrl('edit', ['record' => $product]);
+                        return $itemData['product_url'] . '&skuId=' . $itemData['skuId'];
                     }, shouldOpenInNewTab: true)
                     ->hidden(fn (array $arguments, Repeater $component): bool => blank($component->getRawItemState($arguments['item'])['id'])),
             ])
