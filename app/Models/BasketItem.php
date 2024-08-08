@@ -19,6 +19,7 @@ class BasketItem extends Model
         'product_id',
         'seller_id',
         'provider',
+        'product_url',
         'skuId',
         'basket_id',
     ];
