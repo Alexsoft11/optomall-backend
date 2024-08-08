@@ -983,20 +983,20 @@ class ProductController extends Controller
         // Define the URLs based on the query parameter
         if ($query === "discount") {
             $urls = [
-                "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=$productsCount&q=Car%20Electronics&lang=$lang",
-                "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=$productsCount&q=suits&lang=$lang",
+                "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=$productsCount&q=Jewelry&Accessories&lang=$lang",
+                "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=$productsCount&q=Children'sClothing&lang=$lang",
                 // "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=$productsCount&q=shoes&lang=$lang"
             ];
         } elseif ($query === "top") {
             $urls = [
-                "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=$productsCount&q=trainers&lang=$lang",
-                "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=$productsCount&q=jeans&lang=$lang",
+                "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=$productsCount&q=Beauty&Health&lang=$lang",
+                "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=$productsCount&q=Clothing&lang=$lang",
                 // "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=$productsCount&q=dresses&lang=$lang"
             ];
         } elseif ($query === "recomend") {
             $urls = [
-                "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=$productsCount&q=school&lang=$lang",
-                "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=$productsCount&q=smartphones&lang=$lang",
+                "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=$productsCount&q=Baby&Kids&lang=$lang",
+                "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=$productsCount&q=shirts&lang=$lang",
                 // "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=$productsCount&q=cases&lang=$lang"
             ];
         } else {
