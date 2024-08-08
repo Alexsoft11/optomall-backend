@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\OrderStatus;
 use App\Filament\Resources\OrderGroupResource\Pages;
 use App\Filament\Resources\OrderGroupResource\RelationManagers;
 use App\Models\OrderGroup;
@@ -10,6 +11,8 @@ use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Group;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -29,12 +32,17 @@ class OrderGroupResource extends Resource
     {
         return $form
             ->schema([
+                Select::make('status')
+                    ->label('Status')
+                    ->options(OrderStatus::whereNotNull('name_uz')->pluck('name_uz', 'id'))
+                    ->reactive(),
+                Toggle::make('is_paid'),
                 Group::make()
                     ->schema([
                         Section::make('Buyurtma checklari')
                             ->schema([
                                 Repeater::make('checks')->label('Cheklar')->relationship('checks')->schema([
-                                    FileUpload::make('image')->disk('public')->label('Chek')->openable()->downloadable(),
+                                    FileUpload::make('image')->disk('public')->label('Chek')->openable()->downloadable()->previewable(true),
                                 ]),
                             ]),
                     ])
