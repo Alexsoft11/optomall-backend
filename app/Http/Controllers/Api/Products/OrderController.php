@@ -59,7 +59,6 @@ class OrderController extends Controller
      *             @OA\Property(property="location", type="object",
      *                 @OA\Property(property="region", type="string", example="Toshkent shahar"),
      *                 @OA\Property(property="district", type="string", example="Yakkasaroy tunani"),
-     *                 @OA\Property(property="address", type="string", example="Rakat mahalla"),
      *             ),
      *             @OA\Property(property="items", type="array", @OA\Items(
      *                 @OA\Property(property="product_id", type="string", example="1"),
@@ -109,7 +108,6 @@ class OrderController extends Controller
             'userData.phone' => 'required|string',
             'location.region' => 'required|string',
             'location.district' => 'required|string',
-            'location.address' => 'nullable|string',
             'items.*.product_id' => 'required|string',
             'items.*.title' => 'required|string',
             'items.*.image_url' => 'required|url',
@@ -172,7 +170,6 @@ class OrderController extends Controller
                     'seller_id' => $sellerId,
                     'user_name' => $request->userData['name'],
                     'user_phone' => $request->userData['phone'],
-                    'location_name' => $request->location['address'],
                     'region' => $request->location['region'],
                     'district' => $request->location['district'],
                     'status' => '2',
@@ -379,9 +376,9 @@ class OrderController extends Controller
             return response()->json(['message' => 'Invalid data', 'errors' => $validator->errors()], 400);
         }
 
-        $orderGroup = OrderGroupGroup::find($request->order_group_id);
+        $orderGroup = OrderGroup::find($request->order_group_id);
 
-        if (!$order) {
+        if (!$orderGroup) {
             return response()->json(['message' => 'Order not found'], 404);
         }
 
@@ -696,14 +693,22 @@ class OrderController extends Controller
     public function getUserBasket(Request $request)
     {
         $user = $request->user();
-        $baskets = Basket::where('user_id', $user->id)->with('basketItems')->get();
 
-        foreach ($baskets as $basket) {
-            if ($basket['basketItems']->isEmpty()) {
-                return response()->json([], 200);
-            }
+        // Retrieve the user's baskets along with their basket items
+        $baskets = Basket::where('user_id', $user->id)
+            ->with('basketItems')
+            ->get()
+            ->filter(function ($basket) {
+                // Only include baskets where basketItems is not empty
+                return !$basket->basketItems->isEmpty();
+            });
+
+        // Check if all baskets were filtered out
+        if ($baskets->isEmpty()) {
+            return response()->json([], 200);
         }
 
+        // Return the filtered baskets as a JSON response using the BasketResource collection
         return response()->json(BasketResource::collection($baskets), 200);
     }
 
