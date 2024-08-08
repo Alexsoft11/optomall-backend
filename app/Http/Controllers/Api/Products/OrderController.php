@@ -110,7 +110,7 @@ class OrderController extends Controller
             'userData.phone' => 'required|string',
             'location.region' => 'required|string',
             'location.district' => 'required|string',
-            'location.adress' => 'nullable|string',
+            'location.address' => 'nullable|string',
             'items.*.product_id' => 'required|string',
             'items.*.title' => 'required|string',
             'items.*.image_url' => 'required|url',
@@ -131,6 +131,28 @@ class OrderController extends Controller
         }
 
         $user = auth()->user();
+
+        // Check and update user information if region, district, or address is missing
+        $location = $request->location;
+        $updateUser = false;
+
+        if (empty($user->region)) {
+            $user->region = $location['region'];
+            $updateUser = true;
+        }
+        if (empty($user->district)) {
+            $user->district = $location['district'];
+            $updateUser = true;
+        }
+        if (empty($user->adress)) {
+            $user->address = $location['address'];
+            $updateUser = true;
+        }
+
+        if ($updateUser) {
+            $user->save(); // Save the updated user information
+        }
+
         $items = collect($request->items);
         $groupedItems = $items->groupBy('seller_id');
 
@@ -153,8 +175,9 @@ class OrderController extends Controller
                     'seller_id' => $sellerId,
                     'user_name' => $request->userData['name'],
                     'user_phone' => $request->userData['phone'],
-                    'location_url' => $request->location['url'],
-                    'location_name' => $request->location['addressText'],
+                    'location_name' => $request->location['address'],
+                    'region' => $request->location['region'],
+                    'district' => $request->location['district'],
                     'status' => '2',
                     'substatus' => '1',
                     'status_color' => '#05ff00',
@@ -192,6 +215,12 @@ class OrderController extends Controller
 
                 $orders[] = $order;
             }
+
+            // Remove corresponding items from the basket
+            $orderedProductIds = $items->pluck('product_id')->toArray();
+            BasketItem::where('user_id', $user->id)
+                ->whereIn('product_id', $orderedProductIds)
+                ->delete();
         });
 
         $orderIds = array_map(fn ($order) => $order->id, $orders);
