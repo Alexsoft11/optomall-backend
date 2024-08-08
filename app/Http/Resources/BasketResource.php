@@ -14,7 +14,7 @@ class BasketResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        foreach ($this['basketItems']->isEmpty() ? [] : $this['basketItems'] as $item) {
+        foreach ($this['basketItems'] as $item) {
             return [
                 'id' => $this->id,
                 'title' => $item['title'],
