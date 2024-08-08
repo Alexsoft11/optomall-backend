@@ -13,12 +13,7 @@ class ListCardNumbers extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make()->label(trans('create')),
+            Actions\CreateAction::make(),
         ];
-    }
-
-    public function getTitle(): string
-    {
-        return trans('card_number');
     }
 }
