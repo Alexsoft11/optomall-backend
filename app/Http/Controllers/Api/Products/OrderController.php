@@ -698,7 +698,6 @@ class OrderController extends Controller
     public function getUserBasket(Request $request)
     {
         $user = $request->user();
-        $items = [];
         $baskets = Basket::where('user_id', $user->id)->with('basketItems')->get();
 
         return response()->json(BasketResource::collection($baskets) ?? [], 200);
