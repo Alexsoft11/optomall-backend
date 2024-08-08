@@ -19,6 +19,7 @@ class OrderItem extends Model
         'price',
         'color',
         'size',
+        'skuId',
     ];
 
     public function order()

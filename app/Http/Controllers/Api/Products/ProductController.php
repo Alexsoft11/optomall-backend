@@ -468,7 +468,7 @@ class ProductController extends Controller
                     return response()->json(['error' => 'Product not found'], 404);
                 }
             }
-            $product = new ProductDetail($productDetail['item']);
+            $product = new ProductDetail($productDetail['item'], $provider);
         }
 
         return $this->respondWithSuccess([

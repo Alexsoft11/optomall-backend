@@ -7,15 +7,15 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class ProductDetail extends JsonResource
 {
-    protected $lang;
     protected $amount;
     protected $percent;
+    protected $provider;
 
-    public function __construct($resource, $lang = null)
+    public function __construct($resource, $provider = 'taobao')
     {
         parent::__construct($resource);
         $this->resource = $resource;
-        $this->lang = $lang;
+        $this->provider = $provider;
         $this->amount = Exchanges::where('currency', 'yuan')->first()->amount ?? 1800;
         $this->percent = Exchanges::where('currency', 'product_percent')->first()->amount ?? 0;
     }
@@ -30,12 +30,14 @@ class ProductDetail extends JsonResource
             'discount_percentage' => round((($this['orginal_price'] - $this['price']) / $this['orginal_price']) * 100),
             'image' => preg_replace('/^\/\//', 'https://', $this['pic_url']),
             'quantity' => $this['num'],
+            'seller_id' => $this['seller_info']['user_num_id'],
+            'provider' => $this->provider,
             'description' => str_replace(["\n", "\\"], '', $this['desc']),
             'pictures' => $this->transformPictures($this['item_imgs']),
             'location' => $this['location'] ?? 'China',
             'product_url' => $this['detail_url'],
             'videos' => $this['video'],
-            'skus' => $this->transformSkus($this['prop_imgs']['prop_img'] ?? [], $this['skus']['sku']),
+            'skus' => $this->transformSkus($this['prop_imgs']['prop_img'] ?? $this['prop_imgs']['prop_img'], $this['skus']['sku']),
             'composition' => $this['props'],
             'is_liked' => false,
         ];
@@ -73,7 +75,7 @@ class ProductDetail extends JsonResource
             $propertiesArray = [];
 
             foreach ($propertyDetails as $detail) {
-                $imageUrl = $this->findAttributeUrl($attributes, $detail['propertySec']);
+                $imageUrl = $this->findAttributeUrl($attributes, $detail['propertyFir'] . ":" . $detail['propertySec']);
                 $propertiesArray[] = [
                     'name' => $detail['name'],
                     'value' => $detail['value'],
@@ -106,9 +108,9 @@ class ProductDetail extends JsonResource
 
     private function findAttributeUrl($attributes, $colorId)
     {
-        // return $attributes;
+        // return $colorId;
         foreach ($attributes as $attribute) {
-            if ($attribute['properties'] == '1627207:' . $colorId) {
+            if ($attribute['properties'] == $colorId) {
                 return $attribute['url'];
             }
         }

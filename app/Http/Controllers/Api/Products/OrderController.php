@@ -7,6 +7,7 @@ use App\Http\Resources\BasketResource;
 use App\Http\Resources\OrderItemResource;
 use App\Http\Resources\OrderResource;
 use App\Models\Basket;
+use App\Models\BasketItem;
 use App\Models\BasketItemColor;
 use App\Models\BasketItemSize;
 use App\Models\CardNumber;
@@ -70,7 +71,9 @@ class OrderController extends Controller
      *                 @OA\Property(property="size_id", type="number", example="4"),
      *                 @OA\Property(property="price", type="number", example="4.99"),
      *                 @OA\Property(property="seller_id", type="string", example="2"),
-     *                 @OA\Property(property="provider", type="string", example="taobao")
+     *                 @OA\Property(property="provider", type="string", example="taobao"),
+     *                 @OA\Property(property="sku_id", type="string", example="SKU1234567890"),
+     *                 @OA\Property(property="product_url", type="string", example="url"),
      *             )),
      *             @OA\Property(property="total_price", type="number", example="50.99")
      *         )
@@ -118,6 +121,8 @@ class OrderController extends Controller
             'items.*.price' => 'required|numeric|min:0',
             'items.*.seller_id' => 'nullable|string',
             'items.*.provider' => 'nullable|string',
+            'items.*.sku_id' => 'required|string',
+            'items.*.product_url' => 'nullable|string',
             'total_price' => 'nullable|numeric|min:0',
         ]);
 
@@ -126,16 +131,16 @@ class OrderController extends Controller
         }
 
         $user = auth()->user();
-        $items = collect($request->items); // Convert array to collection
-        $groupedItems = $items->groupBy('seller_id'); // Group by seller_id
+        $items = collect($request->items);
+        $groupedItems = $items->groupBy('seller_id');
 
         $orders = [];
         $orderGroup = null;
 
         DB::transaction(function () use ($groupedItems, $request, $user, &$orders, &$orderGroup) {
-            // Create a single OrderGroup
-             $orderGroup = OrderGroup::create([
-                'status' => '2', // Adjust status as needed
+            $orderGroup = OrderGroup::create([
+                'status' => '2',
+                'status_color' => '#05ff00',
                 'total_price' => $request->total_price,
                 'user_id' => $user->id,
                 'is_paid' => false,
@@ -146,7 +151,6 @@ class OrderController extends Controller
                     'user_id' => $user->id,
                     'total_price' => $request->total_price,
                     'seller_id' => $sellerId,
-                    'provider' => $items->first()['provider'], // Use the provider from the first item
                     'user_name' => $request->userData['name'],
                     'user_phone' => $request->userData['phone'],
                     'location_url' => $request->location['url'],
@@ -155,51 +159,42 @@ class OrderController extends Controller
                     'substatus' => '1',
                     'status_color' => '#05ff00',
                     'is_checking' => false,
-                    'order_group_id' => $orderGroup->id, // Associate the order with the single OrderGroup
+                    'order_group_id' => $orderGroup->id,
                 ]);
 
                 $client = new Client();
 
                 foreach ($items as $item) {
-                    // Fetch product details (adjust this part according to your logic)
-                    $productDetailResponse = $this->productController->productDetailFromTaoBao(new Request(['productId' => $item['product_id'], 'lang' => 'ru']));
-                    $productDetail = json_decode($productDetailResponse->getContent(), true)['detail'];
+                    try {
+                        $url = $item['image_url'];
+                        $randomName = Str::random(40) . '.' . pathinfo($url, PATHINFO_EXTENSION);
+                        $imagePath = 'order_images/' . $randomName;
+                        $response = $client->get($url);
+                        Storage::disk('public')->put($imagePath, $response->getBody());
 
-                    // Download image and save to storage
-                    $url = $item['image_url'];
-                    $randomName = Str::random(40) . '.' . pathinfo($url, PATHINFO_EXTENSION);
-                    $imagePath = 'order_images/' . $randomName;
-                    $response = $client->get($url);
-                    Storage::disk('public')->put($imagePath, $response->getBody());
-
-                    OrderItem::create([
-                        'order_id' => $order->id,
-                        'product_id' => $item['product_id'],
-                        'title' => $productDetail['title'],
-                        'image_url' => $imagePath,
-                        'quantity' => $item['quantity'],
-                        'price' => $item['price'],
-                        'color' => $item['color'],
-                        'size' => $item['size'],
-                        'product_url' => 'ok.com',
-                    ]);
-
+                        OrderItem::create([
+                            'order_id' => $order->id,
+                            'product_id' => $item['product_id'],
+                            'title' => $item['title'],
+                            'provider' => $item['provider'],
+                            'image_url' => $imagePath,
+                            'quantity' => $item['quantity'],
+                            'price' => $item['price'],
+                            'color' => $item['color'],
+                            'size' => $item['size'],
+                            'product_url' => $item['product_url'],
+                            'skuId' => $item['sku_id'],
+                        ]);
+                    } catch (\Exception $e) {
+                        // Handle the exception as needed
+                    }
                 }
 
-                // // Check if the order requires checking
-                // if (OrderCheck::where('order_id', $order->id)->exists()) {
-                //     $order->is_checking = true;
-                //     $order->save();
-                // }
-
-                $orders[] = $order; // Add order to orders array
+                $orders[] = $order;
             }
         });
 
-        // Convert orders to an array of IDs
-        $orderIds = array_map(function ($order) {
-            return $order->id;
-        }, $orders);
+        $orderIds = array_map(fn ($order) => $order->id, $orders);
 
         return response()->json(['message' => 'order_created_successfully', 'orders' => $orderIds, 'order_group' => $orderGroup->id], 201);
     }
@@ -241,11 +236,32 @@ class OrderController extends Controller
 
     public function getOrder(Request $request)
     {
-        $order = Order::where('id', $request->order_id)->where('user_id', auth()->user()->id)->first();
-        $cardNumber = CardNumber::orderBy('money', 'desc')->where('type', 'order')->where('is_active', 1)->first();
+        $orderGroup = OrderGroup::where('id', $request->order_id)
+            ->where('user_id', auth()->user()->id)
+            ->first();
+
+        if (!$orderGroup) {
+            return response()->json(['message' => 'Order group not found'], 404);
+        }
+
+        $orders = Order::where('order_group_id', $orderGroup->id)->get(); // Get all orders
+        $cardNumber = CardNumber::orderBy('money', 'desc')
+            ->where('type', 'order')
+            ->where('is_active', 1)
+            ->first();
+
         $kgPrice = Exchanges::where('currency', 'kg')->first();
 
-        return response()->json(['message' => 'successfull', 'order' => ['id' => $order->id, 'total_price' => $order->total_price, 'kg_price' => $kgPrice->amount, 'card_number' => $cardNumber->card_number ?? 9860176612846848], 'detail' => new OrderResource($order)], 201);
+        return response()->json([
+            'message' => 'successful',
+            'order' => [
+                'id' => $orderGroup->id,
+                'total_price' => $orderGroup->total_price,
+                'kg_price' => $kgPrice->amount ?? 0,
+                'card_number' => $cardNumber->card_number ?? '9860176612846848'
+            ],
+            'detail' => OrderResource::collection($orders) // Pass the collection
+        ], 201);
     }
 
     /**
@@ -298,7 +314,7 @@ class OrderController extends Controller
      *             mediaType="multipart/form-data",
      *             @OA\Schema(
      *                 required={"order_id", "image", "type"},
-     *                 @OA\Property(property="order_id", type="integer", example="1"),
+     *                 @OA\Property(property="order_group_id", type="integer", example="1"),
      *                 @OA\Property(property="image", type="string", format="binary"),
      *                 @OA\Property(property="type", type="string", example="order"),
      *             )
@@ -327,7 +343,7 @@ class OrderController extends Controller
     {
         // Validate request data
         $validator = Validator::make($request->all(), [
-            'order_id' => 'required|integer|exists:orders,id',
+            'order_group_id' => 'required|integer',
             'image' => 'required|image',
             'type' => 'required|in:order,cargo',
         ]);
@@ -336,7 +352,7 @@ class OrderController extends Controller
             return response()->json(['message' => 'Invalid data', 'errors' => $validator->errors()], 400);
         }
 
-        $order = Order::find($request->order_id);
+        $orderGroup = OrderGroupGroup::find($request->order_group_id);
 
         if (!$order) {
             return response()->json(['message' => 'Order not found'], 404);
@@ -344,17 +360,17 @@ class OrderController extends Controller
 
         try {
             // Transaction block
-            $result = DB::transaction(function () use ($request, $order) {
+            $result = DB::transaction(function () use ($request, $orderGroup) {
                 // Check for OrderCheck limit
-                if (OrderCheck::where('order_id', $request->order_id)->count() > 4) {
+                if (OrderCheck::where('order_group_id', $request->order_group_id)->count() > 4) {
                     throw new \Exception('Order checks limit reached');
                 }
 
                 // Create income record
                 Income::create([
                     'user_id' => auth()->user()->id,
-                    'order_id' => $request->order_id,
-                    'amount' => $order->total_price,
+                    'order_id' => $request->order_group_id,
+                    'amount' => $orderGroup->total_price,
                     'type' => $request->type,
                 ]);
 
@@ -370,15 +386,15 @@ class OrderController extends Controller
 
                 // Create order check
                 $orderCheck = OrderCheck::create([
-                    'order_id' => $request->order_id,
+                    'order_group_id' => $request->order_group_id,
                     'image' => $request->image->store('order_checks', 'public'), // Store the image and save the path
                     'card_number_id' => $cardNumber->id,
                 ]);
 
                 // Update order status
-                $order->status = "6";
-                $order->substatus = null;
-                $order->save();
+                $orderGroup->status = "6";
+                $orderGroup->substatus = null;
+                $orderGroup->save();
 
                 return $orderCheck;
             });
@@ -457,8 +473,13 @@ class OrderController extends Controller
         foreach ($request->all() as $item) {
             $basket = Basket::create([
                 'user_id' => auth()->user()->id,
+                'product_id' => $item['product_id']
+            ]);
+
+            BasketItem::create([
                 'product_id' => $item['product_id'],
                 'title' => $item['title'],
+                'basket_id' => $basket['id'],
                 'price' => $item['price'],
                 'color' => $item['color'],
                 'quantity' => $item['quantity'],
@@ -468,7 +489,7 @@ class OrderController extends Controller
                 'product_url' => $item['product_url'],
                 'seller_id' => $item['seller_id'],
                 'provider' => $item['provider'],
-                'skuId' => $item['skuId'],
+                'skuId' => $item['sku_id'],
             ]);
 
             $baskets[] = $basket;
@@ -648,9 +669,10 @@ class OrderController extends Controller
     public function getUserBasket(Request $request)
     {
         $user = $request->user();
-        $baskets = Basket::where('user_id', $user->id)->get();
+        $items = [];
+        $baskets = Basket::where('user_id', $user->id)->with('basketItems')->get();
 
-        return response()->json(['basket_items' => BasketResource::collection($baskets)]);
+        return response()->json(BasketResource::collection($baskets));
     }
 
     /**
