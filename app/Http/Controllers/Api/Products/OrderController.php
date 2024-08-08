@@ -212,6 +212,7 @@ class OrderController extends Controller
             BasketItem::where('basket_id', $basket->id)
                 ->whereIn('product_id', $orderedProductIds)
                 ->delete();
+            $basket->delete();
         });
 
         $orderIds = array_map(fn ($order) => $order->id, $orders);
