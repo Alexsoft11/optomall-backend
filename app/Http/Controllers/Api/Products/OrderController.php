@@ -699,7 +699,9 @@ class OrderController extends Controller
     {
         $user = $request->user();
         $baskets = Basket::where('user_id', $user->id)->with('basketItems')->get();
-
+        if ($baskets['basketItems']->isEmpty()) {
+            return response()->json([], 200);
+        }
         return response()->json(BasketResource::collection($baskets) ?? [], 200);
     }
 
