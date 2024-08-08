@@ -5,20 +5,10 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\CardNumberResource\Pages;
 use App\Filament\Resources\CardNumberResource\RelationManagers;
 use App\Models\CardNumber;
-use App\Models\Order;
 use Filament\Forms;
-use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\Group;
-use Filament\Forms\Components\Repeater;
-use Filament\Forms\Components\Section;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Columns\ToggleColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -27,33 +17,27 @@ class CardNumberResource extends Resource
 {
     protected static ?string $model = CardNumber::class;
 
-    protected static ?string $label = "card_number";
-
-
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Toggle::make('is_active')->label(trans('is_active')),
-                TextInput::make('card_number')->label(trans('card_number')),
-                TextInput::make('money')->label(trans('money')),
-                Select::make('type')->label(trans('type'))->options([
-                    'order' => trans('order'),
-                    'cargo' => trans('cargo'),
-                ]),
-                Group::make()
-                    ->schema([
-                        Section::make(trans('order_checks'))
-                            ->schema([
-                                Repeater::make('checks')->label(trans('checks'))->relationship('checks')->schema([
-                                    FileUpload::make('image')
-                                        ->disk('public')
-                                        ->label(trans('check')),
-                                ]),
-                            ]),
-                    ])->disabled(),
+                Forms\Components\TextInput::make('card_number')
+                    ->required()
+                    ->maxLength(255),
+                Forms\Components\TextInput::make('money')
+                    ->required()
+                    ->maxLength(255),
+                Forms\Components\TextInput::make('type')
+                    ->required()
+                    ->maxLength(255)
+                    ->default('order'),
+                Forms\Components\Toggle::make('is_active')
+                    ->required(),
+                Forms\Components\TextInput::make('name')
+                    ->required()
+                    ->maxLength(255),
             ]);
     }
 
@@ -61,15 +45,30 @@ class CardNumberResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('card_number')->label(trans('card_number')),
-                TextColumn::make('money')->label(trans('money')),
-                ToggleColumn::make('is_active')->label(trans('is_active')),
-                TextColumn::make('type')->label(trans('type')),
+                Tables\Columns\TextColumn::make('card_number')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('money')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('created_at')
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('updated_at')
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('type')
+                    ->searchable(),
+                Tables\Columns\IconColumn::make('is_active')
+                    ->boolean(),
+                Tables\Columns\TextColumn::make('name')
+                    ->searchable(),
             ])
             ->filters([
                 //
             ])
             ->actions([
+                Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
             ])
             ->bulkActions([
@@ -91,17 +90,8 @@ class CardNumberResource extends Resource
         return [
             'index' => Pages\ListCardNumbers::route('/'),
             'create' => Pages\CreateCardNumber::route('/create'),
+            'view' => Pages\ViewCardNumber::route('/{record}'),
             'edit' => Pages\EditCardNumber::route('/{record}/edit'),
         ];
-    }
-
-    
-    public static function getNavigationLabel(): string
-    {
-        return trans('card_number');
-    }
-    public static function getLabel(): string
-    {
-        return trans('card_number');
     }
 }

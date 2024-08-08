@@ -297,6 +297,7 @@ class OrderController extends Controller
                 'total_price' => $orderGroup->total_price,
                 'kg_price' => $kgPrice->amount ?? 0,
                 'card_number' => $cardNumber->card_number ?? '9860176612846848',
+                'name' => $cardNumber->name ?? 'JR'
             ],
             'detail' => OrderResource::collection($orderGroup->orders)
         ], 201);

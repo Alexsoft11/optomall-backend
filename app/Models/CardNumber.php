@@ -22,7 +22,7 @@ class CardNumber extends Model
         });
     }
 
-    protected $fillable = ['card_number', 'money', 'type', 'is_active'];
+    protected $fillable = ['card_number','name', 'money', 'type', 'is_active'];
 
     public function checks()
     {
