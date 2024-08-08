@@ -139,10 +139,6 @@ class OrderController extends Controller
             $user->district = $request->location['district'];
             $updateUser = true;
         }
-        if (empty($user->adress)) {
-            $user->adress = $request->location['address'];
-            $updateUser = true;
-        }
 
         if ($updateUser) {
             $user->save(); // Save the updated user information
