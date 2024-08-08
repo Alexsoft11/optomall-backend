@@ -9,11 +9,27 @@ class OrderGroup extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['status', 'status_color', 'total_price', 'user_id', 'is_paid'];
+    protected $fillable = ['status', 'status_color', 'total_price', 'user_id', 'is_paid', 'unique_id'];
 
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($model) {
+            $model->unique_id = $model->generateUniqueId();
+        });
+    }
+
+    protected function generateUniqueId()
+    {
+        $letters = strtoupper(substr(str_shuffle('ABCDEFGHIJKLMNOPQRSTUVWXYZ'), 0, 3));
+        $numbers = substr(str_shuffle('0123456789'), 0, 4);
+        return $letters . $numbers;
     }
 
     public function orders()

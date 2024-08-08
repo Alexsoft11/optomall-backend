@@ -95,17 +95,6 @@ class OrderResource extends Resource
                             ])->disabled(),
                         Group::make()
                             ->schema([
-                                Section::make('Buyurtma checklari')
-                                    ->schema([
-                                        Repeater::make('checks')->label('Cheklar')->relationship('checks')->schema([
-                                            FileUpload::make('image')->disk('public')->label('Chek'),
-                                        ]),
-                                    ]),
-                            ])
-                            ->disabled()
-                            ->columnSpan(['lg' => fn (?Order $record) => $record === null ? 3 : 2]),
-                        Group::make()
-                            ->schema([
                                 Section::make("Qo'shimcha")
                                     ->schema([
                                         TextInput::make('delivery_time')->label("Yetkazib berish vaqti"),

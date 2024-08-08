@@ -414,7 +414,6 @@ class OrderController extends Controller
 
                 // Update order status
                 $orderGroup->status = "6";
-                $orderGroup->substatus = null;
                 $orderGroup->save();
 
                 return $orderCheck;

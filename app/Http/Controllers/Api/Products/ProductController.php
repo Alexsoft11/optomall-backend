@@ -315,7 +315,7 @@ class ProductController extends Controller
     public function productsFromTaoBao(Request $request)
     {
         $subCategory = $request->subCategory;
-        $lang = $request->lang;
+        $lang = $request->lang ?? 'en';
         $page = $request->page ? $request->page : 1;
         $productsCount = $request->productsCount ? $request->productsCount : 20;
         $url = "https://api.kongcrdv.com/taobao/api_call.php?api_name=item_search&lang=$lang&q=$subCategory&page=$page&page_size=$productsCount&key=kingdev5809@gmail.com";
@@ -370,7 +370,7 @@ class ProductController extends Controller
     public function productsFromTaoBaoToken(Request $request)
     {
         $subCategory = $request->subCategory;
-        $lang = $request->lang;
+        $lang = $request->lang ?? 'en';
         $page = $request->page ? $request->page : 1;
         $productsCount = $request->productsCount ? $request->productsCount : 20;
         $url = "https://api.kongcrdv.com/taobao/api_call.php?api_name=item_search&lang=$lang&q=$subCategory&page=$page&page_size=$productsCount&key=kingdev5809@gmail.com";
@@ -416,7 +416,7 @@ class ProductController extends Controller
     public function productDetail(Request $request)
     {
         $productId = $request->productId;
-        $lang = $request->lang;
+        $lang = $request->lang ?? 'en';
         $provider = $request->provider ?? 'taobao';
 
         // Function to get product details
@@ -515,7 +515,7 @@ class ProductController extends Controller
     public function productDetailFromTaoBao(Request $request)
     {
         $productId = $request->productId;
-        $lang = $request->lang;
+        $lang = $request->lang ?? 'en';
         $provider = $request->provider ?? 'taobao';
 
         // Function to get product details
@@ -618,7 +618,7 @@ class ProductController extends Controller
     public function productDetailFromTaoBaoToken(Request $request)
     {
         $productId = $request->productId;
-        $lang = $request->lang;
+        $lang = $request->lang ?? 'en';
         $provider = $request->provider ?? 'taobao';
 
         // Function to get product details
@@ -751,7 +751,7 @@ class ProductController extends Controller
         $page = $request->page ? $request->page : 1;
         $productsCount = $request->productsCount ? $request->productsCount : 20;
         $provider = $request->provider ? $request->provider : 'taobao';
-        $lang = $request->lang;
+        $lang = $request->lang ?? 'en';
         $imageUrl = $request->imageUrl;
 
         if ($imageUrl) {
@@ -851,7 +851,7 @@ class ProductController extends Controller
         $page = $request->page ? $request->page : 1;
         $productsCount = $request->productsCount ? $request->productsCount : 20;
         $provider = $request->provider ? $request->provider : 'taobao';
-        $lang = $request->lang;
+        $lang = $request->lang ?? 'en';
         $imageUrl = $request->imageUrl;
 
         if ($imageUrl) {
