@@ -193,7 +193,8 @@ class OrderController extends Controller
         });
 
         // $orderIds = $orders->pluck('id');
-
+        // $basket = Basket::where('user_id', auth()->user()->id)->get();
+        // return $basket;
         return response()->json(['message' => 'order_created_successfully', 'order_group' => $orderGroup->id], 201);
     }
 
@@ -220,20 +221,12 @@ class OrderController extends Controller
 
     private function removeBasket($userId, $skuId)
     {
-        $basket = Basket::where('user_id', $userId)->first();
-        if (!$basket) return;
-
-        $basketItem = BasketItem::where('basket_id', $basket->id)
+        $basketItem = BasketItem::where('user_id', $userId)
             ->where('skuId', $skuId)
             ->first();
 
         if ($basketItem) {
-            $basketId = $basketItem->basket_id;
             $basketItem->delete();
-
-            if (!BasketItem::where('basket_id', $basketId)->exists()) {
-                Basket::where('id', $basketId)->delete();
-            }
         }
     }
 
@@ -507,17 +500,12 @@ class OrderController extends Controller
         }
 
         $baskets = [];
-
         foreach ($request->all() as $item) {
-            $basket = Basket::create([
-                'user_id' => auth()->user()->id,
-                'product_id' => $item['product_id']
-            ]);
-
             BasketItem::create([
                 'product_id' => $item['product_id'],
+                'user_id' => auth()->user()->id,
                 'title' => $item['title'],
-                'basket_id' => $basket['id'],
+                'basket_id' => 0,
                 'price' => $item['price'],
                 'color' => $item['color'],
                 'quantity' => $item['quantity'],
@@ -529,8 +517,6 @@ class OrderController extends Controller
                 'provider' => $item['provider'],
                 'skuId' => $item['sku_id'],
             ]);
-
-            $baskets[] = $basket;
         }
 
         return response()->json(['message' => 'Products added to baskets', 'baskets' => $baskets], 201);
@@ -708,22 +694,14 @@ class OrderController extends Controller
     {
         $user = $request->user();
 
-        // Retrieve the user's baskets along with their basket items
-        $baskets = Basket::where('user_id', $user->id)
-            ->with('basketItems')
-            ->get()
-            ->filter(function ($basket) {
-                // Only include baskets where basketItems is not empty
-                return !$basket->basketItems->isEmpty();
-            });
-
-        // Check if all baskets were filtered out
-        if ($baskets->isEmpty()) {
+        $basketItems = BasketItem::where('user_id', $user->id)->get();
+        // return $basketItems;
+        if ($basketItems->isEmpty()) {
             return response()->json([], 200);
         }
 
         // Return the filtered baskets as a JSON response using the BasketResource collection
-        return response()->json(BasketResource::collection($baskets), 200);
+        return response()->json(BasketResource::collection($basketItems), 200);
     }
 
     /**

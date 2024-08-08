@@ -14,21 +14,19 @@ class BasketResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        foreach ($this['basketItems'] as $item) {
-            return [
-                'id' => $this->id,
-                'title' => $item['title'],
-                'product_id' => $item['product_id'],
-                'image_url' => $item['image_url'],
-                'price' => $item['price'],
-                'quantity' => $item['quantity'],
-                'size' => $item['size'],
-                'color' => $item['color'],
-                'sku_id' => $item['skuId'],
-                'provider' => $item['provider'],
-                'product_url' => $item['product_url'],
-                'seller_id' => $item['seller_id'],
-            ];
-        }
+        return [
+            'id' => $this->id,
+            'title' => $this['title'],
+            'product_id' => $this['product_id'],
+            'image_url' => $this['image_url'],
+            'price' => $this['price'],
+            'quantity' => $this['quantity'],
+            'size' => $this['size'],
+            'color' => $this['color'],
+            'sku_id' => $this['skuId'],
+            'provider' => $this['provider'],
+            'product_url' => $this['product_url'],
+            'seller_id' => $this['seller_id'],
+        ];
     }
 }

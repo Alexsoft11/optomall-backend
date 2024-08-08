@@ -22,6 +22,7 @@ class BasketItem extends Model
         'product_url',
         'skuId',
         'basket_id',
+        'user_id',
     ];
 
     public function user(): BelongsTo
