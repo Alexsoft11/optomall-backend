@@ -19,6 +19,7 @@ class BasketResource extends JsonResource
             return [
                 'id' => $this->id,
                 'title' => $item['title'],
+                'product_id' => $item['product_id'],
                 'image_url' => $item['image_url'],
                 'price' => $item['price'],
                 'quantity' => $item['quantity'],
