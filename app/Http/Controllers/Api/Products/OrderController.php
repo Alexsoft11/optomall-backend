@@ -68,7 +68,6 @@ class OrderController extends Controller
      *                 @OA\Property(property="quantity", type="integer", example="2"),
      *                 @OA\Property(property="color", type="string", example="black"),
      *                 @OA\Property(property="size", type="string", example="xl"),
-     *                 @OA\Property(property="size_id", type="number", example="4"),
      *                 @OA\Property(property="price", type="number", example="4.99"),
      *                 @OA\Property(property="seller_id", type="string", example="2"),
      *                 @OA\Property(property="provider", type="string", example="taobao"),
@@ -117,7 +116,6 @@ class OrderController extends Controller
             'items.*.quantity' => 'required|integer|min:1',
             'items.*.color' => 'required|string',
             'items.*.size' => 'required|string',
-            'items.*.size_id' => 'required|integer',
             'items.*.price' => 'required|numeric|min:0',
             'items.*.seller_id' => 'nullable|string',
             'items.*.provider' => 'nullable|string',
@@ -706,7 +704,7 @@ class OrderController extends Controller
             }
         }
 
-        return response()->json(BasketResource::collection($baskets) ?? [], 200);
+        return response()->json(BasketResource::collection($baskets), 200);
     }
 
     /**
