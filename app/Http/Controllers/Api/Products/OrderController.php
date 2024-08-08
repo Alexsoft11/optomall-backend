@@ -145,7 +145,7 @@ class OrderController extends Controller
             $updateUser = true;
         }
         if (empty($user->adress)) {
-            $user->address = $location['address'];
+            $user->adress = $location['address'];
             $updateUser = true;
         }
 
