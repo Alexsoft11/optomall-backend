@@ -458,7 +458,7 @@ class OrderController extends Controller
      *         @OA\JsonContent(
      *             type="array",
      *             @OA\Items(
-     *                 required={"product_id", "title", "price", "color", "quantity", "max_quantity", "size", "image_url", "seller_id", "provider", "skuId"},
+     *                 required={"product_id", "title", "price", "color", "quantity", "max_quantity", "size", "image_url", "seller_id", "provider", "sku_id"},
      *                 @OA\Property(property="product_id", type="string", example="1"),
      *                 @OA\Property(property="title", type="string", example="Product Title"),
      *                 @OA\Property(property="price", type="number", format="float", example="29.99"),
@@ -506,18 +506,16 @@ class OrderController extends Controller
             return response()->json(['message' => 'Invalid data', 'errors' => $validator->errors()], 400);
         }
 
-        $baskets = [];
+        // Retrieve or create a basket for the user
+        $basket = Basket::firstOrCreate(['user_id' => auth()->user()->id]);
+
+        $basketItems = [];
 
         foreach ($request->all() as $item) {
-            $basket = Basket::create([
-                'user_id' => auth()->user()->id,
-                'product_id' => $item['product_id']
-            ]);
-
-            BasketItem::create([
+            $basketItems[] = [
+                'basket_id' => $basket->id,
                 'product_id' => $item['product_id'],
                 'title' => $item['title'],
-                'basket_id' => $basket['id'],
                 'price' => $item['price'],
                 'color' => $item['color'],
                 'quantity' => $item['quantity'],
@@ -528,12 +526,15 @@ class OrderController extends Controller
                 'seller_id' => $item['seller_id'],
                 'provider' => $item['provider'],
                 'skuId' => $item['sku_id'],
-            ]);
-
-            $baskets[] = $basket;
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
         }
 
-        return response()->json(['message' => 'Products added to baskets', 'baskets' => $baskets], 201);
+        // Bulk insert basket items
+        BasketItem::insert($basketItems);
+
+        return response()->json(['message' => 'Products added to basket', 'basket_id' => $basket->id], 201);
     }
 
 
