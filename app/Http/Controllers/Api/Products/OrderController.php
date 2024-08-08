@@ -192,9 +192,9 @@ class OrderController extends Controller
             }
         });
 
-        $orderIds = $orders->pluck('id');
+        // $orderIds = $orders->pluck('id');
 
-        return response()->json(['message' => 'order_created_successfully', 'orders' => $orderIds, 'order_group' => $orderGroup->id], 201);
+        return response()->json(['message' => 'order_created_successfully', 'order_group' => $orderGroup->id], 201);
     }
 
     private function saveOrderItemImage($client, $url)
@@ -284,9 +284,9 @@ class OrderController extends Controller
         }
 
         $cardNumber = CardNumber::orderBy('money', 'desc')
-        ->where('type', 'order')
-        ->where('is_active', 1)
-        ->first();
+            ->where('type', 'order')
+            ->where('is_active', 1)
+            ->first();
 
         $kgPrice = Exchanges::where('currency', 'kg')->first();
 
