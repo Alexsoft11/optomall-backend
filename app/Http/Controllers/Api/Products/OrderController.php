@@ -8,8 +8,6 @@ use App\Http\Resources\OrderItemResource;
 use App\Http\Resources\OrderResource;
 use App\Models\Basket;
 use App\Models\BasketItem;
-use App\Models\BasketItemColor;
-use App\Models\BasketItemSize;
 use App\Models\CardNumber;
 use App\Models\Comment;
 use App\Models\Exchanges;
@@ -127,20 +125,13 @@ class OrderController extends Controller
         }
 
         $user = auth()->user();
+        $location = $request->location;
+        $userData = $request->userData;
 
         // Check and update user information if region, district, or address is missing
-        $updateUser = false;
-
-        if (empty($user->region)) {
-            $user->region = $request->location['region'];
-            $updateUser = true;
-        }
-        if (empty($user->district)) {
-            $user->district = $request->location['district'];
-            $updateUser = true;
-        }
-
-        if ($updateUser) {
+        if (empty($user->region) || empty($user->district)) {
+            $user->region = $user->region ?? $location['region'];
+            $user->district = $user->district ?? $location['district'];
             $user->save(); // Save the updated user information
         }
 
@@ -150,7 +141,7 @@ class OrderController extends Controller
         $orders = [];
         $orderGroup = null;
 
-        DB::transaction(function () use ($groupedItems, $request, $user, &$orders, &$orderGroup) {
+        DB::transaction(function () use ($groupedItems, $user, $userData, $location, $request, &$orders, &$orderGroup) {
             $orderGroup = OrderGroup::create([
                 'status' => '2',
                 'status_color' => '#05ff00',
@@ -159,15 +150,17 @@ class OrderController extends Controller
                 'is_paid' => false,
             ]);
 
+            $client = new Client();
+
             foreach ($groupedItems as $sellerId => $items) {
                 $order = Order::create([
                     'user_id' => $user->id,
-                    'total_price' => $request->total_price,
+                    'total_price' => $items->sum('price'),
                     'seller_id' => $sellerId,
-                    'user_name' => $request->userData['name'],
-                    'user_phone' => $request->userData['phone'],
-                    'region' => $request->location['region'],
-                    'district' => $request->location['district'],
+                    'user_name' => $userData['name'],
+                    'user_phone' => $userData['phone'],
+                    'region' => $location['region'],
+                    'district' => $location['district'],
                     'status' => '2',
                     'substatus' => '1',
                     'status_color' => '#05ff00',
@@ -175,49 +168,73 @@ class OrderController extends Controller
                     'order_group_id' => $orderGroup->id,
                 ]);
 
-                $client = new Client();
-
                 foreach ($items as $item) {
-                    try {
-                        $url = $item['image_url'];
-                        $randomName = Str::random(40) . '.' . pathinfo($url, PATHINFO_EXTENSION);
-                        $imagePath = 'order_images/' . $randomName;
-                        $response = $client->get($url);
-                        Storage::disk('public')->put($imagePath, $response->getBody());
+                    $imagePath = $this->saveOrderItemImage($client, $item['image_url']);
 
-                        OrderItem::create([
-                            'order_id' => $order->id,
-                            'product_id' => $item['product_id'],
-                            'title' => $item['title'],
-                            'provider' => $item['provider'],
-                            'image_url' => $imagePath,
-                            'quantity' => $item['quantity'],
-                            'price' => $item['price'],
-                            'color' => $item['color'],
-                            'size' => $item['size'],
-                            'product_url' => $item['product_url'],
-                            'skuId' => $item['sku_id'],
-                        ]);
-                    } catch (\Exception $e) {
-                        // Handle the exception as needed
-                    }
+                    OrderItem::create([
+                        'order_id' => $order->id,
+                        'product_id' => $item['product_id'],
+                        'title' => $item['title'],
+                        'provider' => $item['provider'],
+                        'image_url' => $imagePath,
+                        'quantity' => $item['quantity'],
+                        'price' => $item['price'],
+                        'color' => $item['color'],
+                        'size' => $item['size'],
+                        'product_url' => $item['product_url'],
+                        'skuId' => $item['sku_id'],
+                    ]);
+
+                    $this->removeBasket($user->id, $item['sku_id']);
                 }
 
                 $orders[] = $order;
             }
-
-            // Remove corresponding items from the basket
-            $orderedProductIds = $items->pluck('product_id')->toArray();
-            $basket = Basket::where('user_id', $user->id)->first();
-            BasketItem::where('basket_id', $basket->id)
-                ->whereIn('product_id', $orderedProductIds)
-                ->delete();
-            $basket->delete();
         });
 
-        $orderIds = array_map(fn ($order) => $order->id, $orders);
+        $orderIds = $orders->pluck('id');
 
         return response()->json(['message' => 'order_created_successfully', 'orders' => $orderIds, 'order_group' => $orderGroup->id], 201);
+    }
+
+    private function saveOrderItemImage($client, $url)
+    {
+        try {
+            // Generate a random name for the image file
+            $randomName = Str::random(40) . '.' . pathinfo($url, PATHINFO_EXTENSION);
+            // Define the path where the image will be stored
+            $imagePath = 'order_images/' . $randomName;
+
+            // Use Guzzle to make an HTTP GET request to the image URL
+            $response = $client->get($url);
+
+            // Store the image in the public disk (storage/app/public/order_images/)
+            Storage::disk('public')->put($imagePath, $response->getBody());
+
+            return $imagePath; // Return the path where the image was stored
+        } catch (\Exception $e) {
+            // Handle the exception, e.g., log the error and return null
+            return null;
+        }
+    }
+
+    private function removeBasket($userId, $skuId)
+    {
+        $basket = Basket::where('user_id', $userId)->first();
+        if (!$basket) return;
+
+        $basketItem = BasketItem::where('basket_id', $basket->id)
+            ->where('skuId', $skuId)
+            ->first();
+
+        if ($basketItem) {
+            $basketId = $basketItem->basket_id;
+            $basketItem->delete();
+
+            if (!BasketItem::where('basket_id', $basketId)->exists()) {
+                Basket::where('id', $basketId)->delete();
+            }
+        }
     }
 
 
@@ -259,17 +276,17 @@ class OrderController extends Controller
     {
         $orderGroup = OrderGroup::where('id', $request->order_id)
             ->where('user_id', auth()->user()->id)
+            ->with(['orders.items', 'orders.getStatus']) // Eager load related models
             ->first();
 
         if (!$orderGroup) {
             return response()->json(['message' => 'Order group not found'], 404);
         }
 
-        $orders = Order::where('order_group_id', $orderGroup->id)->get(); // Get all orders
         $cardNumber = CardNumber::orderBy('money', 'desc')
-            ->where('type', 'order')
-            ->where('is_active', 1)
-            ->first();
+        ->where('type', 'order')
+        ->where('is_active', 1)
+        ->first();
 
         $kgPrice = Exchanges::where('currency', 'kg')->first();
 
@@ -279,9 +296,9 @@ class OrderController extends Controller
                 'id' => $orderGroup->id,
                 'total_price' => $orderGroup->total_price,
                 'kg_price' => $kgPrice->amount ?? 0,
-                'card_number' => $cardNumber->card_number ?? '9860176612846848'
+                'card_number' => $cardNumber->card_number ?? '9860176612846848',
             ],
-            'detail' => OrderResource::collection($orders) // Pass the collection
+            'detail' => OrderResource::collection($orderGroup->orders)
         ], 201);
     }
 
