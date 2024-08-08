@@ -26,6 +26,7 @@ class BasketResource extends JsonResource
                 'color' => $item['color'],
                 'sku_id' => $item['skuId'],
                 'provider' => $item['provider'],
+                'product_url' => $item['product_url'],
                 'seller_id' => $item['seller_id'],
             ];
         }
