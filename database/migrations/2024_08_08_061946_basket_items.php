@@ -11,7 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('baskets', function (Blueprint $table) {
+        Schema::create('basket_items', function (Blueprint $table) {
+            $table->id();
+            $table->string('basket_id');
+            $table->string('product_id');
             $table->string('color');
             $table->string('quantity');
             $table->string('max_quantity');
@@ -20,6 +23,9 @@ return new class extends Migration
             $table->text('image_url');
             $table->string('title');
             $table->string('price');
+            $table->string('provider');
+            $table->string('seller_id');
+            $table->timestamps();
         });
     }
 
@@ -28,15 +34,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('baskets', function (Blueprint $table) {
-            $table->dropColumn('color');
-            $table->dropColumn('quantity');
-            $table->dropColumn('max_quantity');
-            $table->dropColumn('size');
-            $table->dropColumn('skuId');
-            $table->dropColumn('image_url');
-            $table->dropColumn('title');
-            $table->dropColumn('price');
-        });
+        Schema::dropIfExists('basket_items');
     }
 };
