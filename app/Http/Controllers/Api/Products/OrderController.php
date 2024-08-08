@@ -422,11 +422,7 @@ class OrderController extends Controller
                     'image' => $request->image->store('order_checks', 'public'), // Store the image and save the path
                     'card_number_id' => $cardNumber->id,
                 ]);
-                $orders = Order::where('order_group_id', $request->order_group_id)->get();
-                foreach ($orders as $order) {
-                    $order->status = "6";
-                    $order->save();
-                }
+                Order::where('order_group_id', $request->order_group_id)->update(['status' => '6']);
                 // Update order status
                 $orderGroup->status = "6";
                 $orderGroup->save();
