@@ -59,7 +59,7 @@ class OrderController extends Controller
      *             @OA\Property(property="location", type="object",
      *                 @OA\Property(property="region", type="string", example="Toshkent shahar"),
      *                 @OA\Property(property="district", type="string", example="Yakkasaroy tunani"),
-     *                 @OA\Property(property="adress", type="string", example="Rakat mahalla"),
+     *                 @OA\Property(property="address", type="string", example="Rakat mahalla"),
      *             ),
      *             @OA\Property(property="items", type="array", @OA\Items(
      *                 @OA\Property(property="product_id", type="string", example="1"),
@@ -217,7 +217,8 @@ class OrderController extends Controller
 
             // Remove corresponding items from the basket
             $orderedProductIds = $items->pluck('product_id')->toArray();
-            BasketItem::where('user_id', $user->id)
+            $basket = Basket::where('user_id', $user->id)->first();
+            BasketItem::where('basket_id', $basket->id)
                 ->whereIn('product_id', $orderedProductIds)
                 ->delete();
         });
