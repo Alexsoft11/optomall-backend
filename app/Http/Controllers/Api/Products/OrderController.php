@@ -334,7 +334,7 @@ class OrderController extends Controller
      *         @OA\MediaType(
      *             mediaType="multipart/form-data",
      *             @OA\Schema(
-     *                 required={"order_id", "image", "type"},
+     *                 required={"order_group_id", "image", "type"},
      *                 @OA\Property(property="order_group_id", type="integer", example="1"),
      *                 @OA\Property(property="image", type="string", format="binary"),
      *                 @OA\Property(property="type", type="string", example="order"),
