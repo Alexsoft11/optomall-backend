@@ -133,19 +133,18 @@ class OrderController extends Controller
         $user = auth()->user();
 
         // Check and update user information if region, district, or address is missing
-        $location = $request->location;
         $updateUser = false;
 
         if (empty($user->region)) {
-            $user->region = $location['region'];
+            $user->region = $$request->location['region'];
             $updateUser = true;
         }
         if (empty($user->district)) {
-            $user->district = $location['district'];
+            $user->district = $$request->location['district'];
             $updateUser = true;
         }
         if (empty($user->adress)) {
-            $user->adress = $location['address'];
+            $user->adress = $$request->location['address'];
             $updateUser = true;
         }
 
