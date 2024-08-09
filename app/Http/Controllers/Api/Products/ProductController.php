@@ -748,36 +748,30 @@ class ProductController extends Controller
         $value = $request->value;
         $startPrice = $request->startPrice;
         $endPrice = $request->endPrice;
-        $page = $request->page ? $request->page : 1;
-        $productsCount = $request->productsCount ? $request->productsCount : 20;
-        $provider = $request->provider ? $request->provider : 'taobao';
+        $page = $request->page ?? 1;
+        $productsCount = $request->productsCount ?? 20;
+        $provider = $request->provider ?? 'taobao';
         $lang = $request->lang ?? 'en';
         $imageUrl = $request->imageUrl;
 
-        if ($imageUrl) {
-            // If imageUrl has a value, make an additional API call
-            $imageUrlApi = "https://kongcrdv.com/$provider/api/export_api.php?action=item_search_img&key=kingdev5809@gmail.com&imgid=$imageUrl&lang=$lang&page=$page&page_size=$productsCount";
-            $imageResponse = Http::get($imageUrlApi);
-            $imageProducts = $imageResponse->json();
-            // return $imageProducts;
+        $apiKey = 'kingdev5809@gmail.com';
 
-            // Initialize the product data with image products
-            if (!isset($imageProducts['data']['items']['item'])) {
-                return response()->json(['error' => 'Products not found'], 404);
-            }
-            $productData = $imageProducts['data']['items']['item'];
-        } else {
-            // Define the base URL for the product search
-            $url = "https://api.kongcrdv.com/$provider/api_call.php?api_name=item_search&lang=$lang&key=kingdev5809@gmail.com&q=$value&start_price=$startPrice&end_price=$endPrice&page=$page&page_size=$productsCount";
+        // Build the API URL
+        $apiUrl = ($imageUrl
+            ? "https://kongcrdv.com/$provider/api/export_api.php?action=item_search_img&key=kingdev5809@gmail.com&imgid=$imageUrl&lang=$lang&page=$page&page_size=$productsCount"
+            : "https://api.kongcrdv.com/$provider/api_call.php?api_name=item_search&lang=$lang&key=kingdev5809@gmail.com&q=$value&key=$apiKey&page=$page&page_size=$productsCount");
 
-            // Make the initial API call
-            $response = Http::get($url);
-            $products = $response->json();
-            if (!isset($products['items']['item'])) {
-                return response()->json(['error' => 'Products not found'], 404);
-            }
-            // Initialize the product data
-            $productData = $products['items']['item'];
+        // return $apiUrl;
+        // Make the API call
+        $response = Http::get($apiUrl);
+        $products = $response->json();
+
+        // Extract the product data
+        $productData = $imageUrl ? ($products['data']['items']['item'] ?? null) : ($products['items']['item'] ?? null);
+
+        // Return error if no products found
+        if (!$productData) {
+            return response()->json(['error' => 'Products not found'], 404);
         }
 
         // Return the final response
