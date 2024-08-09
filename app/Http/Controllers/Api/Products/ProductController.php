@@ -171,7 +171,7 @@ class ProductController extends Controller
         $likedProducts = LikedProduct::where('user_id', $user->id)->get();
 
         $likedProductsArray = $likedProducts->map(function ($product) use ($lang) {
-            $productDetailResponse = $this->productDetailFromTaoBao(new Request(['productId' => $product->product_id, 'lang' => $lang]));
+            $productDetailResponse = $this->productDetail(new Request(['productId' => $product->product_id, 'lang' => $lang]));
             $productDetail = json_decode($productDetailResponse->getContent(), true)['detail'];
 
             return [
@@ -325,7 +325,9 @@ class ProductController extends Controller
         $products = $response->json();
 
         return $this->respondWithSuccess([
-            'page' => $page, 'page_size' => $productsCount, 'products' => ProductResource::collection($products['items']['item'])
+            'page' => $page,
+            'page_size' => $productsCount,
+            'products' => ProductResource::collection($products['items']['item'])
         ]);
     }
 
@@ -380,7 +382,9 @@ class ProductController extends Controller
         $products = $response->json();
 
         return $this->respondWithSuccess([
-            'page' => $page, 'page_size' => $productsCount, 'products' => ProductTokenResource::collection($products['items']['item'])
+            'page' => $page,
+            'page_size' => $productsCount,
+            'products' => ProductTokenResource::collection($products['items']['item'])
         ]);
     }
     /**
@@ -1069,7 +1073,7 @@ class ProductController extends Controller
         }
 
         // Make asynchronous requests to all URLs
-        $responses = collect($urls)->map(fn ($url) => Http::get($url));
+        $responses = collect($urls)->map(fn($url) => Http::get($url));
 
         // Merge the results into one array, handle potential errors
         $products = $responses->reduce(function ($carry, $response) {
