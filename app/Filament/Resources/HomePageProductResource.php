@@ -55,7 +55,7 @@ class HomePageProductResource extends Resource
                     'discount' => 'Discount',
                     'top' => 'Top products',
                     'recomend' => 'Recommend',
-                ]),
+                ])->required(),
             ]);
     }
 
