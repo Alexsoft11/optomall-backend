@@ -454,11 +454,6 @@ class ProductController extends Controller
         if ($provider == 'local') {
             $product = new ProductDetailDatabase($productDatabase, $lang);
         } else {
-            if (!isset($productDetail['item'])) {
-                if (!isset($productDetail['item'])) {
-                    return response()->json(['error' => 'Product not found'], 404);
-                }
-            }
             // Try to get product details with the initial provider
             $productDetail = $getProductDetails($provider);
             // return $productDetail;
