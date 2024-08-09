@@ -158,7 +158,7 @@ public function login(Request $request)
         return response()->json(['message' => 'wrong_password', 'error' => false], 401);
     }
     if (!$user->info_filled) {
-        return response()->json(['message' => 'add_personal_data', 'error' => false], 403);
+        return response()->json(['message' => 'add_personal_data', "unique_id" => $user->unique_id ]);
     }
 
     if (!$user->email_verified) {
