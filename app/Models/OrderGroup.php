@@ -27,7 +27,9 @@ class OrderGroup extends Model
 
         static::updated(function ($order) {
             if ($order->isDirty('status')) {
-                event(new OrderStatusUpdated($order->orders()));
+                foreach ($order->orders as $orderr) {
+                    event(new OrderStatusUpdated($orderr));
+                }
             }
         });
 
