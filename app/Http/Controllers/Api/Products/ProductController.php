@@ -430,20 +430,6 @@ class ProductController extends Controller
             return Http::get($url)->json();
         };
 
-        // Try to get product details with the initial provider
-        $productDetail = $getProductDetails($provider);
-        // return $productDetail;
-        // If product not found, switch the provider
-        if (!isset($productDetail['item'])) {
-            $provider = $provider === 'taobao' ? '1688' : 'taobao';
-            $productDetail = $getProductDetails($provider);
-
-            // If still not found, return 404 response
-            if (!isset($productDetail['item'])) {
-                return response()->json(['error' => 'Product not found'], 404);
-            }
-        }
-
         // If product not found, switch the provider
 
         // // Function to get random products
@@ -469,6 +455,16 @@ class ProductController extends Controller
             $product = new ProductDetailDatabase($productDatabase, $lang);
         } else {
             if (!isset($productDetail['item'])) {
+                if (!isset($productDetail['item'])) {
+                    return response()->json(['error' => 'Product not found'], 404);
+                }
+            }
+            // Try to get product details with the initial provider
+            $productDetail = $getProductDetails($provider);
+            // return $productDetail;
+            // If product not found, switch the provider
+            if (!isset($productDetail['item'])) {
+                // If still not found, return 404 response
                 if (!isset($productDetail['item'])) {
                     return response()->json(['error' => 'Product not found'], 404);
                 }
