@@ -16,6 +16,7 @@ use App\Http\Resources\ProductTokenResource;
 use App\Http\Resources\ScoreResource;
 use App\Http\Resources\SubCategoryResource;
 use App\Models\Category;
+use App\Models\HomePageProduct;
 use App\Models\LikedProduct;
 use App\Models\Product;
 use App\Models\ProductCategory;
@@ -976,47 +977,29 @@ class ProductController extends Controller
     {
         // Retrieve the query parameters
         $query = $request->input('query');
-        $lang = $request->input('lang');
+        $lang = $request->input('lang') ?? 'en';
         $page = $request->input('page');
         $productsCount = $request->input('productsCount') ?? 10;
 
-        // Define the URLs based on the query parameter
-        if ($query === "discount") {
-            $urls = [
-                "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=$productsCount&q=Jewelry&Accessories&lang=$lang",
-                "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=$productsCount&q=Children'sClothing&lang=$lang",
-                // "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=$productsCount&q=shoes&lang=$lang"
-            ];
-        } elseif ($query === "top") {
-            $urls = [
-                "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=$productsCount&q=Beauty&Health&lang=$lang",
-                "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=$productsCount&q=Clothing&lang=$lang",
-                // "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=$productsCount&q=dresses&lang=$lang"
-            ];
-        } elseif ($query === "recomend") {
-            $urls = [
-                "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=$productsCount&q=Baby&Kids&lang=$lang",
-                "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=$productsCount&q=shirts&lang=$lang",
-                // "https://kongcrdv.com/taobao/api/export_api.php?action=item_search&key=kingdev5809@gmail.com&page=$page&page_size=$productsCount&q=cases&lang=$lang"
-            ];
-        } else {
-            $urls = [];
-        }
+        // Retrieve the products based on the query type
+        $products = HomePageProduct::where('type', $query)->get();
 
-        // Make asynchronous requests to all URLs
-        $responses = collect($urls)->map(fn ($url) => Http::get($url));
+        // Transform the products into the desired structure
+        $transformedProducts = $products->map(function ($product) use ($lang) {
+            return [
+                'id' => $product->product_id,
+                'title' => $product['title_' . $lang],
+                'image' => url('storage/' . $product->image),
+                'price' => $product->price,
+                'discounted_price' => $product->discounted_price,
+                'product_url' => $product->product_url,
+                'provider' => $product->provider,
+            ];
+        });
 
-        // Merge the results into one array, handle potential errors
-        $products = $responses->reduce(function ($carry, $response) {
-            if ($response->successful()) {
-                $items = $response->json()['data']['items']['item'] ?? [];
-                return array_merge($carry, $items);
-            }
-            return $carry;
-        }, []);
-
+        // Return the transformed products with a success response
         return $this->respondWithSuccess([
-            'products' => ProductResource::collection($products),
+            'products' => $transformedProducts,
         ]);
     }
 

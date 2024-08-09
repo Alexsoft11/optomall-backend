@@ -1,4 +1,8 @@
-<!-- resources/views/filament/components/image.blade.php -->
+<!-- resources/views/filament/components/image-preview.blade.php -->
 <div>
-    <img src="{{ $imageUrl }}" alt="Image" style="max-width: 100px;">
+    @if (!empty($getRecord()->image))
+        <img src="{{ $getRecord()->image }}" alt="Image Preview" style="max-width: 200px; height: auto;">
+    @else
+        <p>No image available</p>
+    @endif
 </div>
