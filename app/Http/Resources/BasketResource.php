@@ -32,7 +32,7 @@ class BasketResource extends JsonResource
                 'phone' => $this['user']['phone'],
             ],
             'user_location' => [
-                'regionn' => $this['user']['regionn'],
+                'region' => $this['user']['region'],
                 'district' => $this['user']['district'],
             ],
         ];
