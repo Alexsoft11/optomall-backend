@@ -23,6 +23,12 @@ class OrderGroup extends Model
         static::creating(function ($model) {
             $model->unique_id = $model->generateUniqueId();
         });
+
+        static::updating(function ($model) {
+            if ($model->isDirty('status')) {
+                $model->orders()->update(['status' => $model->status]);
+            }
+        });
     }
 
     protected function generateUniqueId()

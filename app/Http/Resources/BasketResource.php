@@ -27,6 +27,14 @@ class BasketResource extends JsonResource
             'provider' => $this['provider'],
             'product_url' => $this['product_url'],
             'seller_id' => $this['seller_id'],
+            'user_info' => [
+                'name' => $this['user']['name'],
+                'phone' => $this['user']['phone'],
+            ],
+            'user_location' => [
+                'regionn' => $this['user']['regionn'],
+                'district' => $this['user']['district'],
+            ],
         ];
     }
 }

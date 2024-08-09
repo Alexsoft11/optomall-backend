@@ -35,8 +35,6 @@ class OrderGroupResource extends Resource
     {
         return $form
             ->schema([
-
-                TextInput::make('total_price')->label('Jami narxi')->disabled(),
                 Fieldset::make('Foydalanuvchi')->relationship('user')
                     ->schema([
                         TextInput::make('last_name')->label('Familiyasi'),
@@ -60,6 +58,7 @@ class OrderGroupResource extends Resource
                     ->label('Status')
                     ->options(OrderStatus::whereNotNull('name_uz')->pluck('name_uz', 'id'))
                     ->reactive(),
+                TextInput::make('total_price')->label('Jami narxi')->disabled(),
                 Toggle::make('is_paid'),
 
             ]);
@@ -77,7 +76,7 @@ class OrderGroupResource extends Resource
                     ->label('Status')
                     ->sortable()
                     ->searchable(),
-                ColorColumn::make('status_color')->label('Status Rangi'),
+                ColorColumn::make('getStatus.color')->label('Status Rangi'),
                 TextColumn::make('created_at')->label('Created At')->sortable(),
             ])
             ->filters([

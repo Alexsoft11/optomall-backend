@@ -130,7 +130,7 @@ class OrderResource extends Resource
                     ->label('Status')
                     ->sortable()
                     ->searchable(),
-                ColorColumn::make('status_color')->label('Status Rangi'),
+                ColorColumn::make('getStatus.color')->label('Status Rangi'),
                 TextColumn::make('created_at')->label('Created At')->sortable(),
             ])
             ->filters([

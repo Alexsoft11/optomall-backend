@@ -875,11 +875,10 @@ class OrderController extends Controller
         }
 
         // Find the basket item size by basket_id and size_id
-        $basket = Basket::where('id', $request->basket_id)
-            ->first();
+        $basket = BasketItem::where('id', $request->basket_id)->where('user_id', auth()->user()->id)->first();
 
         if (!$basket) {
-            return response()->json(['message' => 'Basket item size not found'], 404);
+            return response()->json(['message' => 'Basket item not found'], 404);
         }
 
         // Remove the size and associated colors from the basket
