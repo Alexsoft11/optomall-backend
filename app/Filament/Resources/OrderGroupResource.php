@@ -21,6 +21,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Columns\ColorColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\Filter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -82,7 +83,18 @@ class OrderGroupResource extends Resource
                 TextColumn::make('created_at')->label('Created At')->sortable(),
             ])
             ->filters([
-                //
+                Filter::make('Basket Unique ID')
+                    ->form([
+                        TextInput::make('basket_unique_id')
+                            ->label('Search by Basket Unique ID'),
+                    ])
+                    ->query(function (Builder $query, array $data) {
+                        if ($data['basket_unique_id']) {
+                            $query->whereHas('orders', function (Builder $query) use ($data) {
+                                $query->where('unique_id', 'like', '%' . $data['basket_unique_id'] . '%');
+                            });
+                        }
+                    }),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),

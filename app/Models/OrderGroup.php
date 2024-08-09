@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Events\OrderStatusUpdated;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -22,6 +23,12 @@ class OrderGroup extends Model
 
         static::creating(function ($model) {
             $model->unique_id = $model->generateUniqueId();
+        });
+
+        static::updated(function ($order) {
+            if ($order->isDirty('status')) {
+                event(new OrderStatusUpdated($order->orders()));
+            }
         });
 
         static::updating(function ($model) {
