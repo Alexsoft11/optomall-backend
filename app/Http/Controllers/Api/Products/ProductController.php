@@ -983,7 +983,7 @@ class ProductController extends Controller
             return [
                 'id' => $product->product_id,
                 'title' => $product['title_' . $lang],
-                'image' => url('storage/' . $product->image),
+                'image' => $product->image,
                 'price' => $product->price,
                 'discounted_price' => $product->discounted_price,
                 'product_url' => $product->product_url,
