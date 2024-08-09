@@ -15,6 +15,8 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class CardNumberResource extends Resource
 {
+    protected static ?string $navigationGroup = "Buyurtmalar";
+
     protected static ?string $model = CardNumber::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';

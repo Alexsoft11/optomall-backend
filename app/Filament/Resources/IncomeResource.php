@@ -20,6 +20,8 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class IncomeResource extends Resource
 {
+    protected static ?string $navigationGroup = "Buyurtmalar";
+
     protected static ?string $model = Income::class;
 
     protected static ?string $label = "reciepts";
@@ -125,15 +127,14 @@ class IncomeResource extends Resource
         ];
     }
 
-    
+
     public static function getNavigationLabel(): string
     {
         return trans('reciepts');
     }
 
     public static function getLabel(): string
-{
-    return trans('reciepts');
-}
-
+    {
+        return trans('reciepts');
+    }
 }

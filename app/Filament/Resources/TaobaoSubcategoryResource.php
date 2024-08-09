@@ -17,6 +17,8 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class TaobaoSubcategoryResource extends Resource
 {
+    protected static ?string $navigationGroup = "Taobao";
+
     protected static ?string $model = TaobaoSubcategory::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';

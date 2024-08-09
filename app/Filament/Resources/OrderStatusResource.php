@@ -20,6 +20,8 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class OrderStatusResource extends Resource
 {
+    protected static ?string $navigationGroup = "Buyurtmalar";
+
     protected static ?string $model = OrderStatus::class;
 
     protected static ?string $label = "order_status";

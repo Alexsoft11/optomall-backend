@@ -16,8 +16,10 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
-class TaobaoCategoryResource extends Resource   
+class TaobaoCategoryResource extends Resource
 {
+    protected static ?string $navigationGroup = "Taobao";
+
     protected static ?string $model = TaobaoCategory::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';

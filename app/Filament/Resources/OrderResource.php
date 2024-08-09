@@ -71,7 +71,7 @@ class OrderResource extends Resource
                                     ->modalDescription('All existing items will be removed from the order.')
                                     ->requiresConfirmation()
                                     ->color('danger')
-                                    ->action(fn (Forms\Set $set) => $set('items', [])),
+                                    ->action(fn(Forms\Set $set) => $set('items', [])),
                             ])
                             ->schema([
                                 static::getItemsRepeater(),
@@ -99,19 +99,19 @@ class OrderResource extends Resource
                             ->options(OrderStatus::whereNotNull('name_uz')->pluck('name_uz', 'id'))
                             ->reactive(),
                         Toggle::make('is_paid'),
-                    ])->columnSpan(['lg' => fn (?Order $record) => $record === null ? 3 : 2]),
+                    ])->columnSpan(['lg' => fn(?Order $record) => $record === null ? 3 : 2]),
                 Section::make()
                     ->schema([
                         Forms\Components\Placeholder::make('created_at')
                             ->label('Created at')
-                            ->content(fn (Order $record): ?string => $record->created_at?->diffForHumans()),
+                            ->content(fn(Order $record): ?string => $record->created_at?->diffForHumans()),
 
                         Forms\Components\Placeholder::make('updated_at')
                             ->label('Last modified at')
-                            ->content(fn (Order $record): ?string => $record->updated_at?->diffForHumans()),
+                            ->content(fn(Order $record): ?string => $record->updated_at?->diffForHumans()),
                     ])
                     ->columnSpan(['lg' => 1])
-                    ->hidden(fn (?Order $record) => $record === null),
+                    ->hidden(fn(?Order $record) => $record === null),
             ])->columns(3);
     }
 
@@ -209,7 +209,7 @@ class OrderResource extends Resource
 
                         return $itemData['product_url'] . '&skuId=' . $itemData['skuId'];
                     }, shouldOpenInNewTab: true)
-                    ->hidden(fn (array $arguments, Repeater $component): bool => blank($component->getRawItemState($arguments['item'])['id'])),
+                    ->hidden(fn(array $arguments, Repeater $component): bool => blank($component->getRawItemState($arguments['item'])['id'])),
             ])
             ->defaultItems(1)
             ->hiddenLabel()
@@ -228,9 +228,9 @@ class OrderResource extends Resource
         ];
     }
 
-    public static function getNavigationLabel(): string
+    public static function shouldRegisterNavigation(): bool
     {
-        return trans('orders');
+        return false;
     }
 
     public static function getLabel(): string

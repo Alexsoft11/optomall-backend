@@ -15,6 +15,12 @@ use Filament\Tables\Columns\ImageColumn;
 
 class HomePageProductResource extends Resource
 {
+    protected static ?string $navigationGroup = "products";
+
+    protected static ?string $navigationLabel = "Bosh sahifa uchun mahsulotlar";
+
+    protected static ?string $label = "Bosh sahifa uchun mahsulotlar";
+
     protected static ?string $model = HomePageProduct::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
@@ -104,6 +110,20 @@ class HomePageProductResource extends Resource
         return [
             //
         ];
+    }
+
+    // public static function getNavigationLabel(): string
+    // {
+    //     return trans('products');
+    // }
+
+    public static function getNavigationGroup(): string
+    {
+        return trans('products');
+    }
+    public static function getLabel(): string
+    {
+        return trans('products');
     }
 
     public static function getPages(): array

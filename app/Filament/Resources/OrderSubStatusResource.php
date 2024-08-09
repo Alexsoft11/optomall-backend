@@ -19,6 +19,8 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class OrderSubStatusResource extends Resource
 {
+    protected static ?string $navigationGroup = "Buyurtmalar";
+
     protected static ?string $model = OrderSubStatus::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';

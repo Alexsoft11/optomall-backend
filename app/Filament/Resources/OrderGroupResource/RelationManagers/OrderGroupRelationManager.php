@@ -85,7 +85,7 @@ class OrderGroupRelationManager extends RelationManager
                     ->label('Status')
                     ->sortable()
                     ->searchable(),
-                ColorColumn::make('status_color')->label('Status Rangi'),
+                ColorColumn::make('getStatus.color')->label('Status Rangi'),
                 TextColumn::make('created_at')->label('Created At')->sortable(),
             ])
             ->filters([
@@ -95,8 +95,8 @@ class OrderGroupRelationManager extends RelationManager
                 Tables\Actions\Action::make('openOrder')
                     ->tooltip('Open order')
                     ->icon('heroicon-m-arrow-top-right-on-square')
-                    ->url(fn ($record) => route('filament.admin.resources.orders.edit', $record->id), shouldOpenInNewTab: true)
-                    ->hidden(fn ($record) => !$record->id),
+                    ->url(fn($record) => route('filament.admin.resources.orders.edit', $record->id), shouldOpenInNewTab: true)
+                    ->hidden(fn($record) => !$record->id),
                 Tables\Actions\DeleteAction::make(),
             ])
             ->groupedBulkActions([
