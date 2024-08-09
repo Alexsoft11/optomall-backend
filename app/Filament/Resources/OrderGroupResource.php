@@ -40,6 +40,7 @@ class OrderGroupResource extends Resource
             ->schema([
                 Fieldset::make('Foydalanuvchi')->relationship('user')
                     ->schema([
+                        TextInput::make('name')->label('Ismi'),
                         TextInput::make('last_name')->label('Familiyasi'),
                         TextInput::make('phone')->label('Telefon raqami'),
                         TextInput::make('email')->label('Pochta'),
