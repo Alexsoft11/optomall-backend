@@ -322,6 +322,18 @@ class OrderController extends Controller
      *         required=true,
      *         @OA\Schema(type="string")
      *     ),
+     *     @OA\Parameter(
+     *         name="name",
+     *         in="query",
+     *         required=true,
+     *         @OA\Schema(type="string"),
+     *     ),
+     *     @OA\Parameter(
+     *         name="phone",
+     *         in="query",
+     *         required=true,
+     *         @OA\Schema(type="string")
+     *     ),
      *     @OA\Response(
      *         response=404,
      *         description="Order not found",
@@ -338,6 +350,8 @@ class OrderController extends Controller
             'order_id' => 'required|integer',
             'region' => 'required|string',
             'district' => 'required|string',
+            'name' => 'required|string',
+            'phone' => 'required|string',
         ]);
 
         if ($validator->fails()) {
@@ -354,6 +368,8 @@ class OrderController extends Controller
 
         $order->region = $request->region;
         $order->district = $request->district;
+        $order->name = $request->name;
+        $order->phone = $request->phone;
         $order->save();
 
         return response()->json(['message' => 'Order successfully updated'], 200);

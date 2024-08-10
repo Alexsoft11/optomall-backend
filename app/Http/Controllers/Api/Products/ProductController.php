@@ -520,20 +520,6 @@ class ProductController extends Controller
             return Http::get($url)->json();
         };
 
-        // Try to get product details with the initial provider
-        $productDetail = $getProductDetails($provider);
-        return $productDetail;
-        // If product not found, switch the provider
-        if (!isset($productDetail['item'])) {
-            $provider = $provider === 'taobao' ? '1688' : 'taobao';
-            $productDetail = $getProductDetails($provider);
-
-            // If still not found, return 404 response
-            if (!isset($productDetail['item'])) {
-                return response()->json(['error' => 'Product not found'], 404);
-            }
-        }
-
         // If product not found, switch the provider
 
         // // Function to get random products
@@ -558,12 +544,16 @@ class ProductController extends Controller
         if ($provider == 'local') {
             $product = new ProductDetailDatabase($productDatabase, $lang);
         } else {
+            // Try to get product details with the initial provider
+            $productDetail = $getProductDetails($provider);
+            // If product not found, switch the provider
             if (!isset($productDetail['item'])) {
+                // If still not found, return 404 response
                 if (!isset($productDetail['item'])) {
                     return response()->json(['error' => 'Product not found'], 404);
                 }
             }
-            $product = new ProductDetailResource($productDetail['item']);
+            $product = new ProductDetailResource($productDetail['item'], $provider);
         }
 
         return $this->respondWithSuccess([
@@ -969,12 +959,12 @@ class ProductController extends Controller
         $lang = $request->input('lang') ?? 'en';
         $page = $request->input('page');
         $productsCount = $request->input('productsCount') ?? 10;
-
         // Retrieve the products based on the query type
         $products = HomePageProduct::where('type', $query)->get();
 
         // Transform the products into the desired structure
         $transformedProducts = $products->map(function ($product) use ($lang) {
+            $isLiked = auth()->check() && auth()->user()->likedProducts()->where('product_id', $product->product_id)->exists();
             return [
                 'id' => $product->product_id,
                 'title' => $product['title_' . $lang],
@@ -983,6 +973,7 @@ class ProductController extends Controller
                 'discounted_price' => $product->discounted_price,
                 'product_url' => $product->product_url,
                 'provider' => $product->provider,
+                'is_liked' => $isLiked,
             ];
         });
 

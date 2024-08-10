@@ -24,6 +24,8 @@ class OrderResource extends JsonResource
                 'price' => $item->price,
                 'quantity' => $item->quantity,
                 'color' => $item->color,
+                'size' => $item->size,
+                'provider' => $item->provider,
                 'image_url' => url('storage/' . $item->image_url),
             ];
         });

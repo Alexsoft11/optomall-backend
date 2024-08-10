@@ -4,85 +4,51 @@ namespace App\Http\Resources;
 
 use App\Models\Exchanges;
 use Illuminate\Http\Resources\Json\JsonResource;
-use App\Models\ProductColor;
-use App\Models\ProductComposition;
-use App\Models\ProductPicture;
-use App\Models\ProductSize;
-use Illuminate\Support\Facades\Date;
 
 class ProductDetailResource extends JsonResource
 {
-    protected $lang;
     protected $amount;
     protected $percent;
+    protected $provider;
 
-    public function __construct($resource, $lang = null)
+    public function __construct($resource, $provider = 'taobao')
     {
         parent::__construct($resource);
         $this->resource = $resource;
-        $this->lang = $lang;
+        $this->provider = $provider;
         $this->amount = Exchanges::where('currency', 'yuan')->first()->amount ?? 1800;
-        $this->percent = Exchanges::where('currency', 'product_percent')->first()->amount;
+        $this->percent = Exchanges::where('currency', 'product_percent')->first()->amount ?? 0;
     }
 
-    /**
-     * Transform the resource into an array.
-     *
-     * @param \Illuminate\Http\Request $request
-     * @return array
-     */
     public function toArray($request)
     {
-
         return [
             'id' => $this['num_iid'],
             'title' => $this['title'],
             'price' => round($this->addPercentToPrice($this['price'], $this->amount, $this->percent)),
             'discounted_price' => round($this->addPercentToPrice($this['orginal_price'], $this->amount, $this->percent)),
-            'discount_percentage' => round((($this->resource['orginal_price'] - $this->resource['price']) / $this->resource['orginal_price']) * 100),
+            'discount_percentage' => round((($this['orginal_price'] - $this['price']) / $this['orginal_price']) * 100),
             'image' => preg_replace('/^\/\//', 'https://', $this['pic_url']),
             'quantity' => $this['num'],
+            'seller_id' => $this['seller_info']['user_num_id'],
+            'provider' => $this->provider,
             'description' => str_replace(["\n", "\\"], '', $this['desc']),
             'pictures' => $this->transformPictures($this['item_imgs']),
             'location' => $this['location'] ?? 'China',
             'product_url' => $this['detail_url'],
             'videos' => $this['video'],
-            'colors' => $this->getColors($this['props_imgs'] ?? null, $this['prop_imgs'] ?? null, $this['pic_url']),
-            'sizes' => $this->transformSizes($this['skus']['sku']),
-            'composition' =>  $this['props'],
+            'skus' => $this['skus']['sku'],
+            'prop_imgs' => $this['prop_imgs']['prop_img'],
+            'props_list' => $this['props_list'],
+            'composition' => $this['props'],
             'is_liked' => false,
         ];
     }
 
-    private function getColors($propsImgs, $propImgs, $picUrl)
-    {
-        $counter = 1;
-
-        if (isset($propsImgs['prop_img']) && !empty($propsImgs['prop_img'])) {
-            return $this->transformAttributes($propsImgs['prop_img']);
-        } elseif (isset($propImgs['prop_img']) && !empty($propImgs['prop_img'])) {
-            return $this->transformAttributes($propImgs['prop_img']);
-        } else {
-            return [
-                [
-                    'id' => $counter++,
-                    'propertyName' => 'color',
-                    'value' => 'black',
-                    'image_url' => preg_replace('/^\/\//', 'https://', $picUrl),
-                ]
-            ];
-        }
-    }
-
     private function addPercentToPrice($priceInYuan, $amount, $percent = 0)
     {
-        // Convert the price from yuan to sum
         $priceInSum = $priceInYuan * $amount;
-
-        // Calculate the amount to add based on the percentage
         $additionalAmount = $priceInSum * ($percent / 100);
-
-        // Return the price with the percentage added
         return $priceInSum + $additionalAmount;
     }
 
@@ -101,165 +67,77 @@ class ProductDetailResource extends JsonResource
         })->toArray();
     }
 
-    private function transformAttributes($attributes)
+    private function transformSkus($propImgs, $skus)
     {
-        $counter = 0;
+        $attributes = $this->transformAttributes($propImgs);
 
-        // Array of prefixes to consider
-        $prefixes = ['color:', 'цвет:', 'rang:', "rangi bo'yicha saralash:", "Цветовая классификация:", "sort by color:"];
+        return array_map(function ($sku) use ($attributes) {
+            // return $attributes;
+            $propertyDetails = $this->extractPropertiesDetails($sku['properties_name']);
+            $propertiesArray = [];
 
-        // Get the keys from props_list
-        $propsListKeys = array_keys($this['props_list']);
-
-        $transformedAttributes = array_filter(array_map(function ($attribute) use (&$counter, $propsListKeys, $prefixes) {
-            // Ensure properties is a string
-            $property = (string) $attribute['properties'];
-
-            // Find the first key from propsListKeys that matches the property
-            $matchingKey = null;
-            foreach ($propsListKeys as $key) {
-                // Convert key to string for comparison
-                if ((string) $key === $property) {
-                    $matchingKey = $key;
-                    break;
-                }
-            }
-
-            // Get the value and remove the prefix if it exists
-            $value = $matchingKey !== null ? $this['props_list'][$matchingKey] : null;
-            if ($value !== null) {
-                foreach ($prefixes as $prefix) {
-                    if (stripos($value, $prefix) === 0) {
-                        $value = preg_replace('/^' . preg_quote($prefix, '/') . '\s*/i', '', $value); // Remove prefix, case-insensitive
-                        break;
-                    }
-                }
+            foreach ($propertyDetails as $detail) {
+                $imageUrl = $this->findAttributeUrl($attributes, $detail['propertyFir'] . ":" . $detail['propertySec']);
+                $propertiesArray[] = [
+                    'name' => $detail['name'],
+                    'value' => $detail['value'],
+                    'displayName' => $detail['displayName'],
+                    'displayValue' => $detail['displayValue'],
+                    'imageUrl' => $imageUrl,
+                    'property_id' => $detail['propertyFir'] . ":" . $detail['propertySec'],
+                ];
             }
 
             return [
-                'id' => $counter++,
-                'propertyName' => $attribute['PropertyName'] ?? null,
-                'value' => $value,
-                'image_url' => isset($attribute['url'])
-                    ? preg_replace('/^(?:http:\/\/|\/\/)/', 'https://', $attribute['url'])
-                    : null,
+                'quantity' => $sku['quantity'],
+                'sku_id' => $sku['sku_id'],
+                'price' => round($this->addPercentToPrice($sku['price'], $this->amount, $this->percent)),
+                'properties_ids' => $sku['properties'],
+                'properties' => $propertiesArray,
             ];
-        }, $attributes));
-
-        // Remove duplicate values
-        $uniqueAttributes = array_unique($transformedAttributes, SORT_REGULAR);
-
-        // Re-index the array
-        return array_values($uniqueAttributes);
+        }, $skus);
     }
 
-    private function transformSizes($attributes)
+    private function transformAttributes($attributes)
     {
-        $counter = 0;
-
-        // Array of prefixes to consider
-        $prefixes = ['size:', 'hajmi:', 'размер:'];
-
-        // Filter props_list for entries with any of the prefixes
-        $sizePropsList = array_filter($this['props_list'], function ($value) use ($prefixes) {
-            foreach ($prefixes as $prefix) {
-                if (stripos($value, $prefix) === 0) {
-                    return true;
-                }
-            }
-            return false;
-        });
-
-        // Get the keys from sizePropsList
-        $sizePropsListKeys = array_keys($sizePropsList);
-
-        $transformedAttributes = array_filter(array_map(function ($attribute) use (&$counter, $sizePropsListKeys, $prefixes) {
-            // Ensure properties is a string
-            $properties = explode(';', (string)$attribute['properties']);
-
-            // Find the first key from sizePropsListKeys that matches any property
-            $matchingKey = null;
-            foreach ($properties as $property) {
-                if (in_array($property, $sizePropsListKeys)) {
-                    $matchingKey = $property;
-                    break;
-                }
-            }
-
-            // Get the value and remove the prefix if it exists
-            $value = $matchingKey !== null ? $this['props_list'][$matchingKey] : null;
-            if ($value !== null) {
-                foreach ($prefixes as $prefix) {
-                    if (stripos($value, $prefix) === 0) {
-                        $value = preg_replace('/^' . preg_quote($prefix, '/') . '\s*/i', '', $value); // Remove prefix, case-insensitive
-                        break;
-                    }
-                }
-            }
-
+        return array_map(function ($attribute) {
             return [
-                'id' => $counter++,
-                'quantity' => $attribute['quantity'],
-                'price' => round($this->addPercentToPrice($attribute['price'], $this->amount, $this->percent)),
-                'value' => $value,
-                'sku_id' => $attribute['sku_id'],
+                'properties' => $attribute['properties'],
+                'url' => preg_replace('/^\/\//', 'https://', $attribute['url']),
             ];
-        }, $attributes));
+        }, $attributes);
+    }
 
-        // Remove entries with null values
-        $transformedAttributes = array_filter($transformedAttributes, function ($attribute) {
-            return $attribute['value'] !== null;
-        });
+    private function findAttributeUrl($attributes, $colorId)
+    {
+        // return $colorId;
+        foreach ($attributes as $attribute) {
+            if ($attribute['properties'] == $colorId) {
+                return $attribute['url'];
+            }
+        }
+        return null;
+    }
 
-        // Sort by value
-        usort($transformedAttributes, function ($a, $b) {
-            return strcmp($a['value'], $b['value']);
-        });
+    private function extractPropertiesDetails($properties_name)
+    {
+        $properties = explode(';', $properties_name);
+        $results = [];
 
-        // Remove duplicate values
-        $uniqueAttributes = [];
-        foreach ($transformedAttributes as $attribute) {
-            if (!isset($uniqueAttributes[$attribute['value']])) {
-                $uniqueAttributes[$attribute['value']] = $attribute;
+        foreach ($properties as $property) {
+            $parts = explode(':', $property);
+            if (isset($parts[2]) && isset($parts[3])) {
+                $results[] = [
+                    'name' => $parts[2],
+                    'value' => $parts[3],
+                    'propertyFir' => $parts[0],
+                    'propertySec' => $parts[1],
+                    'displayName' => $parts[2],
+                    'displayValue' => $parts[3],
+                ];
             }
         }
 
-        // Re-index the array
-        return array_values($uniqueAttributes);
-    }
-
-
-
-    private function transformCompositions($attributes, $propertyNames)
-    {
-        $counter = 0;
-
-        // Transform and filter attributes
-        $transformedAttributes = array_filter(array_map(function ($attribute) use (&$counter) {
-            return [
-                'id' => $counter++,
-                'propertyName' => $attribute['name'] ?? null,
-                'value' => $attribute['value'] ?? null,
-            ];
-        }, $attributes), function ($attribute) use ($propertyNames) {
-            return in_array($attribute['propertyName'], $propertyNames);
-        });
-
-        // Re-index the array
-        return array_values($transformedAttributes);
-    }
-
-    private function transformEloquentAttributes($attributes)
-    {
-        return $attributes->map(function ($attribute) {
-            return [
-                'id' => $attribute->id ?? $attribute->color_id ?? $attribute->size_id,
-                'product_id' => $attribute->product_id,
-                'property_name' => $attribute->property_name ?? null,
-                'value' => $attribute->value ?? null,
-                'image_url' => url('storage/' . $attribute->image_url) ?? null,
-                'mini_image_url' => url('storage/' . $attribute->mini_image_url) ?? null,
-            ];
-        })->toArray();
+        return $results;
     }
 }
