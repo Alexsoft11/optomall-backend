@@ -49,8 +49,10 @@ class HomePageProductResource extends Resource
                 Forms\Components\TextInput::make('product_url')
                     ->url()
                     ->maxLength(255),
-                Forms\Components\TextInput::make('provider')
-                    ->maxLength(255),
+                Select::make('provider')->options([
+                    '1688' => '1688',
+                    'taobao' => 'TaoBao',
+                ])->required(),
                 Select::make('type')->options([
                     'discount' => 'Discount',
                     'top' => 'Top products',
@@ -66,28 +68,7 @@ class HomePageProductResource extends Resource
                 TextColumn::make('title_uz')
                     ->sortable()
                     ->searchable(),
-                TextColumn::make('title_en')
-                    ->sortable()
-                    ->searchable(),
-                TextColumn::make('title_ru')
-                    ->sortable()
-                    ->searchable(),
-                TextColumn::make('price')
-                    ->sortable()
-                    ->searchable(),
-                TextColumn::make('discounted_price')
-                    ->sortable()
-                    ->searchable(),
                 ImageColumn::make('image'),
-                TextColumn::make('product_id')
-                    ->sortable()
-                    ->searchable(),
-                TextColumn::make('product_url')
-                    ->sortable()
-                    ->searchable(),
-                TextColumn::make('provider')
-                    ->sortable()
-                    ->searchable(),
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable(),

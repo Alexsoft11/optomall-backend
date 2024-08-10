@@ -35,14 +35,17 @@ class HomePageProduct extends Model
                 $productDetailResponseuz = $productController->productDetail(new Request([
                     'productId' => $homePageProduct->product_id,
                     'lang' => 'uz',
+                    'provider' => $homePageProduct->provider,
                 ]));
                 $productDetailResponseen = $productController->productDetail(new Request([
                     'productId' => $homePageProduct->product_id,
                     'lang' => 'en',
+                    'provider' => $homePageProduct->provider,
                 ]));
                 $productDetailResponseru = $productController->productDetail(new Request([
                     'productId' => $homePageProduct->product_id,
                     'lang' => 'ru',
+                    'provider' => $homePageProduct->provider,
                 ]));
 
                 $productDetailuz = json_decode($productDetailResponseuz->getContent(), true)['detail'];
