@@ -297,6 +297,69 @@ class OrderController extends Controller
     }
 
     /**
+     * @OA\Put(
+     *     path="/api/edit-order",
+     *     tags={"Order"},
+     *     summary="Edit order by order_id",
+     *     description="Edit order details by providing order_id, region, and district",
+     *     security={{ "bearerAuth":{} }},
+     *     @OA\Parameter(
+     *         name="order_id",
+     *         in="query",
+     *         required=true,
+     *         @OA\Schema(type="integer"),
+     *         description="ID of the order"
+     *     ),
+     *     @OA\Parameter(
+     *         name="region",
+     *         in="query",
+     *         required=true,
+     *         @OA\Schema(type="string"),
+     *     ),
+     *     @OA\Parameter(
+     *         name="district",
+     *         in="query",
+     *         required=true,
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Order not found",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Order not found")
+     *         )
+     *     )
+     * )
+     */
+    public function editOrder(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'order_id' => 'required|integer',
+            'region' => 'required|string',
+            'district' => 'required|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['message' => 'Invalid data', 'errors' => $validator->errors()], 400);
+        }
+
+        $order = Order::where('id', $request->order_id)->where('user_id', auth()->user()->id)
+            ->first();
+        // return $basketItemSize;
+
+        if (!$order) {
+            return response()->json(['message' => 'Order not found'], 404);
+        }
+
+        $order->region = $request->region;
+        $order->district = $request->district;
+        $order->save();
+
+        return response()->json(['message' => 'Order successfully updated'], 200);
+    }
+
+    /**
      * @OA\Get(
      *     path="/api/get-cargo",
      *     summary="Get total cargo weight",
