@@ -698,13 +698,7 @@ class ProductController extends Controller
      *         @OA\Schema(type="string")
      *     ),
      *  @OA\Parameter(
-     *         name="startPrice",
-     *         in="query",
-     *         required=false,
-     *         @OA\Schema(type="string")
-     *     ),
-     *  @OA\Parameter(
-     *         name="endPrice",
+     *         name="sort",
      *         in="query",
      *         required=false,
      *         @OA\Schema(type="string")
@@ -732,8 +726,7 @@ class ProductController extends Controller
     public function searchProductsFromTaobao(Request $request)
     {
         $value = $request->value;
-        $startPrice = $request->startPrice;
-        $endPrice = $request->endPrice;
+        $sort = $request->sort;
         $page = $request->page ?? 1;
         $productsCount = $request->productsCount ?? 20;
         $provider = $request->provider ?? 'taobao';
@@ -744,8 +737,8 @@ class ProductController extends Controller
 
         // Build the API URL
         $apiUrl = ($imageUrl
-            ? "https://kongcrdv.com/$provider/api/export_api.php?action=item_search_img&key=kingdev5809@gmail.com&imgid=$imageUrl&lang=$lang&page=$page&page_size=$productsCount"
-            : "https://api.kongcrdv.com/$provider/api_call.php?api_name=item_search&lang=$lang&key=kingdev5809@gmail.com&q=$value&key=$apiKey&page=$page&page_size=$productsCount");
+            ? "https://kongcrdv.com/$provider/api/export_api.php?action=item_search_img&key=kingdev5809@gmail.com&imgid=$imageUrl&lang=$lang&page=$page&page_size=$productsCount&sort=$sort"
+            : "https://api.kongcrdv.com/$provider/api_call.php?api_name=item_search&lang=$lang&key=kingdev5809@gmail.com&q=$value&key=$apiKey&page=$page&page_size=$productsCount&sort=$sort");
 
         // return $apiUrl;
         // Make the API call
