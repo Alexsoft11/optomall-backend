@@ -361,8 +361,8 @@ class OrderController extends Controller
 
             $order->region = $request->region;
             $order->district = $request->district;
-            $order->name = $request->user_name;
-            $order->phone = $request->user_phone;
+            $order->user_name = $request->name;
+            $order->user_phone = $request->phone;
             $order->save();
         }
 
