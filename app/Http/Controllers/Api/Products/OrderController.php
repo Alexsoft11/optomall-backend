@@ -296,7 +296,7 @@ class OrderController extends Controller
      *     description="Edit order details by providing order_id, region, and district",
      *     security={{ "bearerAuth":{} }},
      *     @OA\Parameter(
-     *         name="order_group_id",
+     *         name="order_id",
      *         in="query",
      *         required=true,
      *         @OA\Schema(type="integer"),
@@ -339,7 +339,7 @@ class OrderController extends Controller
     public function editOrder(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'order_group_id' => 'required|integer',
+            'order_id' => 'required|integer',
             'region' => 'required|string',
             'district' => 'required|string',
             'name' => 'required|string',
@@ -350,7 +350,7 @@ class OrderController extends Controller
             return response()->json(['message' => 'Invalid data', 'errors' => $validator->errors()], 400);
         }
 
-        $orderGroup = OrderGroup::where('id', $request->order_group_id)->where('user_id', auth()->user()->id)
+        $orderGroup = OrderGroup::where('id', $request->order_id)->where('user_id', auth()->user()->id)
             ->first();
         // return $basketItemSize;
 
