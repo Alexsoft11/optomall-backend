@@ -468,7 +468,7 @@ class OrderController extends Controller
             $result = DB::transaction(function () use ($request, $orderGroup) {
                 // Check for OrderCheck limit
                 if (OrderCheck::where('order_group_id', $request->order_group_id)->count() > 4) {
-                    throw new \Exception('Order checks limit reached');
+                    throw new \Exception('order_checks_limit_reached');
                 }
 
                 // Create income record
