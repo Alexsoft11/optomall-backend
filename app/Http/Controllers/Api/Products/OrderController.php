@@ -112,6 +112,8 @@ class OrderController extends Controller
             'total_price' => 'nullable|numeric|min:0',
         ]);
 
+        $user = auth()->user();
+
         if ($validator->fails()) {
             return response()->json(['message' => 'invalid_data', 'errors' => $validator->errors(), 'error' => true], 400);
         }
@@ -122,7 +124,7 @@ class OrderController extends Controller
         $orders = [];
         $orderGroup = null;
 
-        DB::transaction(function () use ($groupedItems, $user, $userData, $location, $request, &$orders, &$orderGroup) {
+        DB::transaction(function () use ($groupedItems, $user, $request, &$orders, &$orderGroup) {
             $orderGroup = OrderGroup::create([
                 'status' => '2',
                 'status_color' => '#05ff00',
