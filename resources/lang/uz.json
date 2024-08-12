@@ -52,5 +52,21 @@
     "mini_image_url": "Mini Rasm URL",
     "composition": "Tarkibiy qismi",
     "main_picture": "Asosiy Rasm",
-    "value": "Qiymat"
+    "value": "Qiymat",
+    "url": "URL manzili",
+    "mobile_image": "Mobil rasm",
+    "roles": "Rollar",
+    "order_id": "Buyurtma ID",
+    "user_id": "Foydalanuvchi ID",
+    "status": "Status",
+    "status_color": "Status rangi",
+    "created_at": "Yaratilgan sana",
+    "open": "Ochish",
+    "amount": "Pul miqdori",
+    "total_amount": "Umumiy pul miqdori",
+    "comment": "Izoh",
+    "currency": "Valyuta",
+    "home_page": "Bosh sahifa mahsulotlari",
+    "taobao_categories": "Tao-Bao kategoriyalari",
+    "order_groups": "Buyurtma guruhlari"
 }

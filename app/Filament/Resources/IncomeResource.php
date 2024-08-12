@@ -34,15 +34,19 @@ class IncomeResource extends Resource
             ->schema([
                 Forms\Components\TextInput::make('user_id')
                     ->required()
+                    ->label(trans("user_id"))
                     ->numeric(),
                 Forms\Components\TextInput::make('order_id')
                     ->required()
+                    ->label(trans("order_id"))
                     ->numeric(),
                 Forms\Components\TextInput::make('amount')
                     ->required()
+                    ->label(trans("amount"))
                     ->maxLength(255),
                 Forms\Components\TextInput::make('type')
                     ->required()
+                    ->label(trans("type"))
                     ->maxLength(255),
             ]);
     }
@@ -53,15 +57,20 @@ class IncomeResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('user_id')
                     ->numeric()
+                    ->label(trans("user_id"))
                     ->sortable(),
                 Tables\Columns\TextColumn::make('order_id')
                     ->numeric()
+                    ->label(trans("order_id"))
                     ->sortable(),
                 Tables\Columns\TextColumn::make('amount')
+                ->label(trans("amount"))
                     ->searchable(),
                 Tables\Columns\TextColumn::make('type')
+                ->label(trans("type"))
                     ->searchable(),
                 Tables\Columns\TextColumn::make('created_at')
+                ->label(trans("created_at"))
                     ->sortable()
             ])
             ->filters([

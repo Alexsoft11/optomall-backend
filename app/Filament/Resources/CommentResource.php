@@ -38,24 +38,27 @@ class CommentResource extends Resource
     public static function form(Forms\Form $form): Forms\Form
     {
         return $form
-        ->schema([
-            Fieldset::make('User')
-            ->relationship('user')
             ->schema([
-                TextInput::make('name'),
-                TextInput::make('phone'),
-            ]),
-            TextInput::make('product_id')
-                ->label('Product Name')
-                ->disabled()
-                ->columnSpan('full'),
+                Fieldset::make('User')
+                    ->relationship('user')
+                    ->label(trans("users"))
+                    ->schema([
+                        TextInput::make('name')
+                            ->label(trans("ism")),
+                        TextInput::make('phone')
+                        ->label(trans("phone")),
+                    ]),
+                TextInput::make('product_id')
+                    ->label(trans("name"))
+                    ->disabled()
+                    ->columnSpan('full'),
 
-            Textarea::make('name')
-                ->label('Comment')
-                ->required()
-                ->columnSpan('full')
-                ->rows(5),
-        ]);
+                Textarea::make('name')
+                    ->label(trans('comment'))
+                    ->required()
+                    ->columnSpan('full')
+                    ->rows(5),
+            ]);
     }
 
     public static function table(Tables\Table $table): Tables\Table
@@ -63,28 +66,30 @@ class CommentResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('user.name')
-                    ->label('Foydalanuchi'),
+                    ->label(trans("ism")),
                 TextColumn::make('product.name')
-                    ->label('Mahsulot')
+                    ->label(trans("name"))
                     ->searchable(),
 
                 TextColumn::make('created_at')
                     ->dateTime()
+                    ->label(trans("created_at"))
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 TextColumn::make('updated_at')
                     ->dateTime()
+                    ->label(trans("updated_at"))
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 Filter::make('name')
-                    ->label('Name')
-                    ->query(fn (Builder $query, array $data): Builder => $query->where('name', 'like', "%{$data['name']}%"))
+                    ->label(trans("ism"))
+                    ->query(fn(Builder $query, array $data): Builder => $query->where('name', 'like', "%{$data['name']}%"))
                     ->form([
                         TextInput::make('name')
-                            ->label('Name')
+                            ->label(trans("ism"))
                             ->placeholder('Enter name')
                     ]),
 

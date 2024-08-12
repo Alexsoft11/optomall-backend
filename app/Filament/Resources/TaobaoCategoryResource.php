@@ -20,6 +20,12 @@ class TaobaoCategoryResource extends Resource
 {
     protected static ?string $navigationGroup = "Taobao";
 
+    protected static ?string $label = "taobao_categories";
+
+    protected static ?string $navigationLabel = "taobao_categories";
+
+
+
     protected static ?string $model = TaobaoCategory::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
@@ -28,10 +34,10 @@ class TaobaoCategoryResource extends Resource
     {
         return $form
             ->schema([
-                TextInput::make('name_uz')->label('Name (UZ)')->nullable(),
-                TextInput::make('name_en')->label('Name (EN)')->nullable(),
-                TextInput::make('name_ru')->label('Name (RU)')->nullable(),
-                Toggle::make('is_active')->label('Is Active')->default(false),
+                TextInput::make('name_uz')->label(trans("title_uz"))->nullable(),
+                TextInput::make('name_en')->label(trans("title_en"))->nullable(),
+                TextInput::make('name_ru')->label(trans("title_ru"))->nullable(),
+                Toggle::make('is_active')->label(trans("is_active"))->default(false),
             ]);
     }
 
@@ -39,12 +45,12 @@ class TaobaoCategoryResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('name_uz')->label('Name (UZ)'),
-                Tables\Columns\TextColumn::make('name_en')->label('Name (EN)'),
-                Tables\Columns\TextColumn::make('name_ru')->label('Name (RU)'),
-                ToggleColumn::make('is_active')->label('Is Active'),
-                Tables\Columns\TextColumn::make('created_at')->label('Created At')->dateTime(),
-                Tables\Columns\TextColumn::make('updated_at')->label('Updated At')->dateTime(),
+                Tables\Columns\TextColumn::make('name_uz')->label(trans("title_uz")),
+                Tables\Columns\TextColumn::make('name_en')->label(trans("title_en")),
+                Tables\Columns\TextColumn::make('name_ru')->label(trans("title_ru")),
+                ToggleColumn::make('is_active')->label(trans("is_active")),
+                Tables\Columns\TextColumn::make('created_at')->label(trans("created_at"))->dateTime(),
+                // Tables\Columns\TextColumn::make('updated_at')->label('Updated At')->dateTime(),
             ])
             ->filters([
                 //
@@ -58,5 +64,15 @@ class TaobaoCategoryResource extends Resource
             'create' => Pages\CreateTaobaoCategory::route('/create'),
             'edit' => Pages\EditTaobaoCategory::route('/{record}/edit'),
         ];
+    }
+
+    public static function getLabel(): string
+    {
+        return trans('taobao_categories');
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return trans('taobao_categories');
     }
 }

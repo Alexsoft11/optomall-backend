@@ -76,16 +76,16 @@ class OrderRelationManager extends RelationManager
                 TextColumn::make('unique_id')
                     ->sortable()
                     ->searchable()
-                    ->label('Order ID'),
-                TextColumn::make('user.unique_id')->label('User ID')->sortable(),
-                TextColumn::make('user.name')->label('Ismi')->sortable(),
-                TextColumn::make('total_price')->label('Jami narx')->sortable(),
+                    ->label(trans("order_id")),
+                TextColumn::make('user.unique_id')->label(trans("user_id"))->sortable(),
+                TextColumn::make('user.name')->label(trans("ism"))->sortable(),
+                TextColumn::make('total_price')->label(trans("price"))->sortable(),
                 TextColumn::make('getStatus.name_uz')
-                    ->label('Status')
+                    ->label(trans("status"))
                     ->sortable()
                     ->searchable(),
-                ColorColumn::make('getStatus.color')->label('Status Rangi'),
-                TextColumn::make('created_at')->label('Created At')->sortable(),
+                ColorColumn::make('getStatus.color')->label(trans("status_color")),
+                TextColumn::make('created_at')->label(trans("created_at"))->sortable(),
             ])
             ->filters([
                 // Add your filters here
@@ -93,6 +93,7 @@ class OrderRelationManager extends RelationManager
             ->actions([
                 Tables\Actions\Action::make('openOrder')
                     ->tooltip('Open order')
+                    ->label(trans("open"))
                     ->icon('heroicon-m-arrow-top-right-on-square')
                     ->url(fn($record) => route('filament.admin.resources.orders.edit', $record->id), shouldOpenInNewTab: true)
                     ->hidden(fn($record) => !$record->id),

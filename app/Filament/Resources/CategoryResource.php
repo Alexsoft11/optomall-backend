@@ -33,12 +33,12 @@ class CategoryResource extends Resource
     {
         return $form
             ->schema([
-                TextInput::make('name_uz')->required(),
-                TextInput::make('name_ru')->required(),
-                TextInput::make('name_en')->required(),
-                FileUpload::make('image')->directory('category-images')->image()->disk('public'),
-                FileUpload::make('image_mobile')->directory('category-images')->image()->disk('public'),
-                Toggle::make('is_active'),
+                TextInput::make('name_uz')->required()->label(trans("title_uz")),
+                TextInput::make('name_ru')->required()->label(trans("title_ru")),
+                TextInput::make('name_en')->required()->label(trans("title_en")),
+                FileUpload::make('image')->directory('category-images')->image()->disk('public')->label(trans("image")),
+                FileUpload::make('image_mobile')->directory('category-images')->image()->disk('public')->label(trans("mobile_image")),
+                Toggle::make('is_active')->label(trans("is_active")),
             ]);
     }
 
@@ -47,12 +47,12 @@ class CategoryResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('id')->sortable()->searchable(),
-                TextColumn::make('name_uz')->sortable()->searchable(),
-                TextColumn::make('name_ru')->sortable()->searchable(),
-                TextColumn::make('name_en')->sortable()->searchable(),
+                TextColumn::make('name_uz')->sortable()->searchable()->label(trans("title_uz")),
+                TextColumn::make('name_ru')->sortable()->searchable()->label(trans("title_ru")),
+                TextColumn::make('name_en')->sortable()->searchable()->label(trans("title_en")),
                 ImageColumn::make('image')->sortable()->disk('public')->label(trans('image')),
-                ImageColumn::make('image_mobile')->sortable()->disk('public')->label('image_mobile'),
-                ToggleColumn::make('is_active')->sortable(),
+                ImageColumn::make('image_mobile')->sortable()->disk('public')->label(trans("mobile_image")),
+                ToggleColumn::make('is_active')->sortable()->label(trans("is_active")),
             ])
             ->filters([
                 //

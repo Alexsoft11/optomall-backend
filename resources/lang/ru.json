@@ -52,5 +52,21 @@
     "mini_image_url": "Мини URL изображения",
     "composition": "Состав",
     "main_picture": "Главное изображение",
-    "value": "Ценить"
+    "value": "Ценить",
+    "url": "URL-адрес",
+    "mobile_image": "Мобильное изображение",
+    "roles": "Роли",
+    "order_id": "ID заказа",
+    "user_id": "ID пользователя",
+    "status": "Статус",
+    "status_color": "Цвет статуса",
+    "created_at": "Создано в",
+    "open": "Открыть",
+    "amount": "Сумма денег",
+    "total_amount": "Общая сумма денег",
+    "comment": "Комментарий",
+    "currency": "Валюта",
+    "home_page": "Товары для главной страницы",
+    "taobao_categories": "Категории Тао-Бао",
+    "order_groups": "Группы заказов"
 }
