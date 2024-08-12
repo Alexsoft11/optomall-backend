@@ -39,7 +39,8 @@ class Order extends Model
         'unique_id',
         'seller_id',
         'provider',
-        'order_group_id'
+        'order_group_id',
+        'is_paid'
     ];
 
 

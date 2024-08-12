@@ -33,6 +33,12 @@ class OrderGroup extends Model
             }
         });
 
+        static::updated(function ($order) {
+            if ($order->isDirty('is_paid')) {
+                $order->orders()->update(['is_paid' => $order->is_paid]);
+            }
+        });
+
         static::updating(function ($model) {
             if ($model->isDirty('status')) {
                 $model->orders()->update(['status' => $model->status]);
