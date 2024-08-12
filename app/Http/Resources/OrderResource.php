@@ -39,7 +39,7 @@ class OrderResource extends JsonResource
                 'en' => $this->getStatus->name_en ?? null,
             ],
             'status_color' => $this->getStatus->color ?? null,
-            'isPaid' => $this->is_paid,
+            'isPaid' => $this->is_paid == 0 ? false : true,
             'total_price' => $this->total_price,
             'user_name' => $this->user_name,
             'user_phone' => $this->user_phone,
