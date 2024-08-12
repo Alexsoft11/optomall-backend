@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('taobao_categories', function (Blueprint $table) {
             $table->id();
+            $table->unsignedBigInteger('unique_id');
             $table->string('name_uz')->nullable();
             $table->string('name_en')->nullable();
             $table->string('name_ru')->nullable();
@@ -22,19 +23,24 @@ return new class extends Migration
 
         Schema::create('taobao_subcategory_names', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('taobao_category_id')->unsigned();
+            $table->unsignedBigInteger('unique_id');
+            $table->unsignedBigInteger('taobao_category_id');
             $table->string('subcategory_name_uz')->nullable();
             $table->string('subcategory_name_en')->nullable();
             $table->string('subcategory_name_ru')->nullable();
+            $table->boolean('is_active')->default(true);
             $table->timestamps();
         });
 
+
         Schema::create('taobao_subcategories', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('taobao_subcategory_name_id')->unsigned();
+            $table->unsignedBigInteger('unique_id');
+            $table->unsignedBigInteger('taobao_subcategory_name_id');
             $table->string('subcategory_uz')->nullable();
             $table->string('subcategory_en')->nullable();
             $table->string('subcategory_ru')->nullable();
+            $table->boolean('is_show')->default(true);
             $table->timestamps();
         });
     }

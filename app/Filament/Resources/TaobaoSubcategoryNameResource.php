@@ -8,9 +8,11 @@ use App\Models\TaobaoSubcategoryName;
 use Filament\Forms;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Columns\ToggleColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -31,6 +33,7 @@ class TaobaoSubcategoryNameResource extends Resource
                     ->relationship('category', 'name_en')
                     ->label('Category')
                     ->required(),
+                Toggle::make('is_active')->label('Is Active'),
                 TextInput::make('subcategory_name_uz')->label('Subcategory Name (UZ)')->nullable(),
                 TextInput::make('subcategory_name_en')->label('Subcategory Name (EN)')->nullable(),
                 TextInput::make('subcategory_name_ru')->label('Subcategory Name (RU)')->nullable(),
@@ -42,6 +45,7 @@ class TaobaoSubcategoryNameResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('category.name_en')->label('Category'),
+                ToggleColumn::make('is_active')->label('Is Active'),
                 Tables\Columns\TextColumn::make('subcategory_name_uz')->label('Subcategory Name (UZ)'),
                 Tables\Columns\TextColumn::make('subcategory_name_en')->label('Subcategory Name (EN)'),
                 Tables\Columns\TextColumn::make('subcategory_name_ru')->label('Subcategory Name (RU)'),

@@ -4,31 +4,44 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 use Spatie\Sluggable\HasSlug;
 use Spatie\Sluggable\SlugOptions;
 
 class TaobaoCategory extends Model
 {
-    use HasFactory, HasSlug;
+    use HasFactory;
 
     protected $fillable = [
         'name_uz',
         'name_en',
         'name_ru',
         'unique',
-        'slug',
+        'unique_id',
         'is_active',
     ];
 
-    public function subcategories()
+    protected static function boot()
     {
-        return $this->hasMany(TaobaoSubcategoryName::class);
+        parent::boot();
+
+        static::creating(function ($model) {
+            $id = random_int(10000, 99999);
+
+            $model->unique_id = $id;
+        });
     }
 
-    public function getSlugOptions(): SlugOptions
+    // protected static function idExistsInAnyTable($id)
+    // {
+    //     // Check if the ID exists in any of the related tables
+    //     return DB::table('taobao_categories')->where('id', $id)->exists() ||
+    //         DB::table('taobao_subcategory_names')->where('id', $id)->exists() ||
+    //         DB::table('taobao_subcategories')->where('id', $id)->exists();
+    // }
+
+    public function subcategories()
     {
-        return SlugOptions::create()
-            ->generateSlugsFrom('name_en')
-            ->saveSlugsTo('slug');
+        return $this->hasMany(TaobaoSubcategoryName::class, 'taobao_category_id', 'unique_id');
     }
 }

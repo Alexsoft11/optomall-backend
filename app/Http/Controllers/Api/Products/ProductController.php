@@ -21,6 +21,8 @@ use App\Models\LikedProduct;
 use App\Models\Product;
 use App\Models\ProductCategory;
 use App\Models\TaobaoCategory;
+use App\Models\TaobaoSubcategory;
+use App\Models\TaobaoSubcategoryName;
 use App\Traits\ApiResponseHelpers;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
@@ -180,6 +182,7 @@ class ProductController extends Controller
                 'title' => $productDetail['title'],
                 'price' => $productDetail['price'],
                 'image' => $productDetail['image'],
+                'provider' => $productDetail['provider'],
                 'is_liked' => true,
             ];
         });
@@ -268,7 +271,7 @@ class ProductController extends Controller
      */
     public function categoriesFromTaoBao(Request $request)
     {
-        $categories = TaobaoCategory::where('is_active', true)->get();
+        $categories = TaobaoCategory::where('is_active', false)->get();
 
         return $this->respondWithSuccess([
             'categories' => CategoryResource::collection($categories)
@@ -709,6 +712,11 @@ class ProductController extends Controller
      *         required=false,
      *         @OA\Schema(type="string")
      *     ),
+     * @OA\Parameter(
+     *         name="catId",
+     *         in="query",
+     *         required=false,
+     *     ),
      *  @OA\Parameter(
      *         name="lang",
      *         in="query",
@@ -732,15 +740,14 @@ class ProductController extends Controller
         $provider = $request->provider ?? 'taobao';
         $lang = $request->lang ?? 'en';
         $imageUrl = $request->imageUrl;
-
         $apiKey = 'kingdev5809@gmail.com';
+        $subcategory = TaobaoSubcategory::where('unique_id', $request->catId)->pluck('unique')->first() ?? TaobaoSubcategoryName::where('unique_id', $request->catId)->pluck('unique')->first();
 
         // Build the API URL
-        $apiUrl = ($imageUrl
-            ? "https://kongcrdv.com/$provider/api/export_api.php?action=item_search_img&key=kingdev5809@gmail.com&imgid=$imageUrl&lang=$lang&page=$page&page_size=$productsCount&sort=$sort"
-            : "https://api.kongcrdv.com/$provider/api_call.php?api_name=item_search&lang=$lang&key=kingdev5809@gmail.com&q=$value&key=$apiKey&page=$page&page_size=$productsCount&sort=$sort");
+        $apiUrl = $imageUrl
+            ? "https://kongcrdv.com/$provider/api/export_api.php?action=item_search_img&key=$apiKey&imgid=$imageUrl&lang=$lang&page=$page&page_size=$productsCount&sort=$sort"
+            : "https://api.kongcrdv.com/$provider/api_call.php?api_name=item_search&lang=$lang&key=$apiKey&q=" . ($value ? $value : $subcategory) . "&page=$page&page_size=$productsCount&sort=$sort";
 
-        // return $apiUrl;
         // Make the API call
         $response = Http::get($apiUrl);
         $products = $response->json();
