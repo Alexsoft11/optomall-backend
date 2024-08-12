@@ -116,17 +116,6 @@ class OrderController extends Controller
             return response()->json(['message' => 'invalid_data', 'errors' => $validator->errors(), 'error' => true], 400);
         }
 
-        $user = auth()->user();
-        $location = $request->location;
-        $userData = $request->userData;
-
-        // Check and update user information if region, district, or address is missing
-        if (empty($user->region) || empty($user->district)) {
-            $user->region = $user->region ?? $location['region'];
-            $user->district = $user->district ?? $location['district'];
-            $user->save(); // Save the updated user information
-        }
-
         $items = collect($request->items);
         $groupedItems = $items->groupBy('seller_id');
 
@@ -350,7 +339,16 @@ class OrderController extends Controller
             return response()->json(['message' => 'Invalid data', 'errors' => $validator->errors()], 400);
         }
 
-        $orderGroup = OrderGroup::where('id', $request->order_id)->where('user_id', auth()->user()->id)
+        $user = auth()->user();
+
+        // Check and update user information if region, district, or address is missing
+        if (empty($user->region) || empty($user->district)) {
+            $user->region = $user->region ?? $request->region;
+            $user->district = $user->district ?? $request->district;
+            $user->save(); // Save the updated user information
+        }
+
+        $orderGroup = OrderGroup::where('id', $request->order_id)->where('user_id', $user->id)
             ->first();
         // return $basketItemSize;
 
