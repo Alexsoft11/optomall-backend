@@ -46,6 +46,7 @@ class ProductResource extends JsonResource
                 : $this->addPercentToPrice($calculatedPrice, $this->percent)),
             'discount_percent' => $discountPercent,
             'image' => $this->resource['pic_url'],
+            'product_url' => $this->resource['detail_url'],
             'is_liked' => false,
         ];
     }
