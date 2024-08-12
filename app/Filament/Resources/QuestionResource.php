@@ -32,13 +32,13 @@ class QuestionResource extends Resource
         return $form
             ->schema([
                 Forms\Components\TextInput::make('name_uz')
-                ->label(__('Name (Uzbek)'))
+                ->label(trans("title_uz"))
                 ->required(),
             Forms\Components\TextInput::make('name_ru')
-                ->label(__('Name (Russian)'))
+                ->label(trans("title_ru"))
                 ->required(),
             Forms\Components\TextInput::make('name_en')
-                ->label(__('Name (English)'))
+                ->label(trans("title_en"))
                 ->required(),
             ]);
     }
@@ -47,9 +47,9 @@ class QuestionResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('name_uz'),
-                Tables\Columns\TextColumn::make('name_ru'),
-                Tables\Columns\TextColumn::make('name_en'),
+                Tables\Columns\TextColumn::make('name_uz')->label(trans("title_uz")),
+                Tables\Columns\TextColumn::make('name_ru')->label(trans("title_ru")),
+                Tables\Columns\TextColumn::make('name_en')->label(trans("title_en")),
             ])
             ->filters([
                 //

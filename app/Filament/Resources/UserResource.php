@@ -28,30 +28,36 @@ class UserResource extends Resource
                 Forms\Components\Select::make('roles')
                     ->relationship('roles', 'name')
                     ->multiple()
+                    ->label(trans('roles'))
                     ->preload()
                     ->searchable(),
                 Forms\Components\TextInput::make('name')
+                ->label(trans('ism'))
                     ->maxLength(100),
                 Forms\Components\TextInput::make('last_name')
+                ->label(trans('last_name'))
                     ->maxLength(100),
                 Forms\Components\TextInput::make('phone')
                     ->tel()
+                    ->label(trans('phone'))
                     ->maxLength(255),
                 Forms\Components\TextInput::make('email')
                     ->email()
+                    ->label(trans('email'))
                     ->required()
                     ->maxLength(255),
-                Forms\Components\TextInput::make('region')
-                    ->maxLength(255),
-                Forms\Components\TextInput::make('district')
-                    ->maxLength(255),
-                Forms\Components\TextInput::make('street')
-                    ->maxLength(255),
-                Forms\Components\TextInput::make('house')
-                    ->maxLength(255),
-                Forms\Components\TextInput::make('post_index')
-                    ->maxLength(255),
-                Forms\Components\TextInput::make('location')
+                // Forms\Components\TextInput::make('region')
+                //     ->maxLength(255),
+                // Forms\Components\TextInput::make('district')
+                //     ->maxLength(255),
+                // Forms\Components\TextInput::make('street')
+                //     ->maxLength(255),
+                // Forms\Components\TextInput::make('house')
+                //     ->maxLength(255),
+                // Forms\Components\TextInput::make('post_index')
+                //     ->maxLength(255),
+                Forms\Components\TextInput::make('adress')
+                ->label(trans('location'))
                     ->maxLength(255),
             ]);
     }
@@ -79,22 +85,7 @@ class UserResource extends Resource
                 Tables\Columns\TextColumn::make('email')
                     ->searchable()
                     ->label(trans('email')),
-                Tables\Columns\TextColumn::make('region')
-                    ->searchable()
-                    ->label(trans('region')),
-                Tables\Columns\TextColumn::make('district')
-                    ->searchable()
-                    ->label(trans('district')),
-                Tables\Columns\TextColumn::make('street')
-                    ->searchable()
-                    ->label(trans('street')),
-                Tables\Columns\TextColumn::make('house')
-                    ->searchable()
-                    ->label(trans('house')),
-                Tables\Columns\TextColumn::make('post_index')
-                    ->searchable()
-                    ->label(trans('post_index')),
-                Tables\Columns\TextColumn::make('location')
+                Tables\Columns\TextColumn::make('adress')
                     ->searchable()
                     ->label(trans('location')),
             ])

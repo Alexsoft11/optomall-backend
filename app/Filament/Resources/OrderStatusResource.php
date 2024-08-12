@@ -21,10 +21,10 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 class OrderStatusResource extends Resource
 {
     protected static ?string $navigationGroup = "Buyurtmalar";
+    protected static ?string $label = "order_status";
 
     protected static ?string $model = OrderStatus::class;
 
-    protected static ?string $label = "order_status";
 
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
@@ -33,14 +33,14 @@ class OrderStatusResource extends Resource
     {
         return $form
             ->schema([
-                TextInput::make('name_uz')->label('Nomi uz'),
-                TextInput::make('name_en')->label('Nomi en'),
-                TextInput::make('name_ru')->label('Nomi ru'),
-                TextInput::make('message_uz')->label('Xabar_uz'),
-                TextInput::make('message_en')->label('Xabar_en'),
-                TextInput::make('message_ru')->label('Xabar_ru'),
-                ColorPicker::make('color')->label('Rangi'),
-                Select::make('type')->label('Turi')->options([
+                TextInput::make('name_uz')->label(trans("title_uz")),
+                TextInput::make('name_en')->label(trans("title_en")),
+                TextInput::make('name_ru')->label(trans("title_ru")),
+                TextInput::make('message_uz')->label(trans("description_uz")),
+                TextInput::make('message_en')->label(trans("description_en")),
+                TextInput::make('message_ru')->label(trans("description_ru")),
+                ColorPicker::make('color')->label(trans("colors")),
+                Select::make('type')->label(trans("type"))->options([
                     'active' => 'Aktiv',
                     'in_verification' => 'Tekshirilmoqda',
                 ]),
@@ -51,10 +51,10 @@ class OrderStatusResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('name_uz')->label('Nomi'),
+                TextColumn::make('name_uz')->label(trans("name")),
                 // TextColumn::make('message_uz')->label('Xabar'),
-                ColorColumn::make('color')->label('Rangi'),
-                TextColumn::make('type')->label('Turi'),
+                ColorColumn::make('color')->label(trans("colors")),
+                TextColumn::make('type')->label(trans("type")),
             ])
             ->filters([
                 // Add your filters here if needed

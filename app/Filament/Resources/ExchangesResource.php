@@ -30,8 +30,10 @@ class ExchangesResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('currency'),
-                Forms\Components\TextInput::make('amount'),
+                Forms\Components\TextInput::make('currency')
+                ->label(trans("currency")),
+                Forms\Components\TextInput::make('amount')
+                ->label(trans("amount")),
             ]);
     }
 
@@ -39,8 +41,8 @@ class ExchangesResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('currency'),
-                Tables\Columns\TextColumn::make('amount'),
+                Tables\Columns\TextColumn::make('currency')->label(trans("currency")),
+                Tables\Columns\TextColumn::make('amount')->label(trans("amount")),
             ])
             ->filters([
                 //

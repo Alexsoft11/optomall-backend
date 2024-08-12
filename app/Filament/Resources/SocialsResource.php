@@ -36,11 +36,13 @@ class SocialsResource extends Resource
         return $form
             ->schema([
                 TextInput::make('name')
+                ->label(trans('name'))
                     ->required()
                     ->maxLength(255),
 
                 FileUpload::make('icon')
                     ->image()
+                    ->label(trans('image'))
                     ->required()
                     ->disk('public')
                     ->directory('social-images')
@@ -48,6 +50,7 @@ class SocialsResource extends Resource
 
                 TextInput::make('path')
                     ->required()
+                    ->label(trans('url'))
                     ->maxLength(255)
                     ->url(),
             ]);
@@ -58,13 +61,16 @@ class SocialsResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('name')
-                    ->searchable(),
+                    ->searchable()
+                    ->label(trans('name')),
 
                 ImageColumn::make('icon')
                     ->disk('public')
+                    ->label(trans('image'))
                     ->searchable(),
 
                 TextColumn::make('path')
+                    ->label(trans('url'))
                     ->searchable(),
 
                 TextColumn::make('created_at')
@@ -80,13 +86,13 @@ class SocialsResource extends Resource
             ->filters([
                 Filter::make('name')
                     ->label('Name')
-                    ->query(fn (Builder $query, array $data): Builder => $query->where('name', 'like', "%{$data['name']}%"))
+                    ->query(fn(Builder $query, array $data): Builder => $query->where('name', 'like', "%{$data['name']}%"))
                     ->form([
                         TextInput::make('name')
                             ->label('Name')
                             ->placeholder('Enter name')
                     ]),
-            
+
                 Filter::make('created_at')
                     ->label('Created Date')
                     ->query(function (Builder $query, array $data): Builder {
@@ -102,13 +108,13 @@ class SocialsResource extends Resource
                         DatePicker::make('from')
                             ->label('From')
                             ->placeholder('Select start date'),
-            
+
                         DatePicker::make('until')
                             ->label('Until')
                             ->placeholder('Select end date'),
                     ]),
             ])
-            
+
             ->actions([
                 ViewAction::make(),
                 EditAction::make(),
