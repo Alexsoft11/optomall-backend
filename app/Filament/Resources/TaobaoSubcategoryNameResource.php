@@ -34,6 +34,7 @@ class TaobaoSubcategoryNameResource extends Resource
                     ->label('Category')
                     ->required(),
                 Toggle::make('is_active')->label('Is Active'),
+                TextInput::make('unique')->label('Search'),
                 TextInput::make('subcategory_name_uz')->label('Subcategory Name (UZ)')->nullable(),
                 TextInput::make('subcategory_name_en')->label('Subcategory Name (EN)')->nullable(),
                 TextInput::make('subcategory_name_ru')->label('Subcategory Name (RU)')->nullable(),
@@ -49,6 +50,7 @@ class TaobaoSubcategoryNameResource extends Resource
                 Tables\Columns\TextColumn::make('subcategory_name_uz')->label('Subcategory Name (UZ)'),
                 Tables\Columns\TextColumn::make('subcategory_name_en')->label('Subcategory Name (EN)'),
                 Tables\Columns\TextColumn::make('subcategory_name_ru')->label('Subcategory Name (RU)'),
+                Tables\Columns\TextColumn::make('unique')->label('Search'),
                 Tables\Columns\TextColumn::make('created_at')->label('Created At')->dateTime(),
                 Tables\Columns\TextColumn::make('updated_at')->label('Updated At')->dateTime(),
             ])
