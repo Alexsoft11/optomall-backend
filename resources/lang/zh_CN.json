@@ -52,5 +52,21 @@
     "mini_image_url": "缩略图 URL",
     "composition": "成分",
     "main_picture": "主图",
-    "value": "价值"
+    "value": "价值",
+    "url": "URL地址",
+    "mobile_image": "移动图片",
+    "roles": "角色",
+    "order_id": "订单ID",
+    "user_id": "用户ID",
+    "status": "状态",
+    "status_color": "状态颜色",
+    "created_at": "创建于",
+    "open": "打开",
+    "amount": "金额",
+    "total_amount": "总金额",
+    "comment": "评论",
+    "currency": "货币",
+    "home_page": "主页商品",
+    "taobao_categories": "淘宝分类",
+    "order_groups": "订单组"
 }

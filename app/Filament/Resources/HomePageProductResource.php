@@ -19,7 +19,7 @@ class HomePageProductResource extends Resource
 
     protected static ?string $navigationLabel = "Bosh sahifa uchun mahsulotlar";
 
-    protected static ?string $label = "Bosh sahifa uchun mahsulotlar";
+    protected static ?string $label = "home_page";
 
     protected static ?string $model = HomePageProduct::class;
 
@@ -115,4 +115,10 @@ class HomePageProductResource extends Resource
             'edit' => Pages\EditHomePageProduct::route('/{record}/edit'),
         ];
     }
+
+    public static function getNavigationLabel(): string
+    {
+        return trans('home_page');
+    }
+
 }
