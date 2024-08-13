@@ -192,6 +192,9 @@ class OrderResource extends Resource
                         'md' => 2,
                     ])
                     ->required(),
+                TextInput::make('provider')->columnSpan([
+                    'md' => 2,
+                ]),
 
 
             ])
