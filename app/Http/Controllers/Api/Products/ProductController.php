@@ -746,7 +746,7 @@ class ProductController extends Controller
         // Build the API URL
         $apiUrl = $imageUrl
             ? "https://kongcrdv.com/$provider/api/export_api.php?action=item_search_img&key=$apiKey&imgid=$imageUrl&lang=$lang&page=$page&page_size=$productsCount&sort=$sort"
-            : "https://api.kongcrdv.com/$provider/api_call.php?api_name=item_search&lang=$lang&key=$apiKey&q=" . ($value ? $value : $subcategory) . "&page=$page&page_size=$productsCount&sort=$sort";
+            : "https://kongcrdv.com/$provider/api/export_api.php?action=item_search&lang=$lang&key=$apiKey&q=" . ($value ? $value : $subcategory) . "&page=$page&page_size=$productsCount&sort=$sort";
 
         // Make the API call
         $response = Http::get($apiUrl);
