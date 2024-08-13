@@ -271,7 +271,7 @@ class ProductController extends Controller
      */
     public function categoriesFromTaoBao(Request $request)
     {
-        $categories = TaobaoCategory::where('is_active', false)->get();
+        $categories = TaobaoCategory::where('is_active', true)->get();
 
         return $this->respondWithSuccess([
             'categories' => CategoryResource::collection($categories)
@@ -464,7 +464,7 @@ class ProductController extends Controller
             if (!isset($productDetail['item'])) {
                 // If still not found, return 404 response
                 if (!isset($productDetail['item'])) {
-                    return response()->json(['error' => 'Product not found'], 404);
+                    return response()->json(['error' => 'product_not_found'], 404);
                 }
             }
             $product = new ProductDetail($productDetail['item'], $provider);
@@ -553,7 +553,7 @@ class ProductController extends Controller
             if (!isset($productDetail['item'])) {
                 // If still not found, return 404 response
                 if (!isset($productDetail['item'])) {
-                    return response()->json(['error' => 'Product not found'], 404);
+                    return response()->json(['error' => 'product_not_found'], 404);
                 }
             }
             $product = new ProductDetailResource($productDetail['item'], $provider);
@@ -626,7 +626,7 @@ class ProductController extends Controller
 
             // If still not found, return 404 response
             if (!isset($productDetail['item'])) {
-                return response()->json(['error' => 'Product not found'], 404);
+                return response()->json(['error' => 'product_not_found'], 404);
             }
         }
         // // Function to get random products
@@ -653,7 +653,7 @@ class ProductController extends Controller
         } else {
             if (!isset($productDetail['item'])) {
                 if (!isset($productDetail['item'])) {
-                    return response()->json(['error' => 'Product not found'], 404);
+                    return response()->json(['error' => 'product_not_found'], 404);
                 }
             }
             $product = new ProductDetailTokenResource($productDetail['item']);
@@ -753,7 +753,7 @@ class ProductController extends Controller
         $products = $response->json();
         // Extract the product data
         if (empty($products['data']['items']['item'])) {
-            return response()->json(['error' => 'Products not found'], 404);
+            return response()->json(['error' => 'product_not_found'], 404);
         }
         $productData = $products['data']['items']['item'];
         return $productData;
@@ -843,7 +843,7 @@ class ProductController extends Controller
         $products = $response->json();
         // Extract the product data
         if (empty($products['data']['items']['item'])) {
-            return response()->json(['error' => 'Products not found'], 404);
+            return response()->json(['error' => 'product_not_found'], 404);
         }
         $productData = $products['data']['items']['item'];
         return $productData;
@@ -895,18 +895,29 @@ class ProductController extends Controller
             'image' => 'required|image|max:2048', // Validate the image file
         ]);
 
+        // Get the uploaded image file
+        $image = $request->file('image');
 
-        // Store the uploaded image
-        $imagePath = $request->file('image')->store('images', 'public');
-        $imageUrl = url(Storage::url($imagePath));
-        $url = "https://kongcrdv.com/taobao/api/export_api.php?action=upload_img&key=kingdev5809@gmail.com&imgcode=$imageUrl&lang=zh-CN";
-        $response = Http::get($url);
-        $image = $response->json();
+        // Convert the image to base64
+        $base64Image = base64_encode(file_get_contents($image));
 
-        return  [
-            'url' => $image['data']['items']['items']['name'],
+        // Define the API URL
+        $url = "https://kongcrdv.com/taobao/api/export_api.php?action=upload_img&key=kingdev5809@gmail.com&imgcode=$base64Image&lang=zh-CN";
+
+        // Send the POST request with the base64 image
+        $response = Http::post($url);
+
+        return $response;
+
+        // Parse the response
+        $imageData = $response->json();
+
+        // Return the desired data
+        return [
+            'url' => $imageData['data']['items']['items']['name'] ?? 'No image found',
         ];
     }
+
 
     /**
      * @OA\Get(
