@@ -746,19 +746,17 @@ class ProductController extends Controller
         // Build the API URL
         $apiUrl = $imageUrl
             ? "https://kongcrdv.com/$provider/api/export_api.php?action=item_search_img&key=$apiKey&imgid=$imageUrl&lang=$lang&page=$page&page_size=$productsCount&sort=$sort"
-            : "https://kongcrdv.com/$provider/api/export_api.php?action=item_search&lang=$lang&key=$apiKey&q=" . ($value ? $value : $subcategory) . "&page=$page&page_size=$productsCount&sort=$sort";
-
+            : "https://kongcrdv.com/$provider/api/export_api.php?action=item_search&lang=$lang&key=$apiKey&q=" . ($value ? $value : $subcategory) . "&page=$page&sort=";
+        // return $apiUrl;
         // Make the API call
         $response = Http::get($apiUrl);
         $products = $response->json();
-
         // Extract the product data
-        $productData = $imageUrl ? ($products['data']['items']['item'] ?? null) : ($products['items']['item'] ?? null);
-
-        // Return error if no products found
-        if (!$productData) {
+        if (empty($products['data']['items']['item'])) {
             return response()->json(['error' => 'Products not found'], 404);
         }
+        $productData = $products['data']['items']['item'];
+        return $productData;
 
         // Return the final response
         return $this->respondWithSuccess([
@@ -826,42 +824,33 @@ class ProductController extends Controller
     public function searchProductsFromTaobaoToken(Request $request)
     {
         $value = $request->value;
-        $startPrice = $request->startPrice;
-        $endPrice = $request->endPrice;
-        $page = $request->page ? $request->page : 1;
-        $productsCount = $request->productsCount ? $request->productsCount : 20;
-        $provider = $request->provider ? $request->provider : 'taobao';
+        $sort = $request->sort;
+        $page = $request->page ?? 1;
+        $productsCount = $request->productsCount ?? 20;
+        $provider = $request->provider ?? 'taobao';
         $lang = $request->lang ?? 'en';
         $imageUrl = $request->imageUrl;
+        $apiKey = 'kingdev5809@gmail.com';
+        $subcategory = TaobaoSubcategory::where('unique_id', $request->catId)->pluck('unique')->first() ?? TaobaoSubcategoryName::where('unique_id', $request->catId)->pluck('unique')->first();
 
-        if ($imageUrl) {
-            // If imageUrl has a value, make an additional API call
-            $imageUrlApi = "https://kongcrdv.com/$provider/api/export_api.php?action=item_search_img&key=kingdev5809@gmail.com&imgid=$imageUrl&lang=$lang";
-            $imageResponse = Http::get($imageUrlApi);
-            $imageProducts = $imageResponse->json();
-            // return $imageProducts;
-
-            // Initialize the product data with image products
-            if (!isset($imageProducts['data']['items']['item'])) {
-                return response()->json(['error' => 'Products not found'], 404);
-            }
-            $productData = $imageProducts['data']['items']['item'];
-        } else {
-            // Define the base URL for the product search
-            $url = "https://api.kongcrdv.com/$provider/api_call.php?api_name=item_search&lang=$lang&key=kingdev5809@gmail.com&q=$value&start_price=$startPrice&end_price=$endPrice&page=$page&page_size=$productsCount";
-
-            // Make the initial API call
-            $response = Http::get($url);
-            $products = $response->json();
-            if (!isset($products['items']['item'])) {
-                return response()->json(['error' => 'Products not found'], 404);
-            }
-            // Initialize the product data
-            $productData = $products['items']['item'];
+        // Build the API URL
+        $apiUrl = $imageUrl
+            ? "https://kongcrdv.com/$provider/api/export_api.php?action=item_search_img&key=$apiKey&imgid=$imageUrl&lang=$lang&page=$page&page_size=$productsCount&sort=$sort"
+            : "https://kongcrdv.com/$provider/api/export_api.php?action=item_search&lang=$lang&key=$apiKey&q=" . ($value ? $value : $subcategory) . "&page=$page&sort=";
+        // return $apiUrl;
+        // Make the API call
+        $response = Http::get($apiUrl);
+        $products = $response->json();
+        // Extract the product data
+        if (empty($products['data']['items']['item'])) {
+            return response()->json(['error' => 'Products not found'], 404);
         }
+        $productData = $products['data']['items']['item'];
+        return $productData;
 
+        // Return the final response
         return $this->respondWithSuccess([
-            'products' => ProductTokenResource::collection($productData)
+            'products' => ProductResource::collection($productData)
         ]);
     }
 
@@ -906,12 +895,16 @@ class ProductController extends Controller
             'image' => 'required|image|max:2048', // Validate the image file
         ]);
 
+
         // Store the uploaded image
         $imagePath = $request->file('image')->store('images', 'public');
         $imageUrl = url(Storage::url($imagePath));
+        $url = "https://kongcrdv.com/taobao/api/export_api.php?action=upload_img&key=kingdev5809@gmail.com&imgcode=$imageUrl&lang=zh-CN";
+        $response = Http::get($url);
+        $image = $response->json();
 
         return  [
-            'url' => $imageUrl,
+            'url' => $image['data']['items']['items']['name'],
         ];
     }
 
