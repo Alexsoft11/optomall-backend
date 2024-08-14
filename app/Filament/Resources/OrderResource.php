@@ -64,7 +64,8 @@ class OrderResource extends Resource
                             TextInput::make('updated_at')->label('Updated At')->disabled(),
 
                         ]),
-                        Section::make('Order items')
+                        Section::make(trans("orders"))
+                        ->label(trans("orders"))
                             ->headerActions([
                                 Action::make('reset')
                                     ->modalHeading('Are you sure?')
@@ -82,16 +83,17 @@ class OrderResource extends Resource
                                 TextInput::make('last_name')->label(trans("last_name")),
                                 TextInput::make('phone')->label(trans("phone")),
                                 TextInput::make('email')->label(trans("email")),
-                                TextInput::make('location')->label(trans("url")),
+                                TextInput::make('location')->label(trans("adress")),
                                 TextInput::make('region')->label(trans("region")),
                                 TextInput::make('district')->label(trans("district")),
                             ])->disabled(),
                         Group::make()
                             ->schema([
-                                Section::make("Qo'shimcha")
+                                Section::make(trans("additional"))
+                                ->label(trans("additional"))
                                     ->schema([
-                                        TextInput::make('delivery_time')->label("Yetkazib berish vaqti"),
-                                        TextInput::make('kg')->label("Kargo og'irligi"),
+                                        TextInput::make('delivery_time')->label(trans("delivery_time")),
+                                        TextInput::make('kg')->label(trans("cargo_weight")),
                                     ]),
                             ]),
                         Select::make('status')
@@ -177,7 +179,7 @@ class OrderResource extends Resource
                 TextInput::make('size')->label(trans("sizes"))->columnSpan([
                     'md' => 3,
                 ]),
-                FileUpload::make('image_url')->disk('public')->columnSpan([
+                FileUpload::make('image_url')->label(trans("image"))->disk('public')->columnSpan([
                     'lg' => 3,
                 ]),
                 TextInput::make('title')->label(trans("name"))->columnSpan([
@@ -192,7 +194,7 @@ class OrderResource extends Resource
                         'md' => 2,
                     ])
                     ->required(),
-                TextInput::make('provider')->columnSpan([
+                TextInput::make('provider')->label(trans("provider"))->columnSpan([
                     'md' => 2,
                 ]),
 

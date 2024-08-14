@@ -68,5 +68,21 @@
     "currency": "Валюта",
     "home_page": "Товары для главной страницы",
     "taobao_categories": "Категории Тао-Бао",
-    "order_groups": "Группы заказов"
+    "order_groups": "Группы заказов",
+    "taobao_sub_categories": "Тао-Бао Подкатегория",
+    "category": "Категория",
+    "sub_category_uz": "Подкатегория узб",
+    "sub_category_en": "Подкатегория англ",
+    "sub_category_ru": "Подкатегория рус",
+    "updated_at": "Время обновления",
+    "is_show": "Показать",
+    "search": "Поиск",
+    "is_paid": "Оплачено",
+    "taobao_sub_categories_name": "Тао-Бао Основная Подкатегория",
+    "hint": "Ключевое слово",
+    "hints": "Ключевые слова",
+    "delivery_time": "Время доставки",
+    "cargo_weight": "Вес груза",
+    "additional": "Дополнительно",
+    "provider": "Поставщик"
 }
