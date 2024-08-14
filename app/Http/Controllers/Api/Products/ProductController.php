@@ -745,18 +745,19 @@ class ProductController extends Controller
 
         // Build the API URL
         $apiUrl = $imageUrl
-            ? "https://api-gw.onebound.cn/$provider/item_search_img/?key=t3832825558&&imgid=$imageUrl&lang=$lang&page=$page&page_size=$productsCount&secret=20240731"
-            : "https://api-gw.onebound.cn/$provider/item_search/?key=t3832825558&&q=" . ($subcategory ? $subcategory : $value) . "&page=$page&page_size=$productsCount&lang=$lang&secret=20240731";
-        // return $apiUrl;
+            ? "https://api-gw.onebound.cn/$provider/item_search_img/?key=t3832825558&imgid=$imageUrl&lang=$lang&page=$page&page_size=$productsCount&secret=20240731"
+            : "https://api-gw.onebound.cn/$provider/item_search/?key=t3832825558&q=" . ($subcategory ? $subcategory : $value) . "&page=$page&page_size=$productsCount&lang=$lang&secret=20240731";
+
         // Make the API call
         $response = Http::get($apiUrl);
         $products = $response->json();
+
         // Extract the product data
         if (empty($products['items']['item'])) {
             return response()->json(['error' => 'product_not_found'], 404);
         }
+
         $productData = $products['items']['item'];
-        return $productData;
 
         // Return the final response
         return $this->respondWithSuccess([
