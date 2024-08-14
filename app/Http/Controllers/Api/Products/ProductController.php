@@ -754,7 +754,7 @@ class ProductController extends Controller
 
         // Extract the product data
         if (empty($products['items']['item'])) {
-            return response()->json(['error' => 'product_not_found'], 404);
+            return response()->json($products, 404);
         }
 
         $productData = $products['items']['item'];
