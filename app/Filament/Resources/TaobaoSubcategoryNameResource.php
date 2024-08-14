@@ -21,6 +21,10 @@ class TaobaoSubcategoryNameResource extends Resource
 {
     protected static ?string $navigationGroup = "Taobao";
 
+    protected static ?string $label = "taobao_sub_categories_name";
+
+    protected static ?string $navigationLabel = "taobao_sub_categories_name";
+
     protected static ?string $model = TaobaoSubcategoryName::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
@@ -31,13 +35,13 @@ class TaobaoSubcategoryNameResource extends Resource
             ->schema([
                 Select::make('taobao_category_id')
                     ->relationship('category', 'name_en')
-                    ->label('Category')
+                    ->label(trans("category"))
                     ->required(),
-                Toggle::make('is_active')->label('Is Active'),
-                TextInput::make('unique')->label('Search'),
-                TextInput::make('subcategory_name_uz')->label('Subcategory Name (UZ)')->nullable(),
-                TextInput::make('subcategory_name_en')->label('Subcategory Name (EN)')->nullable(),
-                TextInput::make('subcategory_name_ru')->label('Subcategory Name (RU)')->nullable(),
+                Toggle::make('is_active')->label(trans("is_active")),
+                TextInput::make('unique')->label(trans("search")),
+                TextInput::make('subcategory_name_uz')->label(trans("sub_category_uz_name"))->nullable(),
+                TextInput::make('subcategory_name_en')->label(trans("sub_category_en_name"))->nullable(),
+                TextInput::make('subcategory_name_ru')->label(trans("sub_category_ru_name"))->nullable(),
             ]);
     }
 
@@ -45,14 +49,14 @@ class TaobaoSubcategoryNameResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('category.name_en')->label('Category'),
-                ToggleColumn::make('is_active')->label('Is Active'),
-                Tables\Columns\TextColumn::make('subcategory_name_uz')->label('Subcategory Name (UZ)'),
-                Tables\Columns\TextColumn::make('subcategory_name_en')->label('Subcategory Name (EN)'),
-                Tables\Columns\TextColumn::make('subcategory_name_ru')->label('Subcategory Name (RU)'),
-                Tables\Columns\TextColumn::make('unique')->label('Search'),
-                Tables\Columns\TextColumn::make('created_at')->label('Created At')->dateTime(),
-                Tables\Columns\TextColumn::make('updated_at')->label('Updated At')->dateTime(),
+                Tables\Columns\TextColumn::make('category.name_en')->label(trans("category")),
+                ToggleColumn::make('is_active')->label(trans("is_active")),
+                Tables\Columns\TextColumn::make('subcategory_name_uz')->label(trans("sub_category_uz_name")),
+                Tables\Columns\TextColumn::make('subcategory_name_en')->label(trans("sub_category_en_name")),
+                Tables\Columns\TextColumn::make('subcategory_name_ru')->label(trans("sub_category_ru_name")),
+                Tables\Columns\TextColumn::make('unique')->label(trans("search")),
+                Tables\Columns\TextColumn::make('created_at')->label(trans("created_at"))->dateTime(),
+                Tables\Columns\TextColumn::make('updated_at')->label(trans("updated_at"))->dateTime(),
             ])
             ->filters([
                 //
@@ -66,5 +70,15 @@ class TaobaoSubcategoryNameResource extends Resource
             'create' => Pages\CreateTaobaoSubcategoryName::route('/create'),
             'edit' => Pages\EditTaobaoSubcategoryName::route('/{record}/edit'),
         ];
+    }
+
+    public static function getLabel(): string
+    {
+        return trans('taobao_sub_categories_name');
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return trans('taobao_sub_categories_name');
     }
 }

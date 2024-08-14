@@ -94,6 +94,7 @@ class OrderGroupRelationManager extends RelationManager
             ->actions([
                 Tables\Actions\Action::make('openOrder')
                     ->tooltip('Open order')
+                    ->label(trans("open"))
                     ->icon('heroicon-m-arrow-top-right-on-square')
                     ->url(fn($record) => route('filament.admin.resources.orders.edit', $record->id), shouldOpenInNewTab: true)
                     ->hidden(fn($record) => !$record->id),
