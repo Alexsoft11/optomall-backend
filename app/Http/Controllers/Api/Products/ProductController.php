@@ -755,18 +755,9 @@ class ProductController extends Controller
         if (empty($products['data']['items']['item'])) {
             return response()->json(['error' => 'product_not_found'], 404);
         }
-<<<<<<< HEAD
         $productData = $products['data']['items']['item'];
-=======
-<<<<<<< HEAD
-        $productData = $products['items']['item'];
->>>>>>> 79acf19 (s)
         return $productData;
 
-=======
-        $productData = $products['data']['items']['item'];
-        
->>>>>>> 4839a0d (hello)
         // Return the final response
         return $this->respondWithSuccess([
             'products' => ProductResource::collection($productData)
@@ -854,16 +845,8 @@ class ProductController extends Controller
         if (empty($products['data']['items']['item'])) {
             return response()->json(['error' => 'product_not_found'], 404);
         }
-<<<<<<< HEAD
         $productData = $products['data']['items']['item'];
-=======
-<<<<<<< HEAD
-        $productData = $products['items']['item'];
->>>>>>> 79acf19 (s)
         return $productData;
-=======
-        $productData = $products['data']['items']['item'];
->>>>>>> 4839a0d (hello)
 
         // Return the final response
         return $this->respondWithSuccess([
