@@ -23,6 +23,10 @@ class TaobaoSubcategoryResource extends Resource
 {
     protected static ?string $navigationGroup = "Taobao";
 
+    protected static ?string $label = "taobao_sub_categories";
+
+    protected static ?string $navigationLabel = "taobao_sub_categories";
+
     protected static ?string $model = TaobaoSubcategory::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
@@ -33,19 +37,19 @@ class TaobaoSubcategoryResource extends Resource
             ->schema([
                 Select::make('taobao_subcategory_name_id')
                     ->relationship('subcategoryName', 'subcategory_name_en')
-                    ->label('Subcategory Name')
+                    ->label(trans("name"))
                     ->required(),
-                Toggle::make('is_show')->label('Is Active'),
-                TextInput::make('subcategory_uz')->label('Subcategory (UZ)')->nullable(),
-                TextInput::make('subcategory_en')->label('Subcategory (EN)')->nullable(),
-                TextInput::make('subcategory_ru')->label('Subcategory (RU)')->nullable(),
-                TextInput::make('unique')->label('Search')->nullable(),
+                Toggle::make('is_show')->label(trans("is_active")),
+                TextInput::make('subcategory_uz')->label(trans("sub_category_uz"))->nullable(),
+                TextInput::make('subcategory_en')->label(trans("sub_category_en"))->nullable(),
+                TextInput::make('subcategory_ru')->label(trans("sub_category_ru"))->nullable(),
+                TextInput::make('unique')->label(trans("search"))->nullable(),
                 Repeater::make('hints')
-                    ->relationship('hints') // Ensure this matches the relationship name in the model
+                    ->relationship('hints')
+                    ->label(trans("hints")) 
                     ->schema([
-                        TextInput::make('name')->required()->label('Hint name'),
+                        TextInput::make('name')->required()->label(trans("hint")),
                     ])
-                    ->label('Hints')
                     ->collapsible(),
             ]);
     }
@@ -54,14 +58,14 @@ class TaobaoSubcategoryResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('subcategoryName.subcategory_name_en')->label('Subcategory Name'),
-                ToggleColumn::make('is_show')->label('Is show'),
-                Tables\Columns\TextColumn::make('subcategory_uz')->label('Subcategory (UZ)'),
-                Tables\Columns\TextColumn::make('subcategory_en')->label('Subcategory (EN)'),
-                Tables\Columns\TextColumn::make('subcategory_ru')->label('Subcategory (RU)'),
-                TextColumn::make('unique')->label('Search'),
-                Tables\Columns\TextColumn::make('created_at')->label('Created At')->dateTime(),
-                Tables\Columns\TextColumn::make('updated_at')->label('Updated At')->dateTime(),
+                Tables\Columns\TextColumn::make('subcategoryName.subcategory_name_en')->label(trans("name")),
+                ToggleColumn::make('is_show')->label(trans("is_show")),
+                Tables\Columns\TextColumn::make('subcategory_uz')->label(trans("sub_category_uz")),
+                Tables\Columns\TextColumn::make('subcategory_en')->label(trans("sub_category_en")),
+                Tables\Columns\TextColumn::make('subcategory_ru')->label(trans("sub_category_ru")),
+                TextColumn::make('unique')->label(trans("search")),
+                Tables\Columns\TextColumn::make('created_at')->label(trans("created_at"))->dateTime(),
+                Tables\Columns\TextColumn::make('updated_at')->label(trans("updated_at"))->dateTime(),
             ])
             ->filters([
                 //
@@ -75,5 +79,15 @@ class TaobaoSubcategoryResource extends Resource
             'create' => Pages\CreateTaobaoSubcategory::route('/create'),
             'edit' => Pages\EditTaobaoSubcategory::route('/{record}/edit'),
         ];
+    }
+
+    public static function getLabel(): string
+    {
+        return trans('taobao_sub_categories');
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return trans('taobao_sub_categories');
     }
 }

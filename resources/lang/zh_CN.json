@@ -68,5 +68,22 @@
     "currency": "货币",
     "home_page": "主页商品",
     "taobao_categories": "淘宝分类",
-    "order_groups": "订单组"
+    "order_groups": "订单组",
+    "taobao_sub_categories": "淘宝子分类",
+    "category": "分类",
+    "sub_category_uz": "子分类 乌兹别克语",
+    "sub_category_en": "子分类 英语",
+    "sub_category_ru": "子分类 俄语",
+    "updated_at": "更新时间",
+    "is_show": "显示",
+    "search": "搜索",
+    "is_paid": "已支付",
+    "taobao_sub_categories_name": "淘宝主要子分类",
+    "hint": "关键词",
+    "hints": "关键词",
+    "delivery_time": "交货时间",
+    "cargo_weight": "货物重量",
+    "additional": "额外的",
+    "provider": "服务提供商"
+
 }
