@@ -55,12 +55,12 @@ class OrderResource extends Resource
                         Fieldset::make('Foydalanuvchi')->relationship('user')
                             ->schema([
                                 TextInput::make('unique_id')->label('Id'),
-                                TextInput::make('name')->label('Ism'),
+                                TextInput::make('name')->label(trans("ism")),
                             ])->disabled(),
                         Fieldset::make('Buyurtma')->schema([
-                            TextInput::make('unique_id')->label('Buyurtma IDsi')->disabled(),
-                            TextInput::make('total_price')->label('Jami narxi')->disabled(),
-                            TextInput::make('created_at')->label('Created At')->disabled(),
+                            TextInput::make('unique_id')->label(trans("order_id"))->disabled(),
+                            TextInput::make('total_price')->label(trans("total_amount"))->disabled(),
+                            TextInput::make('created_at')->label(trans("created_at"))->disabled(),
                             TextInput::make('updated_at')->label('Updated At')->disabled(),
 
                         ]),
@@ -79,12 +79,12 @@ class OrderResource extends Resource
                             ->disabled(),
                         Fieldset::make('Foydalanuvchi')->relationship('user')
                             ->schema([
-                                TextInput::make('last_name')->label('Familiyasi'),
-                                TextInput::make('phone')->label('Telefon raqami'),
-                                TextInput::make('email')->label('Pochta'),
-                                TextInput::make('location')->label('Manzil linki'),
-                                TextInput::make('region')->label('Viloyat'),
-                                TextInput::make('district')->label('Tuman'),
+                                TextInput::make('last_name')->label(trans("last_name")),
+                                TextInput::make('phone')->label(trans("phone")),
+                                TextInput::make('email')->label(trans("email")),
+                                TextInput::make('location')->label(trans("url")),
+                                TextInput::make('region')->label(trans("region")),
+                                TextInput::make('district')->label(trans("district")),
                             ])->disabled(),
                         Group::make()
                             ->schema([
@@ -95,7 +95,7 @@ class OrderResource extends Resource
                                     ]),
                             ]),
                         Select::make('status')
-                            ->label('Status')
+                            ->label(trans("status"))
                             ->options(OrderStatus::whereNotNull('name_uz')->pluck('name_uz', 'id'))
                             ->reactive(),
                         Toggle::make('is_paid'),
@@ -103,7 +103,7 @@ class OrderResource extends Resource
                 Section::make()
                     ->schema([
                         Forms\Components\Placeholder::make('created_at')
-                            ->label('Created at')
+                            ->label(trans("created_at"))
                             ->content(fn(Order $record): ?string => $record->created_at?->diffForHumans()),
 
                         Forms\Components\Placeholder::make('updated_at')
@@ -162,7 +162,7 @@ class OrderResource extends Resource
             ->relationship()
             ->schema([
                 TextInput::make('price')
-                    ->label('Unit Price')
+                    ->label(trans("price"))
                     ->disabled()
                     ->dehydrated()
                     ->numeric()
@@ -171,21 +171,21 @@ class OrderResource extends Resource
                         'md' => 3,
                     ]),
 
-                TextInput::make('color')->label('Rang')->columnSpan([
+                TextInput::make('color')->label(trans("colors"))->columnSpan([
                     'md' => 3,
                 ]),
-                TextInput::make('size')->label("O'lcham")->columnSpan([
+                TextInput::make('size')->label(trans("sizes"))->columnSpan([
                     'md' => 3,
                 ]),
                 FileUpload::make('image_url')->disk('public')->columnSpan([
                     'lg' => 3,
                 ]),
-                TextInput::make('title')->columnSpan([
+                TextInput::make('title')->label(trans("name"))->columnSpan([
                     'md' => 4,
                 ]),
 
                 TextInput::make('quantity')
-                    ->label('Quantity')
+                    ->label(trans("quantity"))
                     ->numeric()
                     ->default(1)
                     ->columnSpan([
