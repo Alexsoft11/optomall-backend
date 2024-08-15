@@ -890,8 +890,12 @@ class ProductController extends Controller
      */
     public function imageSearch(Request $request)
     {
+        $fileSize = $request->file('image')->getSize(); // size in bytes
+        $fileSizeInMB = $fileSize / 1024 / 1024; // convert bytes to MB
+        \Log::info("Uploaded file size: {$fileSizeInMB} MB");
+
         $validator = Validator::make($request->all(), [
-            'image' => 'required|image|max:10000',
+            'image' => 'required|image|max:10240', // 10240 KB = 10 MB
         ]);
 
         if ($validator->fails()) {
