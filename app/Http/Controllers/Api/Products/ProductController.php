@@ -745,8 +745,8 @@ class ProductController extends Controller
 
         // Build the API URL
         $apiUrl = $imageUrl
-            ? "https://api-gw.onebound.cn/$provider/item_search_img/?key=t3832825558&imgid=$imageUrl&cache=no&&lang=$lang&page=$page&page_size=$productsCount&secret=20240731"
-            : "https://api-gw.onebound.cn/$provider/item_search/?key=t3832825558&q=" . ($subcategory ? $subcategory : $value) . "&page=$page&page_size=$productsCount&cache=no&&lang=$lang&secret=20240731";
+            ? "https://api-gw.onebound.cn/$provider/item_search_img/?key=t3832825558&imgid=$imageUrl&cache=no&&lang=en&page=$page&page_size=$productsCount&secret=20240731"
+            : "https://api-gw.onebound.cn/$provider/item_search/?key=t3832825558&q=" . ($subcategory ? $subcategory : $value) . "&page=$page&page_size=$productsCount&cache=no&&lang=en&secret=20240731";
         // return $apiUrl;
         // Make the API call
         $response = Http::get($apiUrl);
