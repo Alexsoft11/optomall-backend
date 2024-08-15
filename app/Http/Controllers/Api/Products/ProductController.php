@@ -753,7 +753,7 @@ class ProductController extends Controller
         $products = $response->json();
         // Extract the product data
         if (empty($products['data']['items']['item'])) {
-            return response()->json(['error' => 'product_not_found'], 404);
+            return response()->json(['error' => 'product_not_found', $products], 404);
         }
         $productData = $products['data']['items']['item'];
         return $productData;
@@ -843,10 +843,10 @@ class ProductController extends Controller
         $products = $response->json();
         // Extract the product data
         if (empty($products['data']['items']['item'])) {
-            return response()->json(['error' => 'product_not_found'], 404);
+            return response()->json(['error' => 'product_not_found', $products], 404);
         }
         $productData = $products['data']['items']['item'];
-        return $productData;
+        // return $productData;
 
         // Return the final response
         return $this->respondWithSuccess([
