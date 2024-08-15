@@ -16,6 +16,13 @@ class OrderResource extends JsonResource
     public function toArray($request)
     {
         $items = $this->items->map(function ($item) {
+            $properties = $item->properties->map(function ($property) {
+                return [
+                    'id' => $property->id,
+                    'name' => $property->name,
+                    'value' => $property->value,
+                ];
+            });
             return [
                 'id' => $item->id,
                 'product_id' => $item->product_id,
@@ -23,10 +30,9 @@ class OrderResource extends JsonResource
                 'title' => $item->title,
                 'price' => $item->price,
                 'quantity' => $item->quantity,
-                'color' => $item->color,
-                'size' => $item->size,
                 'provider' => $item->provider,
                 'image_url' => url('storage/' . $item->image_url),
+                'properties' => $properties,
             ];
         });
 

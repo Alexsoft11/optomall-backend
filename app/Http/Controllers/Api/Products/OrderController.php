@@ -18,6 +18,7 @@ use App\Models\OrderGroup;
 use App\Models\OrderItem;
 use App\Models\OrderStatus;
 use App\Models\Product;
+use App\Models\Properties;
 use GuzzleHttp\Client;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -49,19 +50,22 @@ class OrderController extends Controller
      *         required=true,
      *         description="Order details",
      *         @OA\JsonContent(
-     *             required={"items", "total_price", "provider"},
+     *             required={"items", "total_price"},
      *             @OA\Property(property="items", type="array", @OA\Items(
      *                 @OA\Property(property="product_id", type="string", example="1"),
      *                 @OA\Property(property="title", type="string", example="title"),
      *                 @OA\Property(property="image_url", type="string", example="url"),
      *                 @OA\Property(property="quantity", type="integer", example="2"),
-     *                 @OA\Property(property="color", type="string", example="black"),
-     *                 @OA\Property(property="size", type="string", example="xl"),
      *                 @OA\Property(property="price", type="number", example="4.99"),
      *                 @OA\Property(property="seller_id", type="string", example="2"),
      *                 @OA\Property(property="provider", type="string", example="taobao"),
      *                 @OA\Property(property="sku_id", type="string", example="SKU1234567890"),
      *                 @OA\Property(property="product_url", type="string", example="url"),
+     *                 @OA\Property(property="properties", type="array", @OA\Items(
+     *                     @OA\Property(property="id", type="string", example="1"),
+     *                     @OA\Property(property="name", type="string", example="name"),
+     *                     @OA\Property(property="value", type="string", example="value")
+     *                 )),
      *             )),
      *             @OA\Property(property="total_price", type="number", example="50.99")
      *         )
@@ -72,10 +76,7 @@ class OrderController extends Controller
      *         @OA\JsonContent(
      *             type="object",
      *             @OA\Property(property="message", type="string", example="Order created successfully"),
-     *             @OA\Property(property="orders", type="array", @OA\Items(
-     *                 @OA\Property(property="order_id", type="integer", example="1"),
-     *                 @OA\Property(property="seller_id", type="string", example="2")
-     *             ))
+     *             @OA\Property(property="order_group", type="integer", example="1")
      *         )
      *     ),
      *     @OA\Response(
@@ -92,23 +93,19 @@ class OrderController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'items' => 'required|array',
-            // 'userData' => 'required|array',
-            // 'location' => 'required|array',
-            // 'userData.name' => 'required|string',
-            // 'userData.phone' => 'required|string',
-            // 'location.region' => 'required|string',
-            // 'location.district' => 'required|string',
             'items.*.product_id' => 'required|string',
             'items.*.title' => 'required|string',
             'items.*.image_url' => 'required|url',
             'items.*.quantity' => 'required|integer|min:1',
-            'items.*.color' => 'required|string',
-            'items.*.size' => 'required|string',
             'items.*.price' => 'required|numeric|min:0',
             'items.*.seller_id' => 'nullable|string',
             'items.*.provider' => 'nullable|string',
             'items.*.sku_id' => 'required|string',
             'items.*.product_url' => 'nullable|string',
+            'items.*.properties' => 'required|array',
+            'items.*.properties.*.id' => 'required|string',
+            'items.*.properties.*.name' => 'required|string',
+            'items.*.properties.*.value' => 'required|string',
             'total_price' => 'nullable|numeric|min:0',
         ]);
 
@@ -152,21 +149,28 @@ class OrderController extends Controller
                 ]);
 
                 foreach ($items as $item) {
-                    $imagePath = $this->saveOrderItemImage($client, $item['image_url']);
+                    // $imagePath = $this->saveOrderItemImage($client, $item['image_url']);
 
-                    OrderItem::create([
+                    $orderItem =  OrderItem::create([
                         'order_id' => $order->id,
                         'product_id' => $item['product_id'],
                         'title' => $item['title'],
                         'provider' => $item['provider'],
-                        'image_url' => $imagePath,
+                        'image_url' => $item['image_url'],
                         'quantity' => $item['quantity'],
                         'price' => $item['price'],
-                        'color' => $item['color'],
-                        'size' => $item['size'],
                         'product_url' => $item['product_url'],
                         'skuId' => $item['sku_id'],
                     ]);
+
+                    foreach ($item['properties'] as $property) {
+                        Properties::create([
+                            "property_id" => $property['id'],
+                            "name" => $property['name'],
+                            "value" => $property['value'],
+                            "order_item_id" => $orderItem->id,
+                        ]);
+                    }
 
                     $this->removeBasket($user->id, $item['sku_id']);
                 }
@@ -175,9 +179,6 @@ class OrderController extends Controller
             }
         });
 
-        // $orderIds = $orders->pluck('id');
-        // $basket = Basket::where('user_id', auth()->user()->id)->get();
-        // return $basket;
         return response()->json(['message' => 'order_created_successfully', 'order_group' => $orderGroup->id], 201);
     }
 
@@ -524,19 +525,22 @@ class OrderController extends Controller
      *         @OA\JsonContent(
      *             type="array",
      *             @OA\Items(
-     *                 required={"product_id", "title", "price", "color", "quantity", "max_quantity", "size", "image_url", "seller_id", "provider", "skuId"},
+     *                 required={"product_id", "title", "price", "quantity", "max_quantity", "image_url", "seller_id", "provider", "sku_id", "properties"},
      *                 @OA\Property(property="product_id", type="string", example="1"),
      *                 @OA\Property(property="title", type="string", example="Product Title"),
      *                 @OA\Property(property="price", type="number", format="float", example="29.99"),
-     *                 @OA\Property(property="color", type="string", example="red"),
      *                 @OA\Property(property="quantity", type="integer", example="2"),
      *                 @OA\Property(property="max_quantity", type="integer", example="5"),
-     *                 @OA\Property(property="size", type="string", example="L"),
      *                 @OA\Property(property="image_url", type="string", example="http://example.com/image.jpg"),
      *                 @OA\Property(property="product_url", type="string", example="http://example.com/image.jpg"),
      *                 @OA\Property(property="seller_id", type="string", example="22"),
      *                 @OA\Property(property="provider", type="string", example="taobao"),
      *                 @OA\Property(property="sku_id", type="string", example="SKU12345"),
+     *                 @OA\Property(property="properties", type="array", @OA\Items(
+     *                     @OA\Property(property="id", type="string", example="1"),
+     *                     @OA\Property(property="name", type="string", example="Color"),
+     *                     @OA\Property(property="value", type="string", example="Red")
+     *                 )),
      *             ),
      *         ),
      *     ),
@@ -557,15 +561,17 @@ class OrderController extends Controller
             '*.product_id' => 'required|string',
             '*.title' => 'required|string',
             '*.price' => 'required|numeric',
-            '*.color' => 'required|string',
             '*.quantity' => 'required|integer|min:1',
             '*.max_quantity' => 'required|integer|min:1',
-            '*.size' => 'required|string',
             '*.image_url' => 'required|string',
             '*.product_url' => 'required|string',
             '*.seller_id' => 'required|string',
             '*.provider' => 'required|string',
             '*.sku_id' => 'required|string',
+            '*.properties' => 'nullable|array',
+            '*.properties.*.id' => 'required_with:properties|string',
+            '*.properties.*.name' => 'required_with:properties|string',
+            '*.properties.*.value' => 'required_with:properties|string',
         ]);
 
         if ($validator->fails()) {
@@ -574,27 +580,39 @@ class OrderController extends Controller
 
         $baskets = [];
         foreach ($request->all() as $item) {
-            BasketItem::create([
+            // Create the basket item
+            $basketItem = BasketItem::create([
                 'product_id' => $item['product_id'],
                 'user_id' => auth()->user()->id,
                 'title' => $item['title'],
-                'basket_id' => 0,
+                'basket_id' => 0, // Adjust as needed
                 'price' => $item['price'],
-                'color' => $item['color'],
                 'quantity' => $item['quantity'],
                 'max_quantity' => $item['max_quantity'],
-                'size' => $item['size'],
                 'image_url' => $item['image_url'],
                 'product_url' => $item['product_url'],
                 'seller_id' => $item['seller_id'],
                 'provider' => $item['provider'],
                 'skuId' => $item['sku_id'],
             ]);
+
+            // Save the properties
+            if (isset($item['properties']) && is_array($item['properties'])) {
+                foreach ($item['properties'] as $property) {
+                    Properties::create([
+                        'basket_item_id' => $basketItem->id,
+                        'property_id' => $property['id'],
+                        'name' => $property['name'],
+                        'value' => $property['value'],
+                    ]);
+                }
+            }
+
+            $baskets[] = $basketItem;
         }
 
         return response()->json(['message' => 'Products added to baskets', 'baskets' => $baskets], 201);
     }
-
 
     /**
      * @OA\Get(

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class OrderItem extends Model
 {
@@ -17,8 +18,6 @@ class OrderItem extends Model
         'image_url',
         'quantity',
         'price',
-        'color',
-        'size',
         'skuId',
         'provider',
     ];
@@ -31,5 +30,10 @@ class OrderItem extends Model
     public function product()
     {
         return $this->belongsTo(Product::class);
+    }
+
+    public function properties(): HasMany
+    {
+        return $this->hasMany(Properties::class);
     }
 }

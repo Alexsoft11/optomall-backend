@@ -87,5 +87,6 @@
     "delivery_time": "Yetkazib berish vaqti",
     "cargo_weight": "Kargo og'irligi",
     "additional": "Qo'shimcha",
-    "provider": "Xizmat ko'rsatuvchi"
+    "provider": "Xizmat ko'rsatuvchi",
+    "properties": "Xususiyatlar"
 }

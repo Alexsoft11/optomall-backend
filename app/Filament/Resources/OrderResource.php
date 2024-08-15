@@ -26,6 +26,7 @@ use Filament\Tables;
 use Filament\Tables\Columns\ColorColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\App;
 
 class OrderResource extends Resource
 {
@@ -65,7 +66,7 @@ class OrderResource extends Resource
 
                         ]),
                         Section::make(trans("orders"))
-                        ->label(trans("orders"))
+                            ->label(trans("orders"))
                             ->headerActions([
                                 Action::make('reset')
                                     ->modalHeading('Are you sure?')
@@ -90,7 +91,7 @@ class OrderResource extends Resource
                         Group::make()
                             ->schema([
                                 Section::make(trans("additional"))
-                                ->label(trans("additional"))
+                                    ->label(trans("additional"))
                                     ->schema([
                                         TextInput::make('delivery_time')->label(trans("delivery_time")),
                                         TextInput::make('kg')->label(trans("cargo_weight")),
@@ -160,66 +161,85 @@ class OrderResource extends Resource
 
     public static function getItemsRepeater(): Repeater
     {
+        $locale = App::getLocale();
+        // dd($locale);
         return Repeater::make('items')
             ->relationship()
             ->schema([
-                TextInput::make('price')
-                    ->label(trans("price"))
-                    ->disabled()
-                    ->dehydrated()
-                    ->numeric()
-                    ->required()
-                    ->columnSpan([
-                        'md' => 3,
-                    ]),
+                // First Column: Image
+                Forms\Components\View::make('image_url')
+                    ->columnSpan(4)
+                    ->label('Image Preview')
+                    ->view('filament.components.image'),
 
-                TextInput::make('color')->label(trans("colors"))->columnSpan([
-                    'md' => 3,
-                ]),
-                TextInput::make('size')->label(trans("sizes"))->columnSpan([
-                    'md' => 3,
-                ]),
-                FileUpload::make('image_url')->label(trans("image"))->disk('public')->columnSpan([
-                    'lg' => 3,
-                ]),
-                TextInput::make('title')->label(trans("name"))->columnSpan([
-                    'md' => 4,
-                ]),
+                // Second Column: Other Fields
+                Group::make()
+                    ->schema([
+                        TextInput::make('title')
+                            ->label(trans("Name"))
+                            ->placeholder('Product title')
+                            ->required()
+                            ->columnSpan(12),
 
-                TextInput::make('quantity')
-                    ->label(trans("quantity"))
-                    ->numeric()
-                    ->default(1)
-                    ->columnSpan([
-                        'md' => 2,
+                        TextInput::make('price')
+                            ->label(trans("Price"))
+                            ->numeric()
+                            ->placeholder('Enter price')
+                            ->disabled()
+                            ->required()
+                            ->columnSpan(6),
+
+                        TextInput::make('quantity')
+                            ->label(trans("Quantity"))
+                            ->numeric()
+                            ->default(1)
+                            ->placeholder('Enter quantity')
+                            ->required()
+                            ->columnSpan(6),
+
+                        TextInput::make('provider')
+                            ->label(trans("Provider"))
+                            ->placeholder('Provider name')
+                            ->columnSpan(12),
+
+                        // Properties
+                        Repeater::make('properties')
+                            ->relationship()
+                            ->label(trans("properties"))
+                            ->schema([
+                                TextInput::make('name')
+                                    ->label(trans("name"))
+                                    ->required()
+                                    ->columnSpan(6),
+
+                                TextInput::make('value')
+                                    ->label(trans("value"))
+                                    ->required()
+                                    ->columnSpan(6),
+                            ])
+                            ->columns(12)
+                            ->columnSpan(12),
                     ])
-                    ->required(),
-                TextInput::make('provider')->label(trans("provider"))->columnSpan([
-                    'md' => 2,
-                ]),
-
-
+                    ->columnSpan(8),
             ])
-            ->extraItemActions([
-                Action::make('openProduct')
-                    ->tooltip('Open product')
-                    ->icon('heroicon-m-arrow-top-right-on-square')
-                    ->url(function (array $arguments, Repeater $component): ?string {
-                        $itemData = $component->getRawItemState($arguments['item']);
-
-                        // Ensure product_url exists
-                        if (empty($itemData['product_url'])) {
-                            return null;
-                        }
-
-                        return $itemData['product_url'] . '&skuId=' . $itemData['skuId'];
-                    }, shouldOpenInNewTab: true)
-                    ->hidden(fn(array $arguments, Repeater $component): bool => blank($component->getRawItemState($arguments['item'])['id'])),
+            ->columns([
+                'md' => 12, // Make sure the total columns span adds up to 12 for consistency
             ])
             ->defaultItems(1)
             ->hiddenLabel()
-            ->columns([
-                'md' => 10,
+            ->extraItemActions([
+                Action::make('openProduct')
+                    ->tooltip('Open product')
+                    // ->icon('heroicon-o-external-link')
+                    ->url(
+                        fn(array $arguments, Repeater $component): ?string =>
+                        $component->getRawItemState($arguments['item'])['product_url'] ?? null,
+                        shouldOpenInNewTab: true
+                    )
+                    ->hidden(
+                        fn(array $arguments, Repeater $component): bool =>
+                        blank($component->getRawItemState($arguments['item'])['id'])
+                    ),
             ])
             ->required();
     }

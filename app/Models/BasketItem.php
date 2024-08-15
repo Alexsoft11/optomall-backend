@@ -11,10 +11,8 @@ class BasketItem extends Model
     protected $fillable = [
         'title',
         'price',
-        'color',
         'quantity',
         'max_quantity',
-        'size',
         'image_url',
         'product_id',
         'seller_id',
@@ -33,5 +31,10 @@ class BasketItem extends Model
     public function basket(): BelongsTo
     {
         return $this->belongsTo(Basket::class, 'basket_id');
+    }
+
+    public function properties(): HasMany
+    {
+        return $this->hasMany(Properties::class);
     }
 }
