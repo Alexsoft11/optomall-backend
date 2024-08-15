@@ -901,6 +901,7 @@ class ProductController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'error' => true,
+                'mb' => $fileSizeInMB,
                 'messages' => 'image_file_max_size_exceeded',
             ], 400);
         }
