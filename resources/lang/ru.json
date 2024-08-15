@@ -84,5 +84,6 @@
     "delivery_time": "Время доставки",
     "cargo_weight": "Вес груза",
     "additional": "Дополнительно",
-    "provider": "Поставщик"
+    "provider": "Поставщик",
+    "properties": "Xарактеристики"
 }

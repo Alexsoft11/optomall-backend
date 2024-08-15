@@ -84,6 +84,6 @@
     "delivery_time": "交货时间",
     "cargo_weight": "货物重量",
     "additional": "额外的",
-    "provider": "服务提供商"
-
+    "provider": "服务提供商",
+    "properties": "特性"
 }

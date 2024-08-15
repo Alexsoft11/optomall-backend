@@ -14,6 +14,13 @@ class BasketResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+         $properties = $this->properties->map(function ($property) {
+                return [
+                    'id' => $property->id,
+                    'name' => $property->name,
+                    'value' => $property->value,
+                ];
+            });
         return [
             'id' => $this->id,
             'title' => $this['title'],
@@ -21,12 +28,11 @@ class BasketResource extends JsonResource
             'image_url' => $this['image_url'],
             'price' => $this['price'],
             'quantity' => $this['quantity'],
-            'size' => $this['size'],
-            'color' => $this['color'],
             'sku_id' => $this['skuId'],
             'provider' => $this['provider'],
             'product_url' => $this['product_url'],
             'seller_id' => $this['seller_id'],
+            'properties' => $properties,
             'user_info' => [
                 'name' => $this['user']['name'],
                 'phone' => $this['user']['phone'],
