@@ -968,7 +968,7 @@ class ProductController extends Controller
         $page = $request->input('page');
         $productsCount = $request->input('productsCount') ?? 10;
         // Retrieve the products based on the query type
-        $products = HomePageProduct::where('type', $query)->get();
+        $products = HomePageProduct::where('type', $query)->inRandomOrder()->get();
 
         // Transform the products into the desired structure
         $transformedProducts = $products->map(function ($product) use ($lang) {
