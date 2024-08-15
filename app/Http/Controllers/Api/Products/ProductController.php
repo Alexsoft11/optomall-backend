@@ -745,17 +745,17 @@ class ProductController extends Controller
 
         // Build the API URL
         $apiUrl = $imageUrl
-            ? "https://kongcrdv.com/$provider/api/export_api.php?action=item_search_img&key=$apiKey&imgid=$imageUrl&lang=en&page=$page&page_size=$productsCount&sort=$sort"
-            : "https://kongcrdv.com/$provider/api/export_api.php?action=item_search&lang=en&key=$apiKey&q=" . ($value ? $value : $subcategory) . "&page=$page&sort=";
+            ? "https://api-gw.onebound.cn/$provider/item_search_img/?key=t3832825558&imgid=$imageUrl&cache=no&&lang=en&page=$page&page_size=$productsCount&secret=20240731"
+            : "https://api-gw.onebound.cn/$provider/item_search/?key=t3832825558&q=" . ($subcategory ? $subcategory : $value) . "&page=$page&page_size=$productsCount&cache=no&&lang=en&secret=20240731";
         // return $apiUrl;
         // Make the API call
         $response = Http::get($apiUrl);
         $products = $response->json();
         // Extract the product data
-        if (empty($products['data']['items']['item'])) {
+        if (empty($products['items']['item'])) {
             return response()->json(['error' => 'product_not_found', $products], 404);
         }
-        $productData = $products['data']['items']['item'];
+        $productData = $products['items']['item'];
         // return $productData;
 
         // Return the final response
