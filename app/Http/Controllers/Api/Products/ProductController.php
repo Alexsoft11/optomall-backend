@@ -890,21 +890,24 @@ class ProductController extends Controller
      */
     public function imageSearch(Request $request)
     {
-        $validator = Validator::make(['image' => $request->file('image')], [
-            'image' => 'required|image|max:6000',
+        $validator = Validator::make($request->all(), [
+            'image' => 'required|image|max:10000',
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['error' => $validator->errors(), 'error' => true], 400);
+            return response()->json([
+                'error' => true,
+                'messages' => $validator->errors()
+            ], 400);
         }
 
         // Store the uploaded image
         $imagePath = $request->file('image')->store('images', 'public');
         $imageUrl = url(Storage::url($imagePath));
 
-        return  [
+        return response()->json([
             'url' => $imageUrl,
-        ];
+        ], 200);
     }
 
 
