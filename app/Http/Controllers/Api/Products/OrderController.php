@@ -569,9 +569,9 @@ class OrderController extends Controller
             '*.provider' => 'required|string',
             '*.sku_id' => 'required|string',
             '*.properties' => 'nullable|array',
-            '*.properties.*.id' => 'required_with:properties|string',
-            '*.properties.*.name' => 'required_with:properties|string',
-            '*.properties.*.value' => 'required_with:properties|string',
+            '*.properties.*.id' => 'required|string',
+            '*.properties.*.name' => 'required|string',
+            '*.properties.*.value' => 'required|string',
         ]);
 
         if ($validator->fails()) {

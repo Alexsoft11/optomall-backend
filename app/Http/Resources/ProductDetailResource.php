@@ -37,7 +37,7 @@ class ProductDetailResource extends JsonResource
             'location' => $this['location'] ?? 'China',
             'product_url' => $this['detail_url'],
             'videos' => $this['video'],
-            'skus' => $this['skus']['sku'],
+            'skus' => $this->transformSkus($this['skus']['sku']),
             'prop_imgs' => $this['prop_imgs']['prop_img'],
             'props_list' => $this['props_list'],
             'composition' => $this['props'],
@@ -67,77 +67,59 @@ class ProductDetailResource extends JsonResource
         })->toArray();
     }
 
-    private function transformSkus($propImgs, $skus)
+    private function transformSkus($skus)
     {
-        $attributes = $this->transformAttributes($propImgs);
-
-        return array_map(function ($sku) use ($attributes) {
-            // return $attributes;
-            $propertyDetails = $this->extractPropertiesDetails($sku['properties_name']);
-            $propertiesArray = [];
-
-            foreach ($propertyDetails as $detail) {
-                $imageUrl = $this->findAttributeUrl($attributes, $detail['propertyFir'] . ":" . $detail['propertySec']);
-                $propertiesArray[] = [
-                    'name' => $detail['name'],
-                    'value' => $detail['value'],
-                    'displayName' => $detail['displayName'],
-                    'displayValue' => $detail['displayValue'],
-                    'imageUrl' => $imageUrl,
-                    'property_id' => $detail['propertyFir'] . ":" . $detail['propertySec'],
-                ];
-            }
-
+        return array_map(function ($sku) {
             return [
                 'quantity' => $sku['quantity'],
                 'sku_id' => $sku['sku_id'],
                 'price' => round($this->addPercentToPrice($sku['price'], $this->amount, $this->percent)),
                 'properties_ids' => $sku['properties'],
-                'properties' => $propertiesArray,
+                'properties' => $sku["properties"],
             ];
         }, $skus);
     }
 
-    private function transformAttributes($attributes)
-    {
-        return array_map(function ($attribute) {
-            return [
-                'properties' => $attribute['properties'],
-                'url' => preg_replace('/^\/\//', 'https://', $attribute['url']),
-            ];
-        }, $attributes);
-    }
+    // private function transformAttributes($attributes)
+    // {
+    //     return array_map(function ($attribute) {
+    //         return [
+    //             'properties' => $attribute['properties'],
+    //             'url' => preg_replace('/^\/\//', 'https://', $attribute['url']),
+    //         ];
+    //     }, $attributes);
+    // }
 
-    private function findAttributeUrl($attributes, $colorId)
-    {
-        // return $colorId;
-        foreach ($attributes as $attribute) {
-            if ($attribute['properties'] == $colorId) {
-                return $attribute['url'];
-            }
-        }
-        return null;
-    }
+    // private function findAttributeUrl($attributes, $colorId)
+    // {
+    //     // return $colorId;
+    //     foreach ($attributes as $attribute) {
+    //         if ($attribute['properties'] == $colorId) {
+    //             return $attribute['url'];
+    //         }
+    //     }
+    //     return null;
+    // }
 
-    private function extractPropertiesDetails($properties_name)
-    {
-        $properties = explode(';', $properties_name);
-        $results = [];
+    // private function extractPropertiesDetails($properties_name)
+    // {
+    //     $properties = explode(';', $properties_name);
+    //     $results = [];
 
-        foreach ($properties as $property) {
-            $parts = explode(':', $property);
-            if (isset($parts[2]) && isset($parts[3])) {
-                $results[] = [
-                    'name' => $parts[2],
-                    'value' => $parts[3],
-                    'propertyFir' => $parts[0],
-                    'propertySec' => $parts[1],
-                    'displayName' => $parts[2],
-                    'displayValue' => $parts[3],
-                ];
-            }
-        }
+    //     foreach ($properties as $property) {
+    //         $parts = explode(':', $property);
+    //         if (isset($parts[2]) && isset($parts[3])) {
+    //             $results[] = [
+    //                 'name' => $parts[2],
+    //                 'value' => $parts[3],
+    //                 'propertyFir' => $parts[0],
+    //                 'propertySec' => $parts[1],
+    //                 'displayName' => $parts[2],
+    //                 'displayValue' => $parts[3],
+    //             ];
+    //         }
+    //     }
 
-        return $results;
-    }
+    //     return $results;
+    // }
 }

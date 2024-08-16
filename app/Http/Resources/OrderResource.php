@@ -18,7 +18,7 @@ class OrderResource extends JsonResource
         $items = $this->items->map(function ($item) {
             $properties = $item->properties->map(function ($property) {
                 return [
-                    'id' => $property->id,
+                    'id' => "$property->id",
                     'name' => $property->name,
                     'value' => $property->value,
                 ];

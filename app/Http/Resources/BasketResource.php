@@ -14,13 +14,13 @@ class BasketResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-         $properties = $this->properties->map(function ($property) {
-                return [
-                    'id' => $property->id,
-                    'name' => $property->name,
-                    'value' => $property->value,
-                ];
-            });
+        $properties = $this->properties->map(function ($property) {
+            return [
+                'id' => "$property->id",
+                'name' => $property->name,
+                'value' => $property->value,
+            ];
+        });
         return [
             'id' => $this->id,
             'title' => $this['title'],
