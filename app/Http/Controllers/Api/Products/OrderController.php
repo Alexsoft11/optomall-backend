@@ -623,7 +623,7 @@ class OrderController extends Controller
             $baskets[] = $basketItem;
         }
 
-        return response()->json(['message' => 'Products added to baskets', 'baskets' => $baskets], 201);
+        return response()->json(['message' => 'products_added_to_basket', 'baskets' => $baskets], 201);
     }
 
     /**
@@ -937,7 +937,7 @@ class OrderController extends Controller
         $basket->quantity = $request->quantity;
         $basket->save();
 
-        return response()->json(['message' => 'Size quantity updated successfully', 'basket_item_size' => $basket], 200);
+        return response()->json(['message' => 'size_quantity_updated_successfully', 'basket_item_size' => $basket], 200);
     }
 
     /**
