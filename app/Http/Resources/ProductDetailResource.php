@@ -30,7 +30,7 @@ class ProductDetailResource extends JsonResource
             'discount_percentage' => round((($this['orginal_price'] - $this['price']) / $this['orginal_price']) * 100),
             'image' => preg_replace('/^\/\//', 'https://', $this['pic_url']),
             'quantity' => $this['num'],
-            'seller_id' => $this['seller_info']['user_num_id'],
+            'seller_info' => $this['seller_info'],
             'provider' => $this->provider,
             'description' => str_replace(["\n", "\\"], '', $this['desc']),
             'pictures' => $this->transformPictures($this['item_imgs']),
