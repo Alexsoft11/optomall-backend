@@ -72,10 +72,13 @@ class ProductDetailResource extends JsonResource
     {
         return array_map(function ($sku) {
             return [
+                'price' => round($this->addPercentToPrice($sku['price'], $this->amount, $this->percent)),
+                'total_price' => round($this->addPercentToPrice($sku['total_price'], $this->amount, $this->percent)),
+                'orginal_price' => round($this->addPercentToPrice($sku['orginal_price'], $this->amount, $this->percent)),
+                'properties' => $sku['properties'],
+                'properties_name' => $sku['properties_name'],
                 'quantity' => $sku['quantity'],
                 'sku_id' => $sku['sku_id'],
-                'price' => round($this->addPercentToPrice($sku['price'], $this->amount, $this->percent)),
-                'properties_ids' => $sku['properties'],
             ];
         }, $skus);
     }
