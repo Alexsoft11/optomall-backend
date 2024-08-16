@@ -809,6 +809,40 @@ class OrderController extends Controller
 
     /**
      * @OA\Get(
+     *     path="/api/has-items",
+     *     tags={"Order"},
+     *     summary="Has items in the basket",
+     *     security={{ "bearerAuth":{} }},
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthorized",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Unauthorized"),
+     *         ),
+     *     ),
+     * )
+     */
+    public function hasItems(Request $request)
+    {
+        $user = $request->user();
+
+        $basketItems = BasketItem::where('user_id', $user->id)->get();
+
+        $boolean = false;
+
+        if ($basketItems->isEmpty()) {
+            $boolean = false;
+        } else {
+            $boolean = true;
+        }
+
+        // Return the filtered baskets as a JSON response using the BasketResource collection
+        return response()->json($boolean, 200);
+    }
+
+    /**
+     * @OA\Get(
      *     path="/api/user-products",
      *     summary="Get products based on comment status",
      *     tags={"Comments"},
