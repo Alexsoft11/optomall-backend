@@ -580,31 +580,43 @@ class OrderController extends Controller
 
         $baskets = [];
         foreach ($request->all() as $item) {
-            // Create the basket item
-            $basketItem = BasketItem::create([
-                'product_id' => $item['product_id'],
-                'user_id' => auth()->user()->id,
-                'title' => $item['title'],
-                'basket_id' => 0, // Adjust as needed
-                'price' => $item['price'],
-                'quantity' => $item['quantity'],
-                'max_quantity' => $item['max_quantity'],
-                'image_url' => $item['image_url'],
-                'product_url' => $item['product_url'],
-                'seller_id' => $item['seller_id'],
-                'provider' => $item['provider'],
-                'skuId' => $item['sku_id'],
-            ]);
+            // Check if the basket item with the same sku_id already exists
+            $existingBasketItem = BasketItem::where('skuId', $item['sku_id'])
+                ->where('user_id', auth()->user()->id)
+                ->first();
 
-            // Save the properties
-            if (isset($item['properties']) && is_array($item['properties'])) {
-                foreach ($item['properties'] as $property) {
-                    Properties::create([
-                        'basket_item_id' => $basketItem->id,
-                        'property_id' => $property['id'],
-                        'name' => $property['name'],
-                        'value' => $property['value'],
-                    ]);
+            if ($existingBasketItem) {
+                // Update the quantity if the item exists
+                $existingBasketItem->quantity += $item['quantity'];
+                $existingBasketItem->save();
+                $basketItem = $existingBasketItem;
+            } else {
+                // Create a new basket item if it doesn't exist
+                $basketItem = BasketItem::create([
+                    'product_id' => $item['product_id'],
+                    'user_id' => auth()->user()->id,
+                    'title' => $item['title'],
+                    'basket_id' => 0, // Adjust as needed
+                    'price' => $item['price'],
+                    'quantity' => $item['quantity'],
+                    'max_quantity' => $item['max_quantity'],
+                    'image_url' => $item['image_url'],
+                    'product_url' => $item['product_url'],
+                    'seller_id' => $item['seller_id'],
+                    'provider' => $item['provider'],
+                    'skuId' => $item['sku_id'],
+                ]);
+
+                // Save the properties if any
+                if (isset($item['properties']) && is_array($item['properties'])) {
+                    foreach ($item['properties'] as $property) {
+                        Properties::create([
+                            'basket_item_id' => $basketItem->id,
+                            'property_id' => $property['id'],
+                            'name' => $property['name'],
+                            'value' => $property['value'],
+                        ]);
+                    }
                 }
             }
 
