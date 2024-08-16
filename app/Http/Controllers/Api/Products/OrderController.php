@@ -856,7 +856,7 @@ class OrderController extends Controller
                 $comment = $order->comments->first();
                 return [
                     'id' => $order->id,
-                    'image_url' => url('storage/' . $order->items->first()->image_url),
+                    'image_url' => $order->items->first()->image_url,
                     'name' => $order->items->first()->title,
                     'date' => $comment->created_at->format('Y-m-d'),
                     'stars' => $comment->rating,
@@ -878,7 +878,7 @@ class OrderController extends Controller
             $result = $orders->map(function ($order) {
                 return [
                     'id' => $order->id,
-                    'image_url' => url('storage/' . $order->items->first()->image_url),
+                    'image_url' => $order->items->first()->image_url,
                     'name' => $order->items->first()->title,
                     'date' => $order->created_at->format('Y-m-d'),
                 ];
