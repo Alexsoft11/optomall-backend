@@ -523,41 +523,42 @@ class ProductController extends Controller
             return Http::get($url)->json();
         };
 
-        // If product not found, switch the provider
-
-        // // Function to get random products
-        // $getRandomProducts = function ($provider, $pic_url, $lang) {
-        //     $imageSearchUrl = "https://kongcrdv.com/$provider/api/export_api.php?action=item_search_img&key=kingdev5809@gmail.com&imgid=$pic_url&lang=$lang";
-        //     return Http::get($imageSearchUrl)->json();
-        // };
-
-        // // Try to get random products with the initial provider
-        // $randomProducts = $getRandomProducts($provider, $productDetail['item']['pic_url'], $lang);
-
-        // // If random products not found, switch the provider
-        // if (!isset($randomProducts['data']['items']['item']) || empty($randomProducts['data']['items']['item'])) {
-        //     $provider === 'taobao' ? '1688' : 'taobao';
-        //     // $randomProducts = $getRandomProducts($imageSearchProvider, $productDetail['item']['pic_url'], $lang);
-        // }
-
-        // Prepare recommended products
-        // $recommended = ProductTokenResource::collection(collect($randomProducts['data']['items']['item'])->take(5));
-        $productDatabase = Product::where('id', $productId)->first();
-
+        // Check if provider is 'local' to fetch product from local database
         if ($provider == 'local') {
-            $product = new ProductDetailDatabase($productDatabase, $lang);
-        } else {
-            // Try to get product details with the initial provider
-            $productDetail = $getProductDetails($provider === 'taobao' ? '1688' : 'taobao');
-            // If product not found, switch the provider
-            if (!isset($productDetail['item'])) {
-                // If still not found, return 404 response
-                if (!isset($productDetail['item'])) {
-                    return response()->json(['error' => 'product_not_found'], 404);
-                }
+            $productDatabase = Product::where('id', $productId)->first();
+
+            // Handle the case where the product is not found in the local database
+            if (!$productDatabase) {
+                return response()->json(['error' => 'product_not_found'], 404);
             }
-            $product = new ProductDetailResource($productDetail['item'], $provider);
+
+            $product = new ProductDetailDatabase($productDatabase, $lang);
+
+            return $this->respondWithSuccess([
+                'detail' => $product,
+                'score' => [
+                    'rating' => $productDatabase->seller_info['item_score'] ?? 4.6,
+                    'sold' => $productDatabase->sales ?? 1000,
+                ],
+            ]);
         }
+
+        // Try to get product details with the initial provider
+        $productDetail = $getProductDetails($provider);
+
+        // If product not found, switch the provider and try again
+        if (!isset($productDetail['item'])) {
+            $provider = $provider === 'taobao' ? '1688' : 'taobao';
+            $productDetail = $getProductDetails($provider);
+
+            // If still not found, return 404 response
+            if (!isset($productDetail['item'])) {
+                return response()->json(['error' => 'product_not_found'], 404);
+            }
+        }
+
+        // At this point, $productDetail['item'] is guaranteed to be set
+        $product = new ProductDetailResource($productDetail['item'], $provider);
 
         return $this->respondWithSuccess([
             'detail' => $product,
@@ -565,10 +566,8 @@ class ProductController extends Controller
                 'rating' => $productDetail['item']['seller_info']['item_score'] ?? 4.6,
                 'sold' => $productDetail['item']['sales'] ?? 1000,
             ],
-            // 'recommended' => $recommended,
         ]);
     }
-
 
 
     /**
