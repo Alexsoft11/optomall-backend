@@ -77,7 +77,7 @@ class ProductDetailResource extends JsonResource
                     'total_price' => 0,
                     'orginal_price' => round($this->addPercentToPrice($this->resource['orginal_price'] ?? 0, $this->amount, $this->percent)),
                     'properties' => "1.1:1.1",
-                    'properties_name' => "1.1:Default",
+                    'properties_name' => "1.1:property:default",
                     'quantity' => $this->resource['num'],
                     'sku_id' => $this->resource['num_iid'] . 0,
                 ]
