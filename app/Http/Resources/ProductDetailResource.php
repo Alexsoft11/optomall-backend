@@ -37,6 +37,7 @@ class ProductDetailResource extends JsonResource
             'location' => $this['location'] ?? 'China',
             'product_url' => $this['detail_url'],
             'videos' => $this['video'],
+            // 'skus1' => $this['skus']['sku'],
             'skus' => $this->transformSkus($this['skus']['sku']),
             'prop_imgs' => $this['prop_imgs']['prop_img'],
             'props_list' => $this['props_list'],
@@ -75,7 +76,6 @@ class ProductDetailResource extends JsonResource
                 'sku_id' => $sku['sku_id'],
                 'price' => round($this->addPercentToPrice($sku['price'], $this->amount, $this->percent)),
                 'properties_ids' => $sku['properties'],
-                'properties' => $sku["properties"],
             ];
         }, $skus);
     }
