@@ -74,7 +74,7 @@ class ProductDetailResource extends JsonResource
             return [
                 'price' => round($this->addPercentToPrice($sku['price'], $this->amount, $this->percent)),
                 'total_price' => round($this->addPercentToPrice($sku['total_price'], $this->amount, $this->percent)),
-                'orginal_price' => round($this->addPercentToPrice($sku['orginal_price'], $this->amount, $this->percent)),
+                'orginal_price' => round($this->addPercentToPrice(isset($sku['orginal_price']) ? $sku['orginal_price'] : 0, $this->amount, $this->percent)),
                 'properties' => $sku['properties'],
                 'properties_name' => $sku['properties_name'],
                 'quantity' => $sku['quantity'],
