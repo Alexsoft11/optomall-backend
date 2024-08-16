@@ -536,8 +536,8 @@ class ProductController extends Controller
 
         // // If random products not found, switch the provider
         // if (!isset($randomProducts['data']['items']['item']) || empty($randomProducts['data']['items']['item'])) {
-        //     $imageSearchProvider = $provider === 'taobao' ? '1688' : 'taobao';
-        //     $randomProducts = $getRandomProducts($imageSearchProvider, $productDetail['item']['pic_url'], $lang);
+        //     $provider === 'taobao' ? '1688' : 'taobao';
+        //     // $randomProducts = $getRandomProducts($imageSearchProvider, $productDetail['item']['pic_url'], $lang);
         // }
 
         // Prepare recommended products
@@ -548,7 +548,7 @@ class ProductController extends Controller
             $product = new ProductDetailDatabase($productDatabase, $lang);
         } else {
             // Try to get product details with the initial provider
-            $productDetail = $getProductDetails($provider);
+            $productDetail = $getProductDetails($provider === 'taobao' ? '1688' : 'taobao');
             // If product not found, switch the provider
             if (!isset($productDetail['item'])) {
                 // If still not found, return 404 response
