@@ -38,7 +38,7 @@ class ProductDetailResource extends JsonResource
             'product_url' => $this['detail_url'],
             'videos' => $this['video'],
             // 'skus1' => $this['skus']['sku'],
-            'skus' => $this->transformSkus($this['skus']['sku']),
+            'skus' => $this->transformSkus($this['skus']['sku'] ?? null),
             'prop_imgs' => $this['prop_imgs']['prop_img'],
             'props_list' => $this['props_list'],
             'composition' => $this['props'],
@@ -70,11 +70,25 @@ class ProductDetailResource extends JsonResource
 
     private function transformSkus($skus)
     {
+        if (is_null($skus) || empty($skus)) {
+            return [
+                [
+                    'price' => round($this->addPercentToPrice($this->resource['price'], $this->amount, $this->percent)),
+                    'total_price' => 0,
+                    'orginal_price' => round($this->addPercentToPrice($this->resource['orginal_price'] ?? 0, $this->amount, $this->percent)),
+                    'properties' => "1.1:1.1",
+                    'properties_name' => "1.1:Default",
+                    'quantity' => $this->resource['num'],
+                    'sku_id' => $this->resource['num_iid'] . 0,
+                ]
+            ];
+        }
+
         return array_map(function ($sku) {
             return [
                 'price' => round($this->addPercentToPrice($sku['price'], $this->amount, $this->percent)),
                 'total_price' => round($this->addPercentToPrice($sku['total_price'], $this->amount, $this->percent)),
-                'orginal_price' => round($this->addPercentToPrice(isset($sku['orginal_price']) ? $sku['orginal_price'] : 0, $this->amount, $this->percent)),
+                'orginal_price' => round($this->addPercentToPrice($sku['orginal_price'] ?? 0, $this->amount, $this->percent)),
                 'properties' => $sku['properties'],
                 'properties_name' => $sku['properties_name'],
                 'quantity' => $sku['quantity'],
