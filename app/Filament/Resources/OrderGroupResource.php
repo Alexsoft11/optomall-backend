@@ -7,6 +7,7 @@ use App\Filament\Resources\OrderGroupResource\RelationManagers;
 use App\Filament\Resources\Shop\OrderResource\RelationManagers\OrderGroupRelationManager;
 use App\Models\OrderGroup;
 use App\Models\OrderStatus;
+use App\Models\User;
 use Filament\Forms;
 use Filament\Forms\Components\Fieldset;
 use Filament\Forms\Components\FileUpload;
@@ -101,6 +102,22 @@ class OrderGroupResource extends Resource
                             });
                         }
                     }),
+                Filter::make('User Unique ID')
+                    ->form([
+                        TextInput::make('user_unique_id')
+                            ->label('Search by User Unique ID'),
+                    ])
+                    ->query(function (Builder $query, array $data) {
+                        if ($data['user_unique_id']) {
+                            $query->whereHas('user', function (Builder $query) use ($data) {
+                                $query->where('unique_id', 'like', '%' . $data['user_unique_id'] . '%');
+                            });
+                        }
+                    }),
+                Tables\Filters\SelectFilter::make('status')->label('Sort by status')
+                    ->options(OrderStatus::pluck('name_uz', 'id')->toArray()),
+                Tables\Filters\SelectFilter::make('user_id')->label('Sort by user')
+                    ->options(User::pluck('name', 'id')->toArray()),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
