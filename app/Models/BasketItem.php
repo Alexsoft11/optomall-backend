@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class BasketItem extends Model
+class BasketItem extends BaseModel
 {
     protected $fillable = [
         'title',
