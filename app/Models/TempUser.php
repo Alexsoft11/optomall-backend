@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Notifications\Notifiable;
 
-class TempUser extends BaseModel
+class TempUser extends Model
 {
     use HasFactory, Notifiable;
 

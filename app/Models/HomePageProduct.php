@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 
-class HomePageProduct extends BaseModel
+class HomePageProduct extends Model
 {
     use HasFactory;
 

@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Spatie\Sluggable\HasSlug;
 use Spatie\Sluggable\SlugOptions;
 
-class Order extends BaseModel
+class Order extends Model
 {
     use HasFactory;
     // use HasSlug;

@@ -6,7 +6,7 @@ use App\Events\OrderStatusUpdated;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class OrderGroup extends BaseModel
+class OrderGroup extends Model
 {
     use HasFactory;
 

@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Spatie\Sluggable\HasSlug;
 use Spatie\Sluggable\SlugOptions;
 
-class TaobaoSubcategoryName extends BaseModel
+class TaobaoSubcategoryName extends Model
 {
     use HasFactory;
 
