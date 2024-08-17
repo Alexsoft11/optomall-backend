@@ -230,7 +230,7 @@ class OrderResource extends Resource
             ->extraItemActions([
                 Action::make('openProduct')
                     ->tooltip('Open product')
-                    // ->icon('heroicon-o-external-link')
+                    ->icon('heroicon-m-arrow-top-right-on-square')
                     ->url(
                         fn(array $arguments, Repeater $component): ?string =>
                         $component->getRawItemState($arguments['item'])['product_url'] ?? null,
