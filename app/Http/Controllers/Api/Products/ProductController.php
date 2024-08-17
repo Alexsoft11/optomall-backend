@@ -742,10 +742,12 @@ class ProductController extends Controller
         $apiKey = 'kingdev5809@gmail.com';
         $subcategory = TaobaoSubcategory::where('unique_id', $request->catId)->pluck('unique')->first() ?? TaobaoSubcategoryName::where('unique_id', $request->catId)->pluck('unique')->first();
 
+        $translatedValue = $this->translateText($value, $lang);
+        // return $translatedValue;
         // Build the API URL
         $apiUrl = $imageUrl
             ? "https://kongcrdv.com/$provider/api/export_api.php?action=item_search_img&key=$apiKey&imgid=$imageUrl&lang=$lang&page=$page&page_size=$productsCount&sort=$sort"
-            : "https://kongcrdv.com/$provider/api/export_api.php?action=item_search&lang=$lang&key=$apiKey&q=" . ($subcategory ? $subcategory : $value) . "&page=$page&sort=";
+            : "https://kongcrdv.com/$provider/api/export_api.php?action=item_search&lang=$lang&key=$apiKey&q=" . ($subcategory ? $subcategory : $translatedValue) . "&page=$page&sort=";
         // return $apiUrl;
         // Make the API call
         $response = Http::get($apiUrl);
@@ -759,8 +761,28 @@ class ProductController extends Controller
 
         // Return the final response
         return $this->respondWithSuccess([
-            'products' => ProductResource::collection($productData)
+            'products' => ProductResource::collection($productData),
+            'translatedValue' => $translatedValue,
         ]);
+    }
+
+    private function translateText($text, $lang)
+    {
+        $apiKey = 'dc8c6250d5104f57a59c55ad546d1f20';
+        $endpoint = "https://api.cognitive.microsofttranslator.com/translate?api-version=3.0&from=$lang&to=zh-cn";
+
+        $response = Http::withHeaders([
+            'Ocp-Apim-Subscription-Key' => $apiKey,
+            'Ocp-Apim-Subscription-Region' => 'eastus',
+            'Content-Type' => 'application/json',
+        ])->post($endpoint, [
+            [
+                'Text' => $text
+            ]
+        ]);
+
+        $result = $response->json();
+        return $result[0]['translations'][0]['text'] ?? $text;
     }
 
     /**
