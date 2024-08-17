@@ -92,7 +92,7 @@ class OrderGroupResource extends Resource
                 Filter::make('Basket Unique ID')
                     ->form([
                         TextInput::make('basket_unique_id')
-                            ->label('Search by Basket Unique ID'),
+                            ->label('Search by Order Unique ID'),
                     ])
                     ->query(function (Builder $query, array $data) {
                         if ($data['basket_unique_id']) {
