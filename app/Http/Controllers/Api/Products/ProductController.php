@@ -911,17 +911,6 @@ class ProductController extends Controller
      */
     public function imageSearch(Request $request)
     {
-        // Check if the file exists in the request
-        if ($request->hasFile('image')) {
-            $file = $request->file('image');
-            $fileSize = $file->getSize(); // size in bytes
-            $fileSizeInMB = $fileSize / 1024 / 1024; // convert bytes to MB
-
-            \Log::info("Uploaded file size: {$fileSizeInMB} MB");
-        } else {
-            \Log::info("No image file uploaded.");
-        }
-
         // Validate the incoming request
         $validator = Validator::make($request->all(), [
             'image' => 'required|image|max:10240', // 10240 KB = 10 MB
@@ -937,10 +926,13 @@ class ProductController extends Controller
         // Store the uploaded image
         $imagePath = $request->file('image')->store('images', 'public');
         $imageUrl = url(Storage::url($imagePath));
+        $url = "https://kongcrdv.com/taobao/api/ima.php?action=item_search_img&key=kingdev5809@gmail.com&imgid=$imageUrl&lang=zh-CN";
+        $response = Http::get($url);
+        $image = $response->json();
 
-        return response()->json([
-            'url' => $imageUrl,
-        ], 200);
+        return  [
+            'url' => $image['data']['item']['pic_url'],
+        ];
     }
 
 
