@@ -84,7 +84,7 @@ class OrderResource extends Resource
                                 TextInput::make('last_name')->label(trans("last_name")),
                                 TextInput::make('phone')->label(trans("phone")),
                                 TextInput::make('email')->label(trans("email")),
-                                TextInput::make('location')->label(trans("adress")),
+                                // TextInput::make('location')->label(trans("adress")),
                                 TextInput::make('region')->label(trans("region")),
                                 TextInput::make('district')->label(trans("district")),
                             ])->disabled(),

@@ -44,13 +44,14 @@ class OrderGroupResource extends Resource
     {
         return $form
             ->schema([
+                TextInput::make('unique_id'),
                 Fieldset::make('Foydalanuvchi')->relationship('user')->label(trans("users"))
                     ->schema([
                         TextInput::make('name')->label(trans("ism")),
                         TextInput::make('last_name')->label(trans("last_name")),
                         TextInput::make('phone')->label(trans("phone")),
                         TextInput::make('email')->label(trans("email")),
-                        TextInput::make('adress')->label(trans("location")),
+                        // TextInput::make('adress')->label(trans("location")),
                         TextInput::make('region')->label(trans("region")),
                         TextInput::make('district')->label(trans("district")),
                     ])->disabled()->columnSpan(['sm' => 2]),
@@ -78,7 +79,7 @@ class OrderGroupResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('unique_id'),
+                // TextColumn::make('unique_id'),
                 TextColumn::make('user.unique_id')->label(trans("user_id"))->sortable(),
                 TextColumn::make('user.name')->label(trans("ism"))->sortable(),
                 TextColumn::make('total_price')->label(trans("price"))->sortable(),
