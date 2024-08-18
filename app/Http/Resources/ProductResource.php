@@ -27,7 +27,7 @@ class ProductResource extends JsonResource
 
         // Convert price and promotion_price to float
         $price = floatval($this->resource['price']);
-        $promotionPrice = $this->resource['promotion_price'] ? floatval($this->resource['promotion_price']) : null;
+        $promotionPrice = floatval($this->resource['promotion_price']) ?? null;
 
         // Calculate the actual prices
         $calculatedPrice = $this->calculatePrice($price, $amount);
