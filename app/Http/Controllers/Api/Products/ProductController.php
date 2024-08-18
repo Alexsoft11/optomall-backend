@@ -929,6 +929,7 @@ class ProductController extends Controller
         $url = "https://kongcrdv.com/taobao/api/ima.php?action=item_search_img&key=kingdev5809@gmail.com&imgid=$imageUrl&lang=zh-CN";
         $response = Http::get($url);
         $image = $response->json();
+        return $image;
 
         return  [
             'url' => $image['data']['item']['pic_url'],
