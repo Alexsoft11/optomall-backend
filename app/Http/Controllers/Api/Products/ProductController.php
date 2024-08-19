@@ -732,37 +732,53 @@ class ProductController extends Controller
      */
     public function searchProductsFromTaobao(Request $request)
     {
-        $value = $request->value;
-        $sort = $request->sort;
-        $page = $request->page ?? 1;
-        $productsCount = $request->productsCount ?? 20;
-        $provider = $request->provider ?? 'taobao';
-        $lang = $request->lang ?? 'en';
-        $imageUrl = $request->imageUrl;
+        $value = $request->input('value');
+        $sort = $request->input('sort');
+        $page = $request->input('page', 1);
+        $productsCount = $request->input('productsCount', 20);
+        $provider = strtolower($request->input('provider', 'taobao')); // Ensure provider is in lowercase
+        $lang = $request->input('lang', 'en');
+        $imageUrl = $request->input('imageUrl');
         $apiKey = 'kingdev5809@gmail.com';
-        $subcategory = TaobaoSubcategory::where('unique_id', $request->catId)->pluck('unique')->first() ?? TaobaoSubcategoryName::where('unique_id', $request->catId)->pluck('unique')->first();
 
-        $translatedValue = $this->translateText($value, $lang);
-        // return $translatedValue;
-        // Build the API URL
+        // Fetch subcategory unique ID
+        $subcategory = TaobaoSubcategory::where('unique_id', $request->catId)
+            ->pluck('unique')
+            ->first() ?? TaobaoSubcategoryName::where('unique_id', $request->catId)
+            ->pluck('unique')
+            ->first();
+
+        // Translate the search value
+        // $translatedValue = $this->translateText($value, $lang);
+
+        // Determine the provider name based on the input
+        $providerName = ($provider === 'taobao') ? 'Taobao' : '1688';
+
+        // Build the API URL, including the provider in both cases
         $apiUrl = $imageUrl
-            ? "http://otapi.net/service-json/SearchItemsFrame?instanceKey=acda0ce7-5a15-4c3e-88f0-70fb0026aac2&language=$lang&signature=&timestamp=&xmlParameters=%3CSearchItemsParameters%3E%3CImageUrl%3E$imageUrl%3C%2FImageUrl%3E%3C%2FSearchItemsParameters%3E&framePosition=$page&frameSize=$productsCount"
-            : "https://otapi.net/service-json/SearchItemsFrame?instanceKey=acda0ce7-5a15-4c3e-88f0-70fb0026aac2&language=$lang&signature=&timestamp=&xmlParameters=%3CSearchItemsParameters%3E%3CItemTitle%3E$value%3C%2FItemTitle%3E%3CProvider%3ETaobao%3C%2FProvider%3E%3C%2FSearchItemsParameters%3E&framePosition=$page&frameSize=$productsCount";
-        // return $apiUrl;
-        // Make the API call
+            ? "http://otapi.net/service-json/SearchItemsFrame?instanceKey=acda0ce7-5a15-4c3e-88f0-70fb0026aac2&language=$lang&signature=&timestamp=&xmlParameters=%3CSearchItemsParameters%3E%3CProvider%3E$providerName%3C%2FProvider%3E%3CImageUrl%3E$imageUrl%3C%2FImageUrl%3E%3C%2FSearchItemsParameters%3E&framePosition=$page&frameSize=$productsCount"
+            : "https://otapi.net/service-json/SearchItemsFrame?instanceKey=acda0ce7-5a15-4c3e-88f0-70fb0026aac2&language=$lang&signature=&timestamp=&xmlParameters=%3CSearchItemsParameters%3E%3CProvider%3E$providerName%3C%2FProvider%3E%3CItemTitle%3E$translatedValue%3C%2FItemTitle%3E%3C%2FSearchItemsParameters%3E&framePosition=$page&frameSize=$productsCount";
+
+        // Make the API call with SSL verification disabled (ensure this is temporary)
         $response = Http::withoutVerifying()->get($apiUrl);
+
+        // Handle response and check if products are found
         $products = $response->json();
-        // Extract the product data
         if (empty($products['Result']['Items']['Content'])) {
-            return response()->json(['translatedValue' => $translatedValue, 'error' => 'product_not_found', $products], 404);
+            return response()->json([
+                // 'translatedValue' => $translatedValue,
+                'error' => 'product_not_found',
+                'details' => $products,
+            ], 404);
         }
+
+        // Extract product data
         $productData = $products['Result']['Items']['Content'];
-        // return $productData;
 
         // Return the final response
         return $this->respondWithSuccess([
             'products' => ProductResource::collection($productData),
-            'translatedValue' => $translatedValue,
+            // 'translatedValue' => $translatedValue,
         ]);
     }
 
