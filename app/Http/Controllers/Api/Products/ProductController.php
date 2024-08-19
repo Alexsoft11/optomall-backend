@@ -926,13 +926,13 @@ class ProductController extends Controller
         // Store the uploaded image
         $imagePath = $request->file('image')->store('images', 'public');
         $imageUrl = url(Storage::url($imagePath));
-        $url = "https://kongcrdv.com/taobao/api/ima.php?action=item_search_img&key=kingdev5809@gmail.com&imgid=$imageUrl&lang=zh-CN";
-        $response = Http::get($url);
-        $image = $response->json();
+        // $url = "https://kongcrdv.com/taobao/api/ima.php?action=item_search_img&key=kingdev5809@gmail.com&imgid=$imageUrl&lang=zh-CN";
+        // $response = Http::get($url);
+        // $image = $response->json();
         // return $image;
 
         return  [
-            'url' => $image['data']['item']['0']['pic_url'],
+            'url' => $imageUrl,
         ];
     }
 
