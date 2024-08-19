@@ -26,7 +26,7 @@ class ProductResource extends JsonResource
         $amount = Exchanges::where('currency', 'yuan')->first()->amount ?? 1800;
 
         // Convert price to float
-        $price = floatval($this->resource['Price']['ConvertedPriceWithoutSign']);
+        $price = floatval($this->resource['Price']['OriginalPrice']);
 
         // Check if promotion_price exists and convert it to float, otherwise set it to null
         // $promotionPrice = isset($this->resource['promotion_price']) ? floatval($this->resource['promotion_price']) : null;

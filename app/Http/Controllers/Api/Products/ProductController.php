@@ -752,7 +752,7 @@ class ProductController extends Controller
         // $translatedValue = $this->translateText($value, $lang);
 
         // Determine the provider name based on the input
-        $providerName = ($provider === 'taobao') ? 'Taobao' : '1688';
+        $providerName = ($provider === 'taobao') ? 'Taobao' : 'Alibaba1688';
 
         // Build the API URL, including the provider in both cases
         $apiUrl = $imageUrl
