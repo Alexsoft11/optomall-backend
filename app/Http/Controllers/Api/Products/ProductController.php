@@ -746,17 +746,17 @@ class ProductController extends Controller
         // return $translatedValue;
         // Build the API URL
         $apiUrl = $imageUrl
-            ? "https://kongcrdv.com/$provider/api/export_api.php?action=item_search_img&key=$apiKey&imgid=$imageUrl&lang=$lang&page=$page&page_size=$productsCount&sort=$sort"
-            : "https://kongcrdv.com/$provider/api/export_api.php?action=item_search&lang=$lang&key=$apiKey&q=" . ($subcategory ? $subcategory : $translatedValue) . "&page=$page&sort=";
+            ? "http://otapi.net/service-json/SearchItemsFrame?instanceKey=acda0ce7-5a15-4c3e-88f0-70fb0026aac2&language=$lang&signature=&timestamp=&xmlParameters=%3CSearchItemsParameters%3E%3CImageUrl%3E$imageUrl%3C%2FImageUrl%3E%3C%2FSearchItemsParameters%3E&framePosition=$page&frameSize=$productsCount"
+            : "https://otapi.net/service-json/SearchItemsFrame?instanceKey=acda0ce7-5a15-4c3e-88f0-70fb0026aac2&language=$lang&signature=&timestamp=&xmlParameters=%3CSearchItemsParameters%3E%3CItemTitle%3E$value%3C%2FItemTitle%3E%3CProvider%3ETaobao%3C%2FProvider%3E%3C%2FSearchItemsParameters%3E&framePosition=$page&frameSize=$productsCount";
         // return $apiUrl;
         // Make the API call
-        $response = Http::get($apiUrl);
+        $response = Http::withoutVerifying()->get($apiUrl);
         $products = $response->json();
         // Extract the product data
-        if (empty($products['data']['items']['item'])) {
+        if (empty($products['Result']['Items']['Content'])) {
             return response()->json(['translatedValue' => $translatedValue, 'error' => 'product_not_found', $products], 404);
         }
-        $productData = $products['data']['items']['item'];
+        $productData = $products['Result']['Items']['Content'];
         // return $productData;
 
         // Return the final response

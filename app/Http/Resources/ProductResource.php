@@ -26,30 +26,31 @@ class ProductResource extends JsonResource
         $amount = Exchanges::where('currency', 'yuan')->first()->amount ?? 1800;
 
         // Convert price to float
-        $price = floatval($this->resource['price']);
+        $price = floatval($this->resource['Price']['ConvertedPriceWithoutSign']);
 
         // Check if promotion_price exists and convert it to float, otherwise set it to null
-        $promotionPrice = isset($this->resource['promotion_price']) ? floatval($this->resource['promotion_price']) : null;
+        // $promotionPrice = isset($this->resource['promotion_price']) ? floatval($this->resource['promotion_price']) : null;
 
         // Calculate the actual prices
         $calculatedPrice = $this->calculatePrice($price, $amount);
-        $calculatedPromotionPrice = $promotionPrice ? $this->calculatePrice($promotionPrice, $amount) : null;
+        // $calculatedPromotionPrice = $promotionPrice ? $this->calculatePrice($promotionPrice, $amount) : null;
 
-        // Calculate the discount percentage
-        $discountPercent = $promotionPrice
-            ? round((($price - $promotionPrice) / $price) * 100)
-            : 0;
+        // // Calculate the discount percentage
+        // $discountPercent = $promotionPrice
+        //     ? round((($price - $promotionPrice) / $price) * 100)
+        //     : 0;
 
         return [
-            'id' => $this->resource['num_iid'],
-            'title' => $this->resource['title'],
+            'id' => $this->resource['Id'],
+            'title' => $this->resource['Title'],
             'price' => round($this->addPercentToPrice($calculatedPrice, $this->percent)),
-            'discounted_price' => round($calculatedPromotionPrice
-                ? $this->addPercentToPrice($calculatedPromotionPrice, $this->percent)
-                : $this->addPercentToPrice($calculatedPrice, $this->percent)),
-            'discount_percent' => $discountPercent,
-            'image' => $this->resource['pic_url'],
-            'product_url' => $this->resource['detail_url'],
+            // 'discounted_price' => round($calculatedPromotionPrice
+            //     ? $this->addPercentToPrice($calculatedPromotionPrice, $this->percent)
+            //     : $this->addPercentToPrice($calculatedPrice, $this->percent)),
+            // 'discount_percent' => $discountPercent,
+            'image' => $this->resource['MainPictureUrl'],
+            'product_url' => $this->resource['TaobaoItemUrl'],
+            'provider' => $this->resource['ProviderType'],
             'is_liked' => false,
         ];
     }
