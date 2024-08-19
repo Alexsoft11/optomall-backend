@@ -757,7 +757,7 @@ class ProductController extends Controller
         // Build the API URL, including the provider in both cases
         $apiUrl = $imageUrl
             ? "http://otapi.net/service-json/SearchItemsFrame?instanceKey=acda0ce7-5a15-4c3e-88f0-70fb0026aac2&language=$lang&signature=&timestamp=&xmlParameters=%3CSearchItemsParameters%3E%3CProvider%3E$providerName%3C%2FProvider%3E%3CImageUrl%3E$imageUrl%3C%2FImageUrl%3E%3C%2FSearchItemsParameters%3E&framePosition=$page&frameSize=$productsCount"
-            : "https://otapi.net/service-json/SearchItemsFrame?instanceKey=acda0ce7-5a15-4c3e-88f0-70fb0026aac2&language=$lang&signature=&timestamp=&xmlParameters=%3CSearchItemsParameters%3E%3CProvider%3E$providerName%3C%2FProvider%3E%3CItemTitle%3E$translatedValue%3C%2FItemTitle%3E%3C%2FSearchItemsParameters%3E&framePosition=$page&frameSize=$productsCount";
+            : "https://otapi.net/service-json/SearchItemsFrame?instanceKey=acda0ce7-5a15-4c3e-88f0-70fb0026aac2&language=$lang&signature=&timestamp=&xmlParameters=%3CSearchItemsParameters%3E%3CProvider%3E$providerName%3C%2FProvider%3E%3CItemTitle%3E" . ($subcategory ? $subcategory : $value) . "%3C%2FItemTitle%3E%3C%2FSearchItemsParameters%3E&framePosition=$page&frameSize=$productsCount";
 
         // Make the API call with SSL verification disabled (ensure this is temporary)
         $response = Http::withoutVerifying()->get($apiUrl);
@@ -782,24 +782,24 @@ class ProductController extends Controller
         ]);
     }
 
-    private function translateText($text, $lang)
-    {
-        $apiKey = 'dc8c6250d5104f57a59c55ad546d1f20';
-        $endpoint = "https://api.cognitive.microsofttranslator.com/translate?api-version=3.0&from=$lang&to=zh-cn";
+    // private function translateText($text, $lang)
+    // {
+    //     $apiKey = 'dc8c6250d5104f57a59c55ad546d1f20';
+    //     $endpoint = "https://api.cognitive.microsofttranslator.com/translate?api-version=3.0&from=$lang&to=zh-cn";
 
-        $response = Http::withHeaders([
-            'Ocp-Apim-Subscription-Key' => $apiKey,
-            'Ocp-Apim-Subscription-Region' => 'eastus',
-            'Content-Type' => 'application/json',
-        ])->post($endpoint, [
-            [
-                'Text' => $text
-            ]
-        ]);
+    //     $response = Http::withHeaders([
+    //         'Ocp-Apim-Subscription-Key' => $apiKey,
+    //         'Ocp-Apim-Subscription-Region' => 'eastus',
+    //         'Content-Type' => 'application/json',
+    //     ])->post($endpoint, [
+    //         [
+    //             'Text' => $text
+    //         ]
+    //     ]);
 
-        $result = $response->json();
-        return $result[0]['translations'][0]['text'] ?? $text;
-    }
+    //     $result = $response->json();
+    //     return $result[0]['translations'][0]['text'] ?? $text;
+    // }
 
     /**
      * @OA\Get(
