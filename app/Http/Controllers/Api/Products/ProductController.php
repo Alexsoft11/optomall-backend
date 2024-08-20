@@ -734,7 +734,7 @@ class ProductController extends Controller
     {
         $value = $request->input('value');
         $sort = $request->input('sort');
-        $page = $request->input('page', 1);
+        $page = $request->input('page', 0);
         $productsCount = $request->input('productsCount', 20);
         $provider = strtolower($request->input('provider', 'taobao')); // Ensure provider is in lowercase
         $lang = $request->input('lang', 'en');
@@ -756,8 +756,8 @@ class ProductController extends Controller
 
         // Build the API URL, including the provider in both cases
         $apiUrl = $imageUrl
-            ? "http://otapi.net/service-json/SearchItemsFrame?instanceKey=acda0ce7-5a15-4c3e-88f0-70fb0026aac2&language=$lang&signature=&timestamp=&xmlParameters=%3CSearchItemsParameters%3E%3CProvider%3E$providerName%3C%2FProvider%3E%3CImageUrl%3E$imageUrl%3C%2FImageUrl%3E%3C%2FSearchItemsParameters%3E&framePosition=$page&frameSize=$productsCount"
-            : "https://otapi.net/service-json/SearchItemsFrame?instanceKey=acda0ce7-5a15-4c3e-88f0-70fb0026aac2&language=$lang&signature=&timestamp=&xmlParameters=%3CSearchItemsParameters%3E%3CProvider%3E$providerName%3C%2FProvider%3E%3CItemTitle%3E" . ($subcategory ? $subcategory : $value) . "%3C%2FItemTitle%3E%3C%2FSearchItemsParameters%3E&framePosition=$page&frameSize=$productsCount";
+            ? "http://otapi.net/service-json/SearchItemsFrame?instanceKey=acda0ce7-5a15-4c3e-88f0-70fb0026aac2&language=$lang&signature=&timestamp=&xmlParameters=%3CSearchItemsParameters%3E%3CProvider%3E$providerName%3C%2FProvider%3E%3CImageUrl%3E$imageUrl%3C%2FImageUrl%3E%3C%2FSearchItemsParameters%3E&framePosition=$page&frameSize=40"
+            : "https://otapi.net/service-json/SearchItemsFrame?instanceKey=acda0ce7-5a15-4c3e-88f0-70fb0026aac2&language=$lang&signature=&timestamp=&xmlParameters=%3CSearchItemsParameters%3E%3CProvider%3E$providerName%3C%2FProvider%3E%3CItemTitle%3E" . ($subcategory ? $subcategory : $value) . "%3C%2FItemTitle%3E%3C%2FSearchItemsParameters%3E&framePosition=$page&frameSize=40";
 
         // Make the API call with SSL verification disabled (ensure this is temporary)
         $response = Http::withoutVerifying()->get($apiUrl);
