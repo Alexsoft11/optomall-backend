@@ -817,7 +817,7 @@ class ProductController extends Controller
         $cacheKey = 'search_products_' . md5(json_encode($request->all()));
         return Cache::remember($cacheKey, 300, function () use ($request) {
             $value = $request->input('value');
-            $sort = $request->input('sort');
+            $sort = $request->input('sort'); // Expecting format like 'VendorRating:Desc'
             $page = $request->input('page', 0);
             $productsCount = $request->input('productsCount', 20);
             $provider = strtolower($request->input('provider', 'taobao'));
@@ -831,9 +831,13 @@ class ProductController extends Controller
                 ->pluck('unique')
                 ->first();
 
-            $apiUrl = $imageUrl
-                ? "http://otapi.net/service-json/SearchItemsFrame?instanceKey=74a68481-54a6-4069-98c0-f19fecf1f58f&language=$lang&signature=&timestamp=&xmlParameters=%3CSearchItemsParameters%3E%3CProvider%3EAlibaba1688%3C%2FProvider%3E%3CImageUrl%3E$imageUrl%3C%2FImageUrl%3E%3C%2FSearchItemsParameters%3E&framePosition=$page&frameSize=20"
-                : "https://otapi.net/service-json/SearchItemsFrame?instanceKey=74a68481-54a6-4069-98c0-f19fecf1f58f&language=$lang&signature=&timestamp=&xmlParameters=%3CSearchItemsParameters%3E%3CProvider%3EAlibaba1688%3C%2FProvider%3E%3CItemTitle%3E" . ($subcategory ? $subcategory : $value) . "%3C%2FItemTitle%3E%3C%2FSearchItemsParameters%3E&framePosition=$page&frameSize=20";
+            $baseApiUrl = $imageUrl
+                ? "http://otapi.net/service-json/SearchItemsFrame?instanceKey=74a68481-54a6-4069-98c0-f19fecf1f58f&language=$lang&signature=&timestamp=&xmlParameters=%3CSearchItemsParameters%3E%3CProvider%3EAlibaba1688%3C%2FProvider%3E%3CImageUrl%3E$imageUrl%3C%2FImageUrl%3E"
+                : "https://otapi.net/service-json/SearchItemsFrame?instanceKey=74a68481-54a6-4069-98c0-f19fecf1f58f&language=$lang&signature=&timestamp=&xmlParameters=%3CSearchItemsParameters%3E%3CProvider%3EAlibaba1688%3C%2FProvider%3E%3CItemTitle%3E" . ($subcategory ? $subcategory : $value) . "%3C%2FItemTitle%3E";
+
+            // Append OrderBy parameter if sorting is provided
+            $orderBy = $sort ? "%0D%0A%3COrderBy%3E$sort%3C%2FOrderBy%3E" : '';
+            $apiUrl = $baseApiUrl . $orderBy . "%0D%0A%3C%2FSearchItemsParameters%3E&framePosition=$page&frameSize=$productsCount&blockList=AvailableSearchMethods";
 
             $response = Http::withoutVerifying()->get($apiUrl);
             $products = $response->json();
