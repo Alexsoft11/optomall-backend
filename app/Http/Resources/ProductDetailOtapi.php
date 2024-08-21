@@ -174,7 +174,7 @@ class ProductDetailOtapi extends JsonResource
         return array_map(function ($item) {
             $quantityRanges = [];
 
-            foreach ($item['QuantityRanges'] as $range) {
+            foreach (isset($item['QuantityRanges']) ? $item['QuantityRanges'] : [] as $range) {
                 $quantityRanges[] = [
                     'minQuantity' => $range['MinQuantity'],
                     'price' => round($this->addPercentToPrice($range['Price']['OriginalPrice'], $this->amount, $this->percent)),
