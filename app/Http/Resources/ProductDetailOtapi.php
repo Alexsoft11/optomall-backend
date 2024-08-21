@@ -29,7 +29,7 @@ class ProductDetailOtapi extends JsonResource
     {
         $quantityRanges = [];
 
-        foreach ($this['QuantityRanges'] as $range) {
+        foreach (isset($this['QuantityRanges']) ? $this['QuantityRanges'] : [] as $range) {
             $quantityRanges[] = [
                 'minQuantity' => $range['MinQuantity'],
                 'price' => round($this->addPercentToPrice($range['Price']['OriginalPrice'], $this->amount, $this->percent)),
@@ -101,7 +101,7 @@ class ProductDetailOtapi extends JsonResource
             ];
         }
 
-        return array_map(function ($attribute) {
+        return array_values(array_filter(array_map(function ($attribute) {
             return [
                 'pid' => $attribute['Pid'],
                 'vid' => $attribute['Vid'],
@@ -113,7 +113,9 @@ class ProductDetailOtapi extends JsonResource
                 'imageUrl' => $attribute['ImageUrl'] ?? null,
                 'miniImageUrl' => $attribute['MiniImageUrl'] ?? null,
             ];
-        }, $attributes);
+        }, $attributes), function ($attribute) {
+            return $attribute['isConfigurator'] === true;
+        }));
     }
 
     private function transformCompositions($compositions)
