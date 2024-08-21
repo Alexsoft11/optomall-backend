@@ -8,6 +8,7 @@ use App\Http\Resources\CategoryResource;
 use App\Http\Resources\ProductDetail;
 use App\Http\Resources\ProductDetailDatabase;
 use App\Http\Resources\ProductDetailDatabaseToken;
+use App\Http\Resources\ProductDetailOtapi;
 use App\Http\Resources\ProductDetailResource;
 use App\Http\Resources\ProductDetailTokenResource;
 use OpenApi\Annotations as OA;
@@ -482,6 +483,84 @@ class ProductController extends Controller
 
     /**
      * @OA\Get(
+     *     path="/api/product-detail-otapi",
+     *     summary="Get product detail",
+     *     tags={"Products"},
+     *     @OA\Parameter(
+     *         name="productId",
+     *         in="query",
+     *         required=true,
+     *         @OA\Schema(type="string"),
+     *         description="The ID of the product to retrieve details for"
+     *     ),
+     *  @OA\Parameter(
+     *         name="provider",
+     *         in="query",
+     *         required=false,
+     *         @OA\Schema(type="string")
+     *     ),
+     *    @OA\Parameter(
+     *         name="lang",
+     *         in="query",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *             enum={"uz", "ru", "en"}
+     *         ),
+     *         description="Language code for the product details. Available options: uz, ru, en"
+     *     ),
+     *     @OA\Response(response="200", description="Product detail from taobao"),
+     * )
+     */
+    public function productDetailOtapi(Request $request)
+    {
+        $productId = $request->productId;
+        $lang = $request->lang ?? 'en';
+        $provider = $request->provider ?? 'taobao';
+
+        // Function to get product details
+
+        $url = "https://otapi.net/service-json/BatchGetItemFullInfo?instanceKey=74a68481-54a6-4069-98c0-f19fecf1f58f&language=$lang&signature=&timestamp=&sessionId=&itemParameters=&itemId=$productId&blockList=Description";
+        $productDetail = Http::withoutVerifying()->get($url)->json();
+
+        // return $productDetail;
+        // Check if provider is 'local' to fetch product from local database
+        if ($provider == 'local') {
+            $productDatabase = Product::where('id', $productId)->first();
+
+            // Handle the case where the product is not found in the local database
+            if (!$productDatabase) {
+                return response()->json(['error' => 'product_not_found'], 404);
+            }
+
+            $product = new ProductDetailDatabase($productDatabase, $lang);
+
+            return $this->respondWithSuccess([
+                'detail' => $product,
+                'score' => [
+                    'rating' => $productDatabase->seller_info['item_score'] ?? 4.6,
+                    'sold' => $productDatabase->sales ?? 1000,
+                ],
+            ]);
+        }
+
+        if (!isset($productDetail['Result']['Item'])) {
+            return response()->json(['error' => 'product_not_found'], 404);
+        }
+
+        $product = new ProductDetailOtapi($productDetail['Result']['Item'], $provider);
+
+        return $this->respondWithSuccess([
+            'detail' => $product,
+            'score' => [
+                'rating' => $productDetail['item']['seller_info']['item_score'] ?? 4.6,
+                'sold' => $productDetail['item']['sales'] ?? 1000,
+            ],
+        ]);
+    }
+
+    /**
+     * @OA\Get(
      *     path="/api/product-detail-from-taobao",
      *     summary="Get product detail from taobao",
      *     tags={"Products"},
@@ -756,8 +835,8 @@ class ProductController extends Controller
 
         // Build the API URL, including the provider in both cases
         $apiUrl = $imageUrl
-            ? "http://otapi.net/service-json/SearchItemsFrame?instanceKey=acda0ce7-5a15-4c3e-88f0-70fb0026aac2&language=$lang&signature=&timestamp=&xmlParameters=%3CSearchItemsParameters%3E%3CProvider%3E$providerName%3C%2FProvider%3E%3CImageUrl%3E$imageUrl%3C%2FImageUrl%3E%3C%2FSearchItemsParameters%3E&framePosition=$page&frameSize=40"
-            : "https://otapi.net/service-json/SearchItemsFrame?instanceKey=acda0ce7-5a15-4c3e-88f0-70fb0026aac2&language=$lang&signature=&timestamp=&xmlParameters=%3CSearchItemsParameters%3E%3CProvider%3E$providerName%3C%2FProvider%3E%3CItemTitle%3E" . ($subcategory ? $subcategory : $value) . "%3C%2FItemTitle%3E%3C%2FSearchItemsParameters%3E&framePosition=$page&frameSize=40";
+            ? "http://otapi.net/service-json/SearchItemsFrame?instanceKey=74a68481-54a6-4069-98c0-f19fecf1f58f&language=$lang&signature=&timestamp=&xmlParameters=%3CSearchItemsParameters%3E%3CProvider%3EAlibaba1688%3C%2FProvider%3E%3CImageUrl%3E$imageUrl%3C%2FImageUrl%3E%3C%2FSearchItemsParameters%3E&framePosition=$page&frameSize=20"
+            : "https://otapi.net/service-json/SearchItemsFrame?instanceKey=74a68481-54a6-4069-98c0-f19fecf1f58f&language=$lang&signature=&timestamp=&xmlParameters=%3CSearchItemsParameters%3E%3CProvider%3EAlibaba1688%3C%2FProvider%3E%3CItemTitle%3E" . ($subcategory ? $subcategory : $value) . "%3C%2FItemTitle%3E%3C%2FSearchItemsParameters%3E&framePosition=$page&frameSize=20";
 
         // Make the API call with SSL verification disabled (ensure this is temporary)
         $response = Http::withoutVerifying()->get($apiUrl);

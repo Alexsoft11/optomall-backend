@@ -39,6 +39,7 @@ Route::middleware('throttle:1200,60')->group(function () {
     Route::post('/image-search', [ProductController::class, 'imageSearch']);
 
     Route::get('/product-detail', [ProductController::class, 'productDetail']);
+    Route::get('/product-detail-otapi', [ProductController::class, 'productDetailOtapi']);
 
     Route::get('/products', [ProductController::class, 'products']);
     Route::get('/get-prices', [ProductController::class, 'getPrices']);
