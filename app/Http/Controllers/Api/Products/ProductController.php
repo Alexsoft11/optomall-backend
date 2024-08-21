@@ -819,7 +819,7 @@ class ProductController extends Controller
             $value = $request->input('value');
             $sort = $request->input('sort'); // Expecting format like 'VendorRating:Desc'
             $page = $request->input('page', 0);
-            $productsCount = $request->input('productsCount', 20);
+            $productsCount = $request->input('productsCount', 40);
             $provider = strtolower($request->input('provider', 'taobao'));
             $lang = $request->input('lang', 'en');
             $imageUrl = $request->input('imageUrl');
@@ -837,7 +837,7 @@ class ProductController extends Controller
 
             // Append OrderBy parameter if sorting is provided
             $orderBy = $sort ? "%0D%0A%3COrderBy%3E$sort%3C%2FOrderBy%3E" : '';
-            $apiUrl = $baseApiUrl . $orderBy . "%0D%0A%3C%2FSearchItemsParameters%3E&framePosition=$page&frameSize=$productsCount&blockList=AvailableSearchMethods";
+            $apiUrl = $baseApiUrl . $orderBy . "%0D%0A%3C%2FSearchItemsParameters%3E&framePosition=$page&frameSize=$productsCount&blockList=Description";
 
             $response = Http::withoutVerifying()->get($apiUrl);
             $products = $response->json();
