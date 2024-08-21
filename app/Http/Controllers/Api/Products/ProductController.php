@@ -1061,30 +1061,20 @@ class ProductController extends Controller
      *     @OA\Response(response="200", description="Products from taobao"),
      * )
      */
+
     public function products(Request $request)
     {
         // Retrieve the query parameters
         $query = $request->input('query');
         $lang = $request->input('lang') ?? 'en';
-        $page = $request->input('page', 1); // Default page is 1 if not provided
-        $productsCount = $request->input('productsCount', 10); // Default count is 10 if not provided
-
-        // Cache key
-        $cacheKey = "products_{$query}_{$productsCount}_{$page}_{$lang}";
-
-        // Retrieve products from cache or database
-        $products = Cache::remember($cacheKey, 300, function () use ($query, $productsCount) {
-            return HomePageProduct::where('type', $query)
-                ->inRandomOrder()
-                // ->take($productsCount)
-                ->get();
-        });
-
-        // Get liked products if authenticated
-        $likedProducts = auth()->check() ? auth()->user()->likedProducts()->pluck('product_id')->toArray() : [];
+        $page = $request->input('page');
+        $productsCount = $request->input('productsCount') ?? 10;
+        // Retrieve the products based on the query type
+        $products = HomePageProduct::where('type', $query)->inRandomOrder()->get();
 
         // Transform the products into the desired structure
-        $transformedProducts = $products->map(function ($product) use ($lang, $likedProducts) {
+        $transformedProducts = $products->map(function ($product) use ($lang) {
+            $isLiked = auth()->check() && auth()->user()->likedProducts()->where('product_id', $product->product_id)->exists();
             return [
                 'id' => $product->product_id,
                 'title' => $product['title_' . $lang],
@@ -1093,7 +1083,7 @@ class ProductController extends Controller
                 'discounted_price' => $product->discounted_price,
                 'product_url' => $product->product_url,
                 'provider' => $product->provider,
-                'is_liked' => in_array($product->product_id, $likedProducts),
+                'is_liked' => $isLiked,
             ];
         });
 
