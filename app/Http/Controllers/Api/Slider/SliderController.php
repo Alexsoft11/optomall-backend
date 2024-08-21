@@ -7,6 +7,7 @@ use App\Models\Slider;
 use App\Traits\ApiResponseHelpers;
 use Illuminate\Http\Request;
 use App\Http\Resources\SliderResource;
+use Illuminate\Support\Facades\Cache;
 
 class SliderController extends Controller
 {
@@ -24,13 +25,18 @@ class SliderController extends Controller
      *     )
      * )
      */
-
     public function index()
     {
-        $sliders = Slider::all();
+        $cacheKey = 'sliders_list'; // Define a unique key for caching
 
+        // Retrieve sliders from the cache or fetch from the database if not cached
+        $sliders = Cache::remember($cacheKey, 300, function () {
+            return Slider::all(); // Fetch all sliders from the database
+        });
+
+        // Return the response with cached or newly fetched sliders
         return $this->respondWithSuccess([
-            'sliders' => SliderResource::collection($sliders)
+            'sliders' => SliderResource::collection($sliders),
         ]);
     }
 }
