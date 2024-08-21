@@ -4,6 +4,7 @@ namespace App\Http\Resources;
 
 use App\Models\Exchanges;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Cache;
 
 class ProductDetailOtapi extends JsonResource
 {
@@ -16,8 +17,12 @@ class ProductDetailOtapi extends JsonResource
         parent::__construct($resource);
         $this->resource = $resource;
         $this->provider = $provider;
-        $this->amount = Exchanges::where('currency', 'yuan')->first()->amount ?? 1800;
-        $this->percent = Exchanges::where('currency', 'product_percent')->first()->amount ?? 0;
+        $this->amount = Cache::remember('exchange_yuan', 60 * 60, function () {
+            return Exchanges::where('currency', 'yuan')->first()->amount ?? 1800;
+        });
+        $this->percent = Cache::remember('exchange_percent', 60 * 60, function () {
+            return Exchanges::where('currency', 'product_percent')->first()->amount ?? 0;
+        });
     }
 
     public function toArray($request)

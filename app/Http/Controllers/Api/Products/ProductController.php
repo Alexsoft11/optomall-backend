@@ -25,6 +25,7 @@ use App\Models\TaobaoCategory;
 use App\Models\TaobaoSubcategory;
 use App\Models\TaobaoSubcategoryName;
 use App\Traits\ApiResponseHelpers;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
@@ -517,11 +518,12 @@ class ProductController extends Controller
         $productId = $request->productId;
         $lang = $request->lang ?? 'en';
         $provider = $request->provider ?? 'taobao';
+        $cacheKey = "product-detail-otapi?productId={$productId}&lang={$lang}";
 
-        // Function to get product details
-
-        $url = "https://otapi.net/service-json/BatchGetItemFullInfo?instanceKey=74a68481-54a6-4069-98c0-f19fecf1f58f&language=$lang&signature=&timestamp=&sessionId=&itemParameters=&itemId=$productId&blockList=Description";
-        $productDetail = Http::withoutVerifying()->get($url)->json();
+        $productDetail = Cache::remember($cacheKey, 60 * 5, function () use ($productId, $lang) {
+            $url = "https://otapi.net/service-json/BatchGetItemFullInfo?instanceKey=74a68481-54a6-4069-98c0-f19fecf1f58f&language=$lang&itemId=$productId&blockList=Description";
+            return Http::timeout(5)->withoutVerifying()->get($url)->json();
+        });
 
         // return $productDetail;
         // Check if provider is 'local' to fetch product from local database
@@ -811,54 +813,45 @@ class ProductController extends Controller
      */
     public function searchProductsFromTaobao(Request $request)
     {
-        $value = $request->input('value');
-        $sort = $request->input('sort');
-        $page = $request->input('page', 0);
-        $productsCount = $request->input('productsCount', 20);
-        $provider = strtolower($request->input('provider', 'taobao')); // Ensure provider is in lowercase
-        $lang = $request->input('lang', 'en');
-        $imageUrl = $request->input('imageUrl');
-        $apiKey = 'kingdev5809@gmail.com';
+        // Cache the API response for 5 minutes to avoid repeated external API calls
+        $cacheKey = 'search_products_' . md5(json_encode($request->all()));
+        return Cache::remember($cacheKey, 300, function () use ($request) {
+            $value = $request->input('value');
+            $sort = $request->input('sort');
+            $page = $request->input('page', 0);
+            $productsCount = $request->input('productsCount', 20);
+            $provider = strtolower($request->input('provider', 'taobao'));
+            $lang = $request->input('lang', 'en');
+            $imageUrl = $request->input('imageUrl');
+            $apiKey = 'kingdev5809@gmail.com';
 
-        // Fetch subcategory unique ID
-        $subcategory = TaobaoSubcategory::where('unique_id', $request->catId)
-            ->pluck('unique')
-            ->first() ?? TaobaoSubcategoryName::where('unique_id', $request->catId)
-            ->pluck('unique')
-            ->first();
+            $subcategory = TaobaoSubcategory::where('unique_id', $request->catId)
+                ->pluck('unique')
+                ->first() ?? TaobaoSubcategoryName::where('unique_id', $request->catId)
+                ->pluck('unique')
+                ->first();
 
-        // Translate the search value
-        // $translatedValue = $this->translateText($value, $lang);
+            $apiUrl = $imageUrl
+                ? "http://otapi.net/service-json/SearchItemsFrame?instanceKey=74a68481-54a6-4069-98c0-f19fecf1f58f&language=$lang&signature=&timestamp=&xmlParameters=%3CSearchItemsParameters%3E%3CProvider%3EAlibaba1688%3C%2FProvider%3E%3CImageUrl%3E$imageUrl%3C%2FImageUrl%3E%3C%2FSearchItemsParameters%3E&framePosition=$page&frameSize=20"
+                : "https://otapi.net/service-json/SearchItemsFrame?instanceKey=74a68481-54a6-4069-98c0-f19fecf1f58f&language=$lang&signature=&timestamp=&xmlParameters=%3CSearchItemsParameters%3E%3CProvider%3EAlibaba1688%3C%2FProvider%3E%3CItemTitle%3E" . ($subcategory ? $subcategory : $value) . "%3C%2FItemTitle%3E%3C%2FSearchItemsParameters%3E&framePosition=$page&frameSize=20";
 
-        // Determine the provider name based on the input
-        $providerName = ($provider === 'taobao') ? 'Taobao' : 'Alibaba1688';
+            $response = Http::withoutVerifying()->get($apiUrl);
+            $products = $response->json();
 
-        // Build the API URL, including the provider in both cases
-        $apiUrl = $imageUrl
-            ? "http://otapi.net/service-json/SearchItemsFrame?instanceKey=74a68481-54a6-4069-98c0-f19fecf1f58f&language=$lang&signature=&timestamp=&xmlParameters=%3CSearchItemsParameters%3E%3CProvider%3EAlibaba1688%3C%2FProvider%3E%3CImageUrl%3E$imageUrl%3C%2FImageUrl%3E%3C%2FSearchItemsParameters%3E&framePosition=$page&frameSize=20"
-            : "https://otapi.net/service-json/SearchItemsFrame?instanceKey=74a68481-54a6-4069-98c0-f19fecf1f58f&language=$lang&signature=&timestamp=&xmlParameters=%3CSearchItemsParameters%3E%3CProvider%3EAlibaba1688%3C%2FProvider%3E%3CItemTitle%3E" . ($subcategory ? $subcategory : $value) . "%3C%2FItemTitle%3E%3C%2FSearchItemsParameters%3E&framePosition=$page&frameSize=20";
+            if (empty($products['Result']['Items']['Content'])) {
+                return response()->json([
+                    'error' => 'product_not_found',
+                    'details' => $products,
+                ], 404);
+            }
 
-        // Make the API call with SSL verification disabled (ensure this is temporary)
-        $response = Http::withoutVerifying()->get($apiUrl);
+            $productData = $products['Result']['Items']['Content'];
 
-        // Handle response and check if products are found
-        $products = $response->json();
-        if (empty($products['Result']['Items']['Content'])) {
-            return response()->json([
-                // 'translatedValue' => $translatedValue,
-                'error' => 'product_not_found',
-                'details' => $products,
-            ], 404);
-        }
-
-        // Extract product data
-        $productData = $products['Result']['Items']['Content'];
-
-        // Return the final response
-        return $this->respondWithSuccess([
-            'products' => ProductResource::collection($productData),
-            // 'translatedValue' => $translatedValue,
-        ]);
+            // Optimize resource transformation
+            return $this->respondWithSuccess([
+                'products' => ProductResource::collection($productData)->resolve(),
+            ]);
+        });
     }
 
     // private function translateText($text, $lang)
