@@ -30,23 +30,31 @@ class HomePageProduct extends Model
             if ($homePageProduct->isDirty('product_id')) {
                 // Inject the ProductController
                 $productController = app(ProductController::class);
+                $productId = '';
 
+                if ($homePageProduct->provider == '1688') {
+                    $productId = 'abb-' . $homePageProduct->product_id;
+                } else {
+                    $productId = $homePageProduct->product_id;
+                }
                 // Call the method to get product details
-                $productDetailResponseuz = $productController->productDetail(new Request([
-                    'productId' => $homePageProduct->product_id,
+                $productDetailResponseuz = $productController->productDetailOtapi(new Request([
+                    'productId' => $productId,
                     'lang' => 'uz',
                     'provider' => $homePageProduct->provider,
                 ]));
-                $productDetailResponseen = $productController->productDetail(new Request([
-                    'productId' => $homePageProduct->product_id,
+                $productDetailResponseen = $productController->productDetailOtapi(new Request([
+                    'productId' => $productId,
                     'lang' => 'en',
                     'provider' => $homePageProduct->provider,
                 ]));
-                $productDetailResponseru = $productController->productDetail(new Request([
-                    'productId' => $homePageProduct->product_id,
+                $productDetailResponseru = $productController->productDetailOtapi(new Request([
+                    'productId' => $productId,
                     'lang' => 'ru',
                     'provider' => $homePageProduct->provider,
                 ]));
+
+
 
                 $productDetailuz = json_decode($productDetailResponseuz->getContent(), true)['detail'];
                 $productDetailen = json_decode($productDetailResponseen->getContent(), true)['detail'];
