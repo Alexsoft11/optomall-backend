@@ -1,3 +1,4 @@
+@isset($order)
 <!DOCTYPE html>
 <html>
 
@@ -67,3 +68,4 @@
 </body>
 
 </html>
+@endisset
