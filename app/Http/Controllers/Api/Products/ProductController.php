@@ -27,6 +27,7 @@ use App\Models\TaobaoSubcategoryName;
 use App\Traits\ApiResponseHelpers;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
@@ -522,10 +523,14 @@ class ProductController extends Controller
 
         $productDetail = Cache::remember($cacheKey, 60 * 5, function () use ($productId, $lang) {
             $url = "https://otapi.net/service-json/BatchGetItemFullInfo?instanceKey=74a68481-54a6-4069-98c0-f19fecf1f58f&language=$lang&itemId=$productId&blockList=Description";
-            return Http::timeout(5)->withoutVerifying()->get($url)->json();
+
+            try {
+                return Http::timeout(10)->withoutVerifying()->get($url)->json(); // Increased timeout to 10 seconds
+            } catch (\Illuminate\Http\Client\ConnectionException $e) {
+                return null; // Return null on timeout
+            }
         });
 
-        // return $productDetail;
         // Check if provider is 'local' to fetch product from local database
         if ($provider == 'local') {
             $productDatabase = Product::where('id', $productId)->first();
@@ -546,8 +551,9 @@ class ProductController extends Controller
             ]);
         }
 
-        if (!isset($productDetail['Result']['Item'])) {
-            return response()->json(['error' => 'product_not_found'], 404);
+        // Check if product details were successfully retrieved or if an error occurred
+        if (!$productDetail || !isset($productDetail['Result']['Item'])) {
+            return response()->json(['error' => 'product_not_found_or_timeout'], 404); // Handle timeout or product not found
         }
 
         $product = new ProductDetailOtapi($productDetail['Result']['Item'], $provider);
@@ -555,8 +561,8 @@ class ProductController extends Controller
         return $this->respondWithSuccess([
             'detail' => $product,
             'score' => [
-                'rating' => $productDetail['item']['seller_info']['item_score'] ?? 4.6,
-                'sold' => $productDetail['item']['sales'] ?? 1000,
+                'rating' => $productDetail['Result']['Item']['seller_info']['item_score'] ?? 4.6,
+                'sold' => $productDetail['Result']['Item']['sales'] ?? 1000,
             ],
         ]);
     }
@@ -815,22 +821,25 @@ class ProductController extends Controller
     {
         // Cache the API response for 5 minutes to avoid repeated external API calls
         $cacheKey = 'search_products_' . md5(json_encode($request->all()));
+
         return Cache::remember($cacheKey, 300, function () use ($request) {
             $value = $request->input('value');
             $sort = $request->input('sort'); // Expecting format like 'VendorRating:Desc'
             $page = $request->input('page', 0);
-            $productsCount = $request->input('productsCount', 40);
+            $productsCount = $request->input('productsCount', 20); // Reduced productsCount to 20 for quicker responses
             $provider = strtolower($request->input('provider', 'taobao'));
             $lang = $request->input('lang', 'en');
             $imageUrl = $request->input('imageUrl');
             $apiKey = 'kingdev5809@gmail.com';
 
+            // Fetch the subcategory based on catId
             $subcategory = TaobaoSubcategory::where('unique_id', $request->catId)
                 ->pluck('unique')
                 ->first() ?? TaobaoSubcategoryName::where('unique_id', $request->catId)
                 ->pluck('unique')
                 ->first();
 
+            // Base API URL construction
             $baseApiUrl = $imageUrl
                 ? "http://otapi.net/service-json/SearchItemsFrame?instanceKey=74a68481-54a6-4069-98c0-f19fecf1f58f&language=$lang&signature=&timestamp=&xmlParameters=%3CSearchItemsParameters%3E%3CProvider%3EAlibaba1688%3C%2FProvider%3E%3CImageUrl%3E$imageUrl%3C%2FImageUrl%3E"
                 : "https://otapi.net/service-json/SearchItemsFrame?instanceKey=74a68481-54a6-4069-98c0-f19fecf1f58f&language=$lang&signature=&timestamp=&xmlParameters=%3CSearchItemsParameters%3E%3CProvider%3EAlibaba1688%3C%2FProvider%3E%3CItemTitle%3E" . ($subcategory ? $subcategory : $value) . "%3C%2FItemTitle%3E";
@@ -839,9 +848,16 @@ class ProductController extends Controller
             $orderBy = $sort ? "%0D%0A%3COrderBy%3E$sort%3C%2FOrderBy%3E" : '';
             $apiUrl = $baseApiUrl . $orderBy . "%0D%0A%3C%2FSearchItemsParameters%3E&framePosition=$page&frameSize=$productsCount&blockList=Description";
 
-            $response = Http::withoutVerifying()->get($apiUrl);
-            $products = $response->json();
+            try {
+                // Making the external API request with a longer timeout (async can be implemented here too)
+                $response = Http::timeout(10)->withoutVerifying()->get($apiUrl);
+                $products = $response->json();
+            } catch (\Exception $e) {
+                Log::error('Error fetching products from Taobao: ' . $e->getMessage());
+                return response()->json(['error' => 'service_unavailable'], 503);
+            }
 
+            // Check if products are found
             if (empty($products['Result']['Items']['Content'])) {
                 return response()->json([
                     'error' => 'product_not_found',
