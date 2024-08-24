@@ -553,7 +553,7 @@ class ProductController extends Controller
 
         // Check if product details were successfully retrieved or if an error occurred
         if (!$productDetail || !isset($productDetail['Result']['Item'])) {
-            return response()->json(['error' => 'product_not_found_or_timeout'], 404); // Handle timeout or product not found
+            return response()->json(['error' => 'product_not_found', 'productDetail' => $productDetail], 404); // Handle timeout or product not found
         }
 
         $product = new ProductDetailOtapi($productDetail['Result']['Item'], $provider);
