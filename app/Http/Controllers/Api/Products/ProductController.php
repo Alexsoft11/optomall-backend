@@ -519,17 +519,17 @@ class ProductController extends Controller
         $productId = $request->productId;
         $lang = $request->lang ?? 'en';
         $provider = $request->provider ?? 'taobao';
+        $cacheKey = "product-detail-otapi?productId={$productId}&lang={$lang}";
 
-        // Construct the API URL
-        $url = "https://otapi.net/service-json/BatchGetItemFullInfo?instanceKey=74a68481-54a6-4069-98c0-f19fecf1f58f&language=$lang&itemId=$productId&blockList=Description";
+        $productDetail = Cache::remember($cacheKey, 60 * 5, function () use ($productId, $lang) {
+            $url = "https://otapi.net/service-json/BatchGetItemFullInfo?instanceKey=74a68481-54a6-4069-98c0-f19fecf1f58f&language=$lang&itemId=$productId&blockList=Description";
 
-        try {
-            // Make the API request with a 10-second timeout
-            $productDetail = Http::timeout(50)->withoutVerifying()->get($url)->json();
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
-            // Handle connection timeout error
-            return response()->json(['error' => 'service_unavailable'], 503);
-        }
+            try {
+                return Http::timeout(50)->withoutVerifying()->get($url)->json(); // Increased timeout to 10 seconds
+            } catch (\Illuminate\Http\Client\ConnectionException $e) {
+                return null; // Return null on timeout
+            }
+        });
 
         // Check if provider is 'local' to fetch product from local database
         if ($provider == 'local') {
