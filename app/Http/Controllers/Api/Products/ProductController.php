@@ -525,7 +525,7 @@ class ProductController extends Controller
 
         try {
             // Make the API request with a 10-second timeout
-            $productDetail = Http::timeout(10)->withoutVerifying()->get($url)->json();
+            $productDetail = Http::timeout(50)->withoutVerifying()->get($url)->json();
         } catch (\Illuminate\Http\Client\ConnectionException $e) {
             // Handle connection timeout error
             return response()->json(['error' => 'service_unavailable'], 503);
