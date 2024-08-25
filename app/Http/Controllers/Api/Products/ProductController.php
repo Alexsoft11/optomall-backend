@@ -557,7 +557,7 @@ class ProductController extends Controller
         }
 
         $product = new ProductDetailOtapi($productDetail['Result']['Item'], $provider);
-        $recommended = ProductResource::collection($productDetail['Result']['RecommendedItems']['Content']);
+        $recommended = ProductResource::collection($productDetail['Result']['RecommendedItems']['Content'] ?? []);
 
         return $this->respondWithSuccess([
             'detail' => $product,
