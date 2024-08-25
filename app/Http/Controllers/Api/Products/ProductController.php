@@ -522,7 +522,7 @@ class ProductController extends Controller
         $cacheKey = "product-detail-otapi?productId={$productId}&lang={$lang}";
 
         $productDetail = Cache::remember($cacheKey, 60 * 5, function () use ($productId, $lang) {
-            $url = "https://otapi.net/service-json/BatchGetItemFullInfo?instanceKey=74a68481-54a6-4069-98c0-f19fecf1f58f&language=$lang&itemId=$productId&blockList=Description";
+            $url = "https://otapi.net/service-json/BatchGetItemFullInfo?instanceKey=74a68481-54a6-4069-98c0-f19fecf1f58f&language=$lang&itemId=$productId&blockList=OriginalDescription";
 
             try {
                 return Http::timeout(50)->withoutVerifying()->get($url)->json(); // Increased timeout to 10 seconds

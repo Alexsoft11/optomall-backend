@@ -61,6 +61,7 @@ class HomePageProduct extends Model
                 $productDetailru = json_decode($productDetailResponseru->getContent(), true)['detail'];
 
                 // Update fields based on the product detail
+                $homePageProduct->product_id = $productDetailuz['id'] ?? $homePageProduct->product_id;
                 $homePageProduct->title_uz = $productDetailuz['title'] ?? $homePageProduct->title_uz;
                 $homePageProduct->title_en = $productDetailen['title'] ?? $homePageProduct->title_en;
                 $homePageProduct->title_ru = $productDetailru['title'] ?? $homePageProduct->title_ru;

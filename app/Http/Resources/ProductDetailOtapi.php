@@ -46,7 +46,7 @@ class ProductDetailOtapi extends JsonResource
             'quantity' => $this['MasterQuantity'],
             // 'seller_info' => $this['seller_info'],
             'provider' => $this['ProviderType'],
-            'description' => str_replace(["\n", "\\"], '', $this['Description']),
+            'description' => str_replace(["\n", "\\"], '', $this['Description']) ?? '',
             'pictures' => $this->transformPictures($this['Pictures']),
             'location' => $this['Location']['City'] ?? 'China',
             'product_url' => $this['TaobaoItemUrl'],
