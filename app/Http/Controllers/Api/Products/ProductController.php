@@ -522,7 +522,7 @@ class ProductController extends Controller
         $cacheKey = "product-detail-otapi?productId={$productId}&lang={$lang}";
 
         $productDetail = Cache::remember($cacheKey, 60 * 5, function () use ($productId, $lang) {
-            $url = "https://otapi.net/service-json/BatchGetItemFullInfo?instanceKey=74a68481-54a6-4069-98c0-f19fecf1f58f&language=$lang&itemId=$productId&blockList=OriginalDescription";
+            $url = "https://otapi.net/service-json/BatchGetItemFullInfo?instanceKey=74a68481-54a6-4069-98c0-f19fecf1f58f&language=$lang&itemId=$productId&blockList=Description&blockList=RecommendedItems";
 
             try {
                 return Http::timeout(50)->withoutVerifying()->get($url)->json(); // Increased timeout to 10 seconds
@@ -557,6 +557,7 @@ class ProductController extends Controller
         }
 
         $product = new ProductDetailOtapi($productDetail['Result']['Item'], $provider);
+        $recommended = ProductResource::collection($productDetail['Result']['RecommendedItems']['Content']);
 
         return $this->respondWithSuccess([
             'detail' => $product,
@@ -564,6 +565,7 @@ class ProductController extends Controller
                 'rating' => $productDetail['Result']['Item']['seller_info']['item_score'] ?? 4.6,
                 'sold' => $productDetail['Result']['Item']['sales'] ?? 1000,
             ],
+            'recommended' => $recommended,
         ]);
     }
 
