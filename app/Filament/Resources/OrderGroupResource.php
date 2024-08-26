@@ -65,12 +65,12 @@ class OrderGroupResource extends Resource
                             ]),
                     ])
                     ->disabled(),
-                Select::make('status')
-                    ->label(trans("status"))
-                    ->options(OrderStatus::whereNotNull('name_uz')->pluck('name_uz', 'id'))
-                    ->reactive(),
-                TextInput::make('total_price')->label(trans("total_amount"))->disabled(),
-                Toggle::make('is_paid'),
+                // Select::make('status')
+                //     ->label(trans("status"))
+                //     ->options(OrderStatus::whereNotNull('name_uz')->pluck('name_uz', 'id'))
+                //     ->reactive(),
+                // TextInput::make('total_price')->label(trans("total_amount"))->disabled(),
+                // Toggle::make('is_paid'),
 
             ]);
     }
