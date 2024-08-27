@@ -44,7 +44,7 @@ class ProductDetailOtapi extends JsonResource
             // 'discount_percentage' => round((($this['orginal_price'] - $this['price']) / $this['orginal_price']) * 100),
             'image' => $this['MainPictureUrl'],
             'quantity' => $this['MasterQuantity'],
-            // 'seller_info' => $this['seller_info'],
+            'seller_id' => $this['VendorId'],
             'provider' => $this['ProviderType'],
             'description' => str_replace(["\n", "\\"], '', $this['Description']) ?? '',
             'pictures' => $this->transformPictures($this['Pictures']),

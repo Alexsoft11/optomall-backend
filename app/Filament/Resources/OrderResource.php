@@ -137,10 +137,18 @@ class OrderResource extends Resource
                 TextColumn::make('created_at')->label('Created At')->sortable(),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('status')
-                    ->options(OrderStatus::pluck('name_uz', 'id')->toArray()),
-                Tables\Filters\SelectFilter::make('user_id')
-                    ->options(User::pluck('name', 'id')->toArray()),
+                Tables\Filters\SelectFilter::make('status')->label('Sort by status')
+                    ->options(
+                        OrderStatus::pluck('name_uz', 'id')->mapWithKeys(function ($item, $key) {
+                            return [(string) $key => (string) $item];
+                        })->toArray()
+                    ),
+                Tables\Filters\SelectFilter::make('user_id')->label('Sort by user')
+                    ->options(
+                        User::pluck('name', 'id')->mapWithKeys(function ($item, $key) {
+                            return [(string) $key => (string) $item];
+                        })->toArray()
+                    ),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
