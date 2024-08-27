@@ -117,7 +117,7 @@ class OrderGroupResource extends Resource
                     }),
                 Tables\Filters\SelectFilter::make('status')->label('Sort by status')
                     ->options(
-                        OrderStatus::where('name_uz')->pluck('name_uz', 'id')->mapWithKeys(function ($item, $key) {
+                        OrderStatus::pluck('name_uz', 'id')->mapWithKeys(function ($item, $key) {
                             return [(string) $key => (string) $item];
                         })->toArray()
                     ),
