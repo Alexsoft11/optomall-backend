@@ -65,12 +65,12 @@ class OrderGroupResource extends Resource
                             ]),
                     ])
                     ->disabled(),
-                // Select::make('status')
-                //     ->label(trans("status"))
-                //     ->options(OrderStatus::whereNotNull('name_uz')->pluck('name_uz', 'id'))
-                //     ->reactive(),
-                // TextInput::make('total_price')->label(trans("total_amount"))->disabled(),
-                // Toggle::make('is_paid'),
+                Select::make('status')
+                    ->label(trans("status"))
+                    ->options(OrderStatus::whereNotNull('name_uz')->pluck('name_uz', 'id'))
+                    ->reactive(),
+                TextInput::make('total_price')->label(trans("total_amount"))->disabled(),
+                Toggle::make('is_paid'),
 
             ]);
     }
@@ -115,10 +115,10 @@ class OrderGroupResource extends Resource
                             });
                         }
                     }),
-                // Tables\Filters\SelectFilter::make('status')->label('Sort by status')
-                //     ->options(OrderStatus::pluck('name_uz', 'id')->toArray()),
-                // Tables\Filters\SelectFilter::make('user_id')->label('Sort by user')
-                //     ->options(User::pluck('name', 'id')->toArray()),
+                Tables\Filters\SelectFilter::make('status')->label('Sort by status')
+                    ->options(OrderStatus::pluck('name_uz', 'id')->toArray()),
+                Tables\Filters\SelectFilter::make('user_id')->label('Sort by user')
+                    ->options(User::pluck('name', 'id')->toArray()),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
