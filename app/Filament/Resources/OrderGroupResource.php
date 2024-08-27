@@ -66,7 +66,7 @@ class OrderGroupResource extends Resource
                     ])
                     ->disabled(),
                 Select::make('status')
-                    ->label(trans("status"))
+                    ->label('Status')
                     ->options(OrderStatus::where('name_uz')->pluck('name_uz', 'id')),
                 TextInput::make('total_price')->label(trans("total_amount"))->disabled(),
                 Toggle::make('is_paid'),
@@ -83,7 +83,7 @@ class OrderGroupResource extends Resource
                 TextColumn::make('user.name')->label(trans("ism"))->sortable(),
                 TextColumn::make('total_price')->label(trans("price"))->sortable(),
                 TextColumn::make('getStatus.name_uz')
-                    ->label(trans("status"))
+                    ->label("Status")
                     ->sortable()
                     ->searchable(),
                 ColorColumn::make('getStatus.color')->label(trans("status_color")),
