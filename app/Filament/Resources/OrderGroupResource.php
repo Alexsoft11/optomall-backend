@@ -115,8 +115,8 @@ class OrderGroupResource extends Resource
                             });
                         }
                     }),
-                Tables\Filters\SelectFilter::make('status')->label('Sort by status')
-                    ->options(OrderStatus::pluck('name_uz', 'id')->toArray()),
+                // Tables\Filters\SelectFilter::make('status')->label('Sort by status')
+                //     ->options(OrderStatus::pluck('name_uz', 'id')->toArray()),
                 Tables\Filters\SelectFilter::make('user_id')->label('Sort by user')
                     ->options(User::pluck('name', 'id')->toArray()),
             ])
