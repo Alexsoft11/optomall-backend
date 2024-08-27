@@ -67,14 +67,7 @@ class OrderGroupResource extends Resource
                     ->disabled(),
                 Select::make('status')
                     ->label(trans("status"))
-                    ->options(
-                        OrderStatus::whereNotNull('name_uz')
-                            ->pluck('name_uz', 'id')
-                            ->map(function ($value) {
-                                return $value ?: 'Unknown Status'; // Default label if name_uz is null
-                            })
-                    )
-                    ->reactive(),
+                    ->options(OrderStatus::where('name_uz')->pluck('name_uz', 'id')),
                 TextInput::make('total_price')->label(trans("total_amount"))->disabled(),
                 Toggle::make('is_paid'),
 
