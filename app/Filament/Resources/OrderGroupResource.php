@@ -67,7 +67,13 @@ class OrderGroupResource extends Resource
                     ->disabled(),
                 Select::make('status')
                     ->label(trans("status"))
-                    ->options(OrderStatus::whereNotNull('name_uz')->pluck('name_uz', 'id'))
+                    ->options(
+                        OrderStatus::whereNotNull('name_uz')
+                            ->pluck('name_uz', 'id')
+                            ->map(function ($value) {
+                                return $value ?: 'Unknown Status'; // Default label if name_uz is null
+                            })
+                    )
                     ->reactive(),
                 TextInput::make('total_price')->label(trans("total_amount"))->disabled(),
                 Toggle::make('is_paid'),
@@ -115,8 +121,8 @@ class OrderGroupResource extends Resource
                             });
                         }
                     }),
-                // Tables\Filters\SelectFilter::make('status')->label('Sort by status')
-                //     ->options(OrderStatus::pluck('name_uz', 'id')->toArray()),
+                Tables\Filters\SelectFilter::make('status')->label('Sort by status')
+                    ->options(OrderStatus::pluck('name_uz', 'id')->toArray()),
                 Tables\Filters\SelectFilter::make('user_id')->label('Sort by user')
                     ->options(User::pluck('name', 'id')->toArray()),
             ])
