@@ -1060,42 +1060,77 @@ class ProductController extends Controller
      *             type="string"
      *         )
      *     ),
-     *    @OA\Parameter(
+     *     @OA\Parameter(
      *         name="productsCount",
      *         in="query",
      *         required=false,
      *         @OA\Schema(type="string"),
      *         description="The count of products"
      *     ),
-     *    @OA\Parameter(
+     *     @OA\Parameter(
      *         name="lang",
      *         in="query",
      *         required=false,
-     *         @OA\Schema(type="string"),
+     *         @OA\Schema(type="string")
      *     ),
-     *  @OA\Parameter(
+     *     @OA\Parameter(
      *         name="page",
      *         in="query",
      *         required=false,
      *         @OA\Schema(type="integer")
      *     ),
      *     tags={"Products"},
-     *     @OA\Response(response="200", description="Products from taobao"),
+     *     @OA\Response(
+     *         response="200",
+     *         description="Products from taobao",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(
+     *                 property="products",
+     *                 type="array",
+     *                 @OA\Items(
+     *                     type="object",
+     *                     @OA\Property(property="id", type="integer"),
+     *                     @OA\Property(property="title", type="string"),
+     *                     @OA\Property(property="image", type="string"),
+     *                     @OA\Property(property="price", type="number", format="float"),
+     *                     @OA\Property(property="discounted_price", type="number", format="float"),
+     *                     @OA\Property(property="product_url", type="string"),
+     *                     @OA\Property(property="provider", type="string"),
+     *                     @OA\Property(property="is_liked", type="boolean")
+     *                 )
+     *             ),
+     *             @OA\Property(
+     *                 property="pagination",
+     *                 type="object",
+     *                 @OA\Property(property="current_page", type="integer"),
+     *                 @OA\Property(property="per_page", type="integer"),
+     *                 @OA\Property(property="total", type="integer"),
+     *                 @OA\Property(property="last_page", type="integer")
+     *             )
+     *         )
+     *     )
      * )
      */
-
     public function products(Request $request)
     {
         // Retrieve the query parameters
         $query = $request->input('query');
         $lang = $request->input('lang') ?? 'en';
-        $page = $request->input('page');
-        $productsCount = $request->input('productsCount') ?? 10;
+        $page = $request->input('page') ?? 1; // Default page number is 1
+        $productsCount = $request->input('productsCount') ?? 40; // Default to 40 products per page
+
+        // Ensure productsCount is an integer and not less than 1
+        $productsCount = max(1, (int)$productsCount);
+
         // Retrieve the products based on the query type
-        $products = HomePageProduct::where('type', $query)->inRandomOrder()->get();
+        $productsQuery = HomePageProduct::where('type', $query)->inRandomOrder();
+
+        // Apply pagination
+        $products = $productsQuery->paginate($productsCount, ['*'], 'page', $page);
 
         // Transform the products into the desired structure
-        $transformedProducts = $products->map(function ($product) use ($lang) {
+        $transformedProducts = $products->getCollection()->map(function ($product) use ($lang) {
             $isLiked = auth()->check() && auth()->user()->likedProducts()->where('product_id', $product->product_id)->exists();
             return [
                 'id' => $product->product_id,
@@ -1109,11 +1144,18 @@ class ProductController extends Controller
             ];
         });
 
-        // Return the transformed products with a success response
+        // Return the transformed products with a success response and pagination metadata
         return $this->respondWithSuccess([
             'products' => $transformedProducts,
+            'pagination' => [
+                'current_page' => $products->currentPage(),
+                'per_page' => $products->perPage(),
+                'total' => $products->total(),
+                'last_page' => $products->lastPage(),
+            ],
         ]);
     }
+
 
 
     /**
