@@ -35,7 +35,6 @@ class OrderGroupResource extends Resource
 
     protected static ?string $navigationLabel = "order_groups";
 
-
     protected static ?string $model = OrderGroup::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
@@ -67,10 +66,13 @@ class OrderGroupResource extends Resource
                     ->disabled(),
                 Select::make('status')
                     ->label('Status')
-                    ->options(OrderStatus::where('name_uz')->pluck('name_uz', 'id')),
+                    ->options(
+                        OrderStatus::where('name_uz')->pluck('name_uz', 'id')->mapWithKeys(function ($item, $key) {
+                            return [(string) $key => (string) $item];
+                        })
+                    ),
                 TextInput::make('total_price')->label(trans("total_amount"))->disabled(),
                 Toggle::make('is_paid'),
-
             ]);
     }
 
@@ -78,7 +80,6 @@ class OrderGroupResource extends Resource
     {
         return $table
             ->columns([
-                // TextColumn::make('unique_id'),
                 TextColumn::make('user.unique_id')->label(trans("user_id"))->sortable(),
                 TextColumn::make('user.name')->label(trans("ism"))->sortable(),
                 TextColumn::make('total_price')->label(trans("price"))->sortable(),
@@ -115,9 +116,17 @@ class OrderGroupResource extends Resource
                         }
                     }),
                 Tables\Filters\SelectFilter::make('status')->label('Sort by status')
-                    ->options(OrderStatus::where('name_uz')->pluck('name_uz', 'id')->toArray()),
+                    ->options(
+                        OrderStatus::where('name_uz')->pluck('name_uz', 'id')->mapWithKeys(function ($item, $key) {
+                            return [(string) $key => (string) $item];
+                        })->toArray()
+                    ),
                 Tables\Filters\SelectFilter::make('user_id')->label('Sort by user')
-                    ->options(User::pluck('name', 'id')->toArray()),
+                    ->options(
+                        User::pluck('name', 'id')->mapWithKeys(function ($item, $key) {
+                            return [(string) $key => (string) $item];
+                        })->toArray()
+                    ),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
