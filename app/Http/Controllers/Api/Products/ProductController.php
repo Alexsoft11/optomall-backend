@@ -1118,7 +1118,7 @@ class ProductController extends Controller
         $query = $request->input('query');
         $lang = $request->input('lang') ?? 'en';
         $page = $request->input('page') ?? 1; // Default page number is 1
-        $productsCount = $request->input('productsCount') ?? 40; // Default to 40 products per page
+        $productsCount = $request->input('productsCount') ?? 60; // Default to 40 products per page
 
         // Ensure productsCount is an integer and not less than 1
         $productsCount = max(1, (int)$productsCount);
