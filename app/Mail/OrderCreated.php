@@ -1,7 +1,6 @@
 <?php
 namespace App\Mail;
 
-use App\Models\Order;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
@@ -10,12 +9,16 @@ class OrderCreated extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public $order;
-    
+    public $orderGroupId;
 
-    public function __construct(Order $order)
+    /**
+     * Create a new message instance.
+     *
+     * @return void
+     */
+    public function __construct($orderGroupId)
     {
-        $this->order = $order;
+        $this->orderGroupId = $orderGroupId;
     }
 
     /**
@@ -27,7 +30,7 @@ class OrderCreated extends Mailable
     {
         return $this->view('emails.order_created')
                     ->with([
-                        'order' => $this->order,
+                        'orderGroupId' => $this->orderGroupId,
                     ]);
     }
 }

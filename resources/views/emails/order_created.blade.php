@@ -65,8 +65,8 @@
     <div class="container">
         <h1>Новый заказ</h1>
         <p>На сайте принят новый заказ</p>
-        <p>Заказ: <a href="https://api.onway.uz/admin/order-groups/{{ $order->unique_id }}">{{ $order->unique_id }}</a></p>
-        <a href="https://api.onway.uz/admin/order-groups/{{ $order->unique_id }}" class="btn">Посмотреть заказ</a>
+        <p>Заказ: <a href="https://api.onway.uz/admin/order-groups">{{ $orderGroupId }}</a></p>
+        <a href="https://api.onway.uz/admin/order-groups" class="btn">Посмотреть заказ</a>
     </div>
     <div class="footer">
         <p>&copy; 2024 Optomall.uz. Все права защищены.</p>

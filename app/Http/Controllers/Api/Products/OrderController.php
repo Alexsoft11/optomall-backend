@@ -93,6 +93,10 @@ class OrderController extends Controller
      */
     public function create(Request $request)
     {
+
+        $orderId = $orderGroup->id;
+        $order = Order::find($orderId);
+        
         $validator = Validator::make($request->all(), [
             'items' => 'required|array',
             'items.*.product_id' => 'required|string',
@@ -181,9 +185,7 @@ class OrderController extends Controller
             }
         });
 
-        $orderId = $orderGroup->id;
-        $order = Order::find($orderId);
-        Mail::to('realsherzod71@gmail.com')->send(new OrderCreated($order));
+        Mail::to('realsherzod71@gmail.com')->send(new OrderCreated($orderGroup->id));
 
         return response()->json(['message' => 'order_created_successfully', 'order_group' => $orderGroup->id], 201);
     }
