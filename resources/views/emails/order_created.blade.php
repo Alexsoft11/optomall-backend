@@ -41,7 +41,8 @@
         }
         .btn {
             display: inline-block;
-            background-color: #007bff;
+            background-color: #ffffff;
+            border: 1px solid blue;
             color: #ffffff;
             text-decoration: none;
             padding: 10px 20px;
@@ -51,7 +52,7 @@
             text-align: center;
         }
         .btn:hover {
-            background-color: #0056b3;
+            background-color: #cad4de;
         }
         .footer {
             text-align: center;

@@ -181,7 +181,7 @@ class OrderController extends Controller
             }
         });
 
-        Mail::to('realsherzod71@gmail.com')->send(new OrderCreated($orderGroup->id));
+        Mail::to('optomall.uz@gmail.com')->send(new OrderCreated($orderGroup->id));
 
         return response()->json(['message' => 'order_created_successfully', 'order_group' => $orderGroup->id], 201);
     }
