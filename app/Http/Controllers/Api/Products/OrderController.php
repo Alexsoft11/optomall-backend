@@ -92,11 +92,7 @@ class OrderController extends Controller
      * )
      */
     public function create(Request $request)
-    {
-
-        $orderId = $orderGroup->id;
-        $order = Order::find($orderId);
-        
+    {   
         $validator = Validator::make($request->all(), [
             'items' => 'required|array',
             'items.*.product_id' => 'required|string',
