@@ -181,7 +181,9 @@ class OrderController extends Controller
             }
         });
 
-        Mail::to('realsherzod71@gmail.com')->send(new OrderCreated($orderGroup->id));
+        $orderId = $orderGroup->id;
+        $order = Order::find($orderId);
+        Mail::to('realsherzod71@gmail.com')->send(new OrderCreated($order));
 
         return response()->json(['message' => 'order_created_successfully', 'order_group' => $orderGroup->id], 201);
     }
