@@ -67,7 +67,7 @@ class OrderGroupResource extends Resource
                 Select::make('status')
                     ->label('Status')
                     ->options(
-                        OrderStatus::where('name_uz')->pluck('name_uz', 'id')->mapWithKeys(function ($item, $key) {
+                        OrderStatus::pluck('name_uz', 'id')->mapWithKeys(function ($item, $key) {
                             return [(string) $key => (string) $item];
                         })
                     ),
