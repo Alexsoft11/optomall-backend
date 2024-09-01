@@ -184,7 +184,7 @@ class OrderResource extends Resource
                 // Second Column: Other Fields
                 Group::make()
                     ->schema([
-                        TextInput::make('title')
+                        Textarea::make('title')
                             ->label(trans("Name"))
                             ->placeholder('Product title')
                             ->required()
@@ -216,7 +216,7 @@ class OrderResource extends Resource
                             ->relationship()
                             ->label(trans("properties"))
                             ->schema([
-                                TextInput::make('name')
+                                Textarea::make('name')
                                     ->label(trans("name"))
                                     ->required()
                                     ->columnSpan(6),
