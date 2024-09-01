@@ -177,7 +177,7 @@ class OrderResource extends Resource
                             ->label(trans("Name"))
                             ->placeholder('Product title')
                             ->required()
-                            ->columnSpan(12),
+                            ->columnSpan(8),
 
                         TextInput::make('price')
                             ->label(trans("Price"))
@@ -198,7 +198,7 @@ class OrderResource extends Resource
                         TextInput::make('provider')
                             ->label(trans("Provider"))
                             ->placeholder('Provider name')
-                            ->columnSpan(12),
+                            ->columnSpan(8),
 
                         // Properties
                         Repeater::make('properties')
@@ -208,17 +208,17 @@ class OrderResource extends Resource
                                 TextInput::make('name')
                                     ->label(trans("name"))
                                     ->required()
-                                    ->columnSpan(4), // Adjusted for a bigger appearance
+                                    ->columnSpan(6), // Adjusted for a bigger appearance
 
                                 TextInput::make('value')
                                     ->label(trans("value"))
                                     ->required()
-                                    ->columnSpan(4), // Adjusted for a bigger appearance
+                                    ->columnSpan(6), // Adjusted for a bigger appearance
                             ])
                             ->columns(12)
                             ->columnSpan(12), // Adjusted to expand the section size
                     ])
-                    ->columnSpan(8),
+                    ->columnSpan(12),
             ])
             ->columns([
                 'md' => 12, // Ensuring the total columns span adds up to 12 for consistency
