@@ -212,24 +212,24 @@ class OrderResource extends Resource
                             ->columnSpan(12),
 
                         // Properties
-                        Repeater::make('properties')
-                            ->relationship()
-                            ->label(trans("properties"))
-                            ->schema([
-                                Textarea::make('name')
-                                    ->label(trans("name"))
-                                    ->required()
-                                    ->columnSpan(6),
-
-                                Textarea::make('value')
-                                    ->label(trans("value"))
-                                    ->required()
-                                    ->columnSpan(6),
-                            ])
-                            ->columns(12)
-                            ->columnSpan(12),
                     ])
                     ->columnSpan(8),
+                Repeater::make('properties')
+                    ->relationship()
+                    ->label(trans("properties"))
+                    ->schema([
+                        Textarea::make('name')
+                            ->label(trans("name"))
+                            ->required()
+                            ->columnSpan(6),
+
+                        Textarea::make('value')
+                            ->label(trans("value"))
+                            ->required()
+                            ->columnSpan(6),
+                    ])
+                    ->columns(12)
+                    ->columnSpan(12),
             ])
             ->columns([
                 'md' => 12, // Make sure the total columns span adds up to 12 for consistency
