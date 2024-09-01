@@ -32,12 +32,6 @@ class OrderResource extends Resource
 {
     protected static ?string $model = Order::class;
 
-    // protected static ?string $navigationIcon = 'heroicon-o-shopping-cart';
-
-    // protected static ?string $navigationLabel = "orders";
-
-    // protected static ?string $label = "orders";
-
     public static function form(Form $form): Form
     {
         return $form
@@ -63,7 +57,6 @@ class OrderResource extends Resource
                             TextInput::make('total_price')->label(trans("total_amount"))->disabled(),
                             TextInput::make('created_at')->label(trans("created_at"))->disabled(),
                             TextInput::make('updated_at')->label('Updated At')->disabled(),
-
                         ]),
                         Section::make(trans("orders"))
                             ->label(trans("orders"))
@@ -84,7 +77,6 @@ class OrderResource extends Resource
                                 TextInput::make('last_name')->label(trans("last_name")),
                                 TextInput::make('phone')->label(trans("phone")),
                                 TextInput::make('email')->label(trans("email")),
-                                // TextInput::make('location')->label(trans("adress")),
                                 TextInput::make('region')->label(trans("region")),
                                 TextInput::make('district')->label(trans("district")),
                             ])->disabled(),
@@ -152,7 +144,6 @@ class OrderResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
-                // Tables\Actions\ViewAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\DeleteBulkAction::make(),
@@ -170,7 +161,6 @@ class OrderResource extends Resource
     public static function getItemsRepeater(): Repeater
     {
         $locale = App::getLocale();
-        // dd($locale);
         return Repeater::make('items')
             ->relationship()
             ->schema([
@@ -218,20 +208,20 @@ class OrderResource extends Resource
                                 TextInput::make('name')
                                     ->label(trans("name"))
                                     ->required()
-                                    ->columnSpan(6),
+                                    ->columnSpan(4), // Adjusted for a bigger appearance
 
                                 TextInput::make('value')
                                     ->label(trans("value"))
                                     ->required()
-                                    ->columnSpan(6),
+                                    ->columnSpan(4), // Adjusted for a bigger appearance
                             ])
                             ->columns(12)
-                            ->columnSpan(12),
+                            ->columnSpan(12), // Adjusted to expand the section size
                     ])
                     ->columnSpan(8),
             ])
             ->columns([
-                'md' => 12, // Make sure the total columns span adds up to 12 for consistency
+                'md' => 12, // Ensuring the total columns span adds up to 12 for consistency
             ])
             ->defaultItems(1)
             ->hiddenLabel()
@@ -257,7 +247,6 @@ class OrderResource extends Resource
         return [
             'index' => Pages\ListOrders::route('/'),
             'edit' => Pages\EditOrder::route('/{record}/edit'),
-            // 'view' => Pages\ViewOrder::route('/{record}'),
         ];
     }
 
