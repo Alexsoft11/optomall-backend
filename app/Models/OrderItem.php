@@ -36,14 +36,4 @@ class OrderItem extends Model
     {
         return $this->hasMany(Properties::class);
     }
-
-    public function getNameTooltip(): string
-    {
-        return $this->properties()->pluck('name')->implode(', ') ?: 'Default Tooltip';
-    }
-
-    public function getValueTooltip(): string
-    {
-        return $this->properties()->pluck('value')->implode(', ') ?: 'Default Tooltip';
-    }
 }
