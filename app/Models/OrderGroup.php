@@ -67,4 +67,12 @@ class OrderGroup extends Model
     {
         return $this->belongsTo(OrderStatus::class, 'status');
     }
+
+    protected static function booted(): void
+    {
+        // Delete all orders when orderGroup is deleted
+        static::deleting(function (OrderGroup $orderGroup) {
+            $orderGroup->orders()->delete();
+        });
+    }
 }

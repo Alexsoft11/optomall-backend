@@ -176,7 +176,7 @@ class ProductController extends Controller
         $likedProducts = LikedProduct::where('user_id', $user->id)->get();
 
         $likedProductsArray = $likedProducts->map(function ($product) use ($lang) {
-            $productDetailResponse = $this->productDetailFromTaoBao(new Request(['productId' => $product->product_id, 'lang' => $lang]));
+            $productDetailResponse = $this->productDetailOtapi(new Request(['productId' => $product->product_id, 'lang' => $lang]));
             $productDetail = json_decode($productDetailResponse->getContent(), true)['detail'];
 
             return [
