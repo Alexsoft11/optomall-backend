@@ -17,6 +17,7 @@ use Filament\Forms\Components\Group;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\ToggleButtons;
@@ -220,7 +221,7 @@ class OrderResource extends Resource
                                     ->required()
                                     ->columnSpan(6),
 
-                                TextInput::make('value')
+                                Textarea::make('value')
                                     ->label(trans("value"))
                                     ->required()
                                     ->columnSpan(6),
