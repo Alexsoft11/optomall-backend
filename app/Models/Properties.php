@@ -26,14 +26,4 @@ class Properties extends Model
     {
         return $this->belongsTo(BasketItem::class, 'basket_item_id');
     }
-
-    public function getNameTooltip(): string
-    {
-        return $this->pluck('name')->implode(', ') ?: 'Default Tooltip';
-    }
-
-    public function getValueTooltip(): string
-    {
-        return $this->pluck('value')->implode(', ') ?: 'Default Tooltip';
-    }
 }

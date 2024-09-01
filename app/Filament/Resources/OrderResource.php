@@ -218,15 +218,12 @@ class OrderResource extends Resource
                                 TextInput::make('name')
                                     ->label(trans("name"))
                                     ->required()
-                                    ->columnSpan(6)
-                                    ->hint(fn($record) => $record->getNameTooltip()) // Dynamically fetch tooltip value
-                                    ->hintIcon('heroicon-s-information-circle'),
+                                    ->columnSpan(6),
+
                                 TextInput::make('value')
                                     ->label(trans("value"))
                                     ->required()
-                                    ->columnSpan(6)
-                                    ->hint(fn($record) => $record->getValueTooltip()) // Dynamically fetch tooltip value
-                                    ->hintIcon('heroicon-s-information-circle'),
+                                    ->columnSpan(6),
                             ])
                             ->columns(12)
                             ->columnSpan(12),
