@@ -620,15 +620,19 @@ class OrderController extends Controller
             $basePrice = $item['price'];
             $finalPrice = $basePrice;
 
-            // Determine the final price based on quantity ranges
-            if (isset($item['quantityRanges']) && is_array($item['quantityRanges'])) {
-                $applicablePrice = $finalPrice;
+            // Determine the final price based on the highest matching quantity range
+            if (isset($item['quantityRanges']) && count($item['quantityRanges']) > 0) {
+                $applicableRange = null;
+
                 foreach ($item['quantityRanges'] as $range) {
                     if ($quantity >= $range['minQuantity']) {
-                        $applicablePrice = $range['price']; // Update to this price if minQuantity is met
+                        $applicableRange = $range;
                     }
                 }
-                $finalPrice = $applicablePrice; // Set the final price to the last applicable price
+
+                if ($applicableRange) {
+                    $finalPrice = $applicableRange['price'];
+                }
             }
 
             // Check if the basket item with the same sku_id already exists
