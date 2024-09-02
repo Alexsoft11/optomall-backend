@@ -634,7 +634,9 @@ class OrderController extends Controller
 
                 foreach ($item['quantityRanges'] as $range) {
                     if ($quantity >= $range['minQuantity']) {
-                        $applicableRange = $range; // This will update with the highest matching minQuantity
+                        if ($applicableRange === null || $range['minQuantity'] > $applicableRange['minQuantity']) {
+                            $applicableRange = $range;
+                        }
                     }
                 }
 
