@@ -535,14 +535,18 @@ class OrderController extends Controller
      *         @OA\JsonContent(
      *             type="array",
      *             @OA\Items(
-     *                 required={"product_id", "title", "price", "quantity", "max_quantity", "image_url", "seller_id", "provider", "sku_id", "properties"},
+     *                 required={"product_id", "title", "price", "quantityRanges", "quantity", "max_quantity", "image_url", "seller_id", "provider", "sku_id", "properties"},
      *                 @OA\Property(property="product_id", type="string", example="1"),
      *                 @OA\Property(property="title", type="string", example="Product Title"),
      *                 @OA\Property(property="price", type="number", format="float", example="29.99"),
+     *                 @OA\Property(property="quantityRanges", type="array", @OA\Items(
+     *                     @OA\Property(property="minQuantity", type="integer", example="2"),
+     *                     @OA\Property(property="price", type="number", format="float", example="411930")
+     *                 )),
      *                 @OA\Property(property="quantity", type="integer", example="2"),
      *                 @OA\Property(property="max_quantity", type="integer", example="5"),
      *                 @OA\Property(property="image_url", type="string", example="http://example.com/image.jpg"),
-     *                 @OA\Property(property="product_url", type="string", example="http://example.com/image.jpg"),
+     *                 @OA\Property(property="product_url", type="string", example="http://example.com/product.jpg"),
      *                 @OA\Property(property="seller_id", type="string", example="22"),
      *                 @OA\Property(property="provider", type="string", example="taobao"),
      *                 @OA\Property(property="sku_id", type="string", example="SKU12345"),
@@ -571,6 +575,9 @@ class OrderController extends Controller
             '*.product_id' => 'required|string',
             '*.title' => 'required|string',
             '*.price' => 'required|numeric',
+            '*.quantityRanges' => 'nullable|array',
+            '*.quantityRanges.*.minQuantity' => 'nullable|integer|min:1',
+            '*.quantityRanges.*.price' => 'nullable|numeric',
             '*.quantity' => 'required|integer|min:1',
             '*.max_quantity' => 'required|integer|min:1',
             '*.image_url' => 'required|string',
@@ -590,6 +597,19 @@ class OrderController extends Controller
 
         $baskets = [];
         foreach ($request->all() as $item) {
+            $quantity = $item['quantity'];
+            $basePrice = $item['price'];
+            $finalPrice = $basePrice;
+
+            // Determine the final price based on quantity ranges
+            if (isset($item['quantityRanges'])) {
+                foreach ($item['quantityRanges'] as $range) {
+                    if ($quantity >= $range['minQuantity']) {
+                        $finalPrice = $range['price'];
+                    }
+                }
+            }
+
             // Check if the basket item with the same sku_id already exists
             $existingBasketItem = BasketItem::where('skuId', $item['sku_id'])
                 ->where('user_id', auth()->user()->id)
@@ -597,7 +617,8 @@ class OrderController extends Controller
 
             if ($existingBasketItem) {
                 // Update the quantity if the item exists
-                $existingBasketItem->quantity += $item['quantity'];
+                $existingBasketItem->quantity += $quantity;
+                $existingBasketItem->price = $finalPrice;
                 $existingBasketItem->save();
                 $basketItem = $existingBasketItem;
             } else {
@@ -607,8 +628,8 @@ class OrderController extends Controller
                     'user_id' => auth()->user()->id,
                     'title' => $item['title'],
                     'basket_id' => 0, // Adjust as needed
-                    'price' => $item['price'],
-                    'quantity' => $item['quantity'],
+                    'price' => $finalPrice,
+                    'quantity' => $quantity,
                     'max_quantity' => $item['max_quantity'],
                     'image_url' => $item['image_url'],
                     'product_url' => $item['product_url'],
