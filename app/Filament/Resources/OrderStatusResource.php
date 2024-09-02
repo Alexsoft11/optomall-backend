@@ -6,14 +6,19 @@ use App\Filament\Resources\OrderStatusResource\Pages;
 use App\Filament\Resources\OrderStatusResource\RelationManagers;
 use App\Models\OrderStatus;
 use Filament\Forms;
+use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\ColorPicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Columns\BooleanColumn;
+use Filament\Tables\Columns\CheckboxColumn;
 use Filament\Tables\Columns\ColorColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\ToggleColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -44,6 +49,9 @@ class OrderStatusResource extends Resource
                     'active' => 'Aktiv',
                     'in_verification' => 'Tekshirilmoqda',
                 ]),
+                Toggle::make('for_first')
+                    ->label('Int')
+                    ->default(false),
             ]);
     }
 
@@ -55,6 +63,7 @@ class OrderStatusResource extends Resource
                 // TextColumn::make('message_uz')->label('Xabar'),
                 ColorColumn::make('color')->label(trans("colors")),
                 TextColumn::make('type')->label(trans("type")),
+                ToggleColumn::make('for_first')->label('Int'),
             ])
             ->filters([
                 // Add your filters here if needed

@@ -92,7 +92,7 @@ class OrderController extends Controller
      * )
      */
     public function create(Request $request)
-    {   
+    {
         $validator = Validator::make($request->all(), [
             'items' => 'required|array',
             'items.*.product_id' => 'required|string',
@@ -124,8 +124,10 @@ class OrderController extends Controller
         $orderGroup = null;
 
         DB::transaction(function () use ($groupedItems, $user, $request, &$orders, &$orderGroup) {
+            $defaultStatus = OrderStatus::where('for_first', true)->first();
+            $statusId = $defaultStatus ? $defaultStatus->id : '3';
             $orderGroup = OrderGroup::create([
-                'status' => '2',
+                'status' => $statusId,
                 'status_color' => '#05ff00',
                 'total_price' => $request->total_price,
                 'user_id' => $user->id,
@@ -500,9 +502,11 @@ class OrderController extends Controller
                     'image' => $request->image->store('order_checks', 'public'), // Store the image and save the path
                     'card_number_id' => $cardNumber->id,
                 ]);
-                Order::where('order_group_id', $request->order_group_id)->update(['status' => '6']);
+                $defaultStatus = OrderStatus::where('for_first', true)->first();
+                $statusId = $defaultStatus ? $defaultStatus->id : '3';
+                Order::where('order_group_id', $request->order_group_id)->update(['status' => $statusId]);
                 // Update order status
-                $orderGroup->status = "6";
+                $orderGroup->status = $statusId;
                 $orderGroup->save();
 
                 return $orderCheck;

@@ -21,6 +21,7 @@ class OrderStatus extends Model
         'message_en',
         'message_ru',
         'type',
+        'for_first',
     ];
 
     public function getSlugOptions(): SlugOptions
@@ -31,6 +32,18 @@ class OrderStatus extends Model
     }
 
     protected $appends = ['name', 'message'];
+
+    public static function boot()
+    {
+        parent::boot();
+
+        static::saving(function ($model) {
+            if ($model->for_first) {
+                // Set for_first to false for all other statuses
+                static::where('id', '!=', $model->id)->update(['for_first' => false]);
+            }
+        });
+    }
 
     public function getNameAttribute()
     {
