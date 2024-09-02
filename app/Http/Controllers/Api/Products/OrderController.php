@@ -54,11 +54,16 @@ class OrderController extends Controller
      *         @OA\JsonContent(
      *             required={"items", "total_price"},
      *             @OA\Property(property="items", type="array", @OA\Items(
+     *                 required={"product_id", "title", "price", "quantity", "image_url", "seller_id", "provider", "sku_id", "properties", "quantityRanges"},
      *                 @OA\Property(property="product_id", type="string", example="1"),
      *                 @OA\Property(property="title", type="string", example="title"),
      *                 @OA\Property(property="image_url", type="string", example="url"),
      *                 @OA\Property(property="quantity", type="integer", example="2"),
      *                 @OA\Property(property="price", type="number", example="4.99"),
+     *                 @OA\Property(property="quantityRanges", type="array", @OA\Items(
+     *                     @OA\Property(property="minQuantity", type="integer", example="2"),
+     *                     @OA\Property(property="price", type="number", format="float", example="411930")
+     *                 )),
      *                 @OA\Property(property="seller_id", type="string", example="2"),
      *                 @OA\Property(property="provider", type="string", example="taobao"),
      *                 @OA\Property(property="sku_id", type="string", example="SKU1234567890"),
@@ -100,6 +105,9 @@ class OrderController extends Controller
             'items.*.image_url' => 'required|url',
             'items.*.quantity' => 'required|integer|min:1',
             'items.*.price' => 'required|numeric|min:0',
+            'items.*.quantityRanges' => 'nullable|array',
+            'items.*.quantityRanges.*.minQuantity' => 'nullable|integer|min:1',
+            'items.*.quantityRanges.*.price' => 'nullable|numeric',
             'items.*.seller_id' => 'nullable|string',
             'items.*.provider' => 'nullable|string',
             'items.*.sku_id' => 'required|string',
@@ -155,16 +163,27 @@ class OrderController extends Controller
                 ]);
 
                 foreach ($items as $item) {
-                    // $imagePath = $this->saveOrderItemImage($client, $item['image_url']);
+                    $quantity = $item['quantity'];
+                    $basePrice = $item['price'];
+                    $finalPrice = $basePrice;
 
-                    $orderItem =  OrderItem::create([
+                    // Determine the final price based on quantity ranges
+                    if (isset($item['quantityRanges'])) {
+                        foreach ($item['quantityRanges'] as $range) {
+                            if ($quantity >= $range['minQuantity']) {
+                                $finalPrice = $range['price'];
+                            }
+                        }
+                    }
+
+                    $orderItem = OrderItem::create([
                         'order_id' => $order->id,
                         'product_id' => $item['product_id'],
                         'title' => $item['title'],
                         'provider' => $item['provider'],
                         'image_url' => $item['image_url'],
-                        'quantity' => $item['quantity'],
-                        'price' => $item['price'],
+                        'quantity' => $quantity,
+                        'price' => $finalPrice,
                         'product_url' => $item['product_url'],
                         'skuId' => $item['sku_id'],
                     ]);
