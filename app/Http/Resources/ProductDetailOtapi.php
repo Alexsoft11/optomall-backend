@@ -161,8 +161,8 @@ class ProductDetailOtapi extends JsonResource
                     'salesCount' => 1,
                     'configurators' => [
                         [
-                            'pid' => "1.1:property:default",
-                            'vid' => "1.1:1.1"
+                            'Pid' => "1.1:property:default",
+                            'Vid' => "1.1:1.1"
                         ]
                     ],
                     'price' => round($this->addPercentToPrice($this->resource['Price']['OriginalPrice'], $this->amount, $this->percent)),
