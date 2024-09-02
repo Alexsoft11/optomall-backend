@@ -85,11 +85,11 @@ class ProductDetailOtapi extends JsonResource
 
     private function transformAttributes($attributes)
     {
-        if (is_null($attributes) || empty($attributes)) {
+        if (is_null($attributes) || empty($attributes) || !array_filter($attributes, fn($attribute) => $attribute['IsConfigurator'] === true)) {
             return [
                 [
-                    'vid' => "1.1:1.1",
                     'pid' => "1.1:property:default",
+                    'vid' => "1.1:1.1",
                     'propertyName' => "1.1:1.1",
                     'value' => "1.1:property:default",
                     'originalPropertyName' => "1.1:property:default",
