@@ -35,6 +35,11 @@ class ProductDetailOtapi extends JsonResource
                 'price' => round($this->addPercentToPrice($range['Price']['OriginalPrice'], $this->amount, $this->percent)),
             ];
         }
+
+        usort($quantityRanges, function ($a, $b) {
+            return $a['minQuantity'] <=> $b['minQuantity'];
+        });
+
         return [
             'id' => $this['Id'],
             'title' => $this['Title'],
