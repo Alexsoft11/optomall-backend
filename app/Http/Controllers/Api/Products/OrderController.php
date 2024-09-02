@@ -168,11 +168,19 @@ class OrderController extends Controller
                     $finalPrice = $basePrice;
 
                     // Determine the final price based on quantity ranges
-                    if (isset($item['quantityRanges'])) {
+                    if (isset($item['quantityRanges']) && count($item['quantityRanges']) > 0) {
+                        $applicableRange = null;
+
                         foreach ($item['quantityRanges'] as $range) {
-                            if ($quantity >= $range['minQuantity']) {
-                                $finalPrice = $range['price'];
+                            if (
+                                $quantity >= $range['minQuantity']
+                            ) {
+                                $applicableRange = $range;
                             }
+                        }
+
+                        if ($applicableRange) {
+                            $finalPrice = $applicableRange['price'];
                         }
                     }
 
