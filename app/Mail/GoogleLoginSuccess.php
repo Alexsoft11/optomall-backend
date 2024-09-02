@@ -32,12 +32,12 @@ class GoogleLoginSuccess extends Mailable
      */
     public function build()
     {
-        return $this->subject('OnWay.uz')
-                    ->view('emails.googleLoginSuccess')
-                    ->with([
-                        'userName' => $this->user->name,
-                        'userEmail' => $this->user->email,
-                        'userPassword' => $this->password,
-                    ]);
+        return $this->subject('otomall.uz')
+            ->view('emails.googleLoginSuccess')
+            ->with([
+                'userName' => $this->user->name,
+                'userEmail' => $this->user->email,
+                'userPassword' => $this->password,
+            ]);
     }
 }

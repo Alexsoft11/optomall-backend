@@ -57,12 +57,12 @@
         <h1>Уважаемый клиент,</h1>
         <p>{{ $order->getStatus->message_ru }}</p>
         <p>Заказ: <a
-                href="https://onway.uz/purchases?filter=all&orderId={{ $order->unique_id }}">{{ $order->unique_id }}</a>
+                href="https://optomall.uz/purchases?filter=all&orderId={{ $order->unique_id }}">{{ $order->unique_id }}</a>
         </p>
         <p>Спасибо за покупки у нас!</p>
         <div class="signature">
             <p>С наилучшими пожеланиями,</p>
-            <p>Onway.uz</p>
+            <p>Optomall.uz</p>
         </div>order
     </div>
 </body>
