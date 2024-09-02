@@ -38,7 +38,7 @@ class OrderResource extends JsonResource
 
         return [
             'unique_id' => $this->unique_id,
-            'id' => $this->id,
+            'id' => $this->orderGroup->id,
             'status' => [
                 'uz' => $this->getStatus->name_uz ?? null,
                 'ru' => $this->getStatus->name_ru ?? null,
