@@ -139,7 +139,7 @@ class OrderController extends Controller
             foreach ($groupedItems as $sellerId => $items) {
                 $order = Order::create([
                     'user_id' => $user->id,
-                    'total_price' => $items->sum('price'),
+                    'total_price' => $request->total_price,
                     'seller_id' => $sellerId,
                     'user_name' => '.',
                     'user_phone' => '.',
