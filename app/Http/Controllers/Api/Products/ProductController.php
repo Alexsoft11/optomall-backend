@@ -1127,7 +1127,7 @@ class ProductController extends Controller
 
         // Store the uploaded image
         $imagePath = $request->file('image')->store('images', 'public');
-        $imageFullPath = Storage::path($imagePath);
+        $imageFullPath = url('storage/' . $imagePath);
 
         // Convert the image to Base64
         $imageData = file_get_contents($imageFullPath);
@@ -1137,15 +1137,14 @@ class ProductController extends Controller
         $apiUrl = 'https://api-gw.onebound.cn/taobao/upload_img/?key=t3832825558&&cache=no&&lang=zh-CN&secret=20240731';
 
         // Send POST request to the API with Base64 image in the body
-        $response = Http::post($apiUrl, [
-            'imgcode' => $base64Image,
+        $response = Http::asForm()->post($apiUrl, [
+            'imgcode' => 'data:image/jpeg;base64,' . $base64Image,
         ]);
 
         // Decode the response from the API
         $responseData = $response->json();
-
         // Check if the API call was successful
-        if ($response->successful() && isset($responseData['items']['item']['name'])) {
+        if (isset($responseData['items']['item']['name'])) {
             return response()->json([
                 'url' => $responseData['items']['item']['name'],  // Adjust according to the actual API response structure
             ]);
