@@ -611,8 +611,8 @@ class ProductController extends Controller
         $provider = $request->provider ?? 'taobao';
         $cacheKey = "product-detail?productId={$productId}&lang={$lang}";
 
-        $productDetail = Cache::remember($cacheKey, 60 * 5, function () use ($productId, $lang) {
-            $url = "https://api-gw.onebound.cn/1688/item_get/?key=t3832825558&&num_iid=564801075456&cache=no&&secret=20240731&lang=en";
+        $productDetail = Cache::remember($cacheKey, 60 * 5, function () use ($productId, $lang, $provider) {
+            $url = "https://api-gw.onebound.cn/$provider/item_get/?key=t3832825558&&num_iid=$productId&&cache=no&&secret=20240731&lang=$lang";
 
             try {
                 return Http::timeout(50)->withoutVerifying()->get($url)->json(); // Increased timeout to 10 seconds
@@ -1127,15 +1127,41 @@ class ProductController extends Controller
 
         // Store the uploaded image
         $imagePath = $request->file('image')->store('images', 'public');
-        $imageUrl = url(Storage::url($imagePath));
-        // $url = "https://kongcrdv.com/taobao/api/ima.php?action=item_search_img&key=kingdev5809@gmail.com&imgid=$imageUrl&lang=zh-CN";
-        // $response = Http::get($url);
-        // $image = $response->json();
-        // return $image;
+        $imageFullPath = Storage::path($imagePath);
 
-        return  [
-            'url' => $imageUrl,
+        // Convert the image to Base64
+        $imageData = file_get_contents($imageFullPath);
+        $base64Image = base64_encode($imageData);
+
+        // Build the API URL with query parameters
+        $apiUrl = 'https://api-gw.onebound.cn/taobao/upload_img/';
+        $queryParams = [
+            'key' => 't3832825558',
+            'cache' => 'no',
+            'lang' => 'zh-CN',
+            'secret' => '20240731',
         ];
+
+        // Send POST request to the API with Base64 image in the body
+        $response = Http::asForm()->post($apiUrl . '?' . http_build_query($queryParams), [
+            'imgcode' => $base64Image,
+        ]);
+
+        // Decode the response from the API
+        $responseData = $response->json();
+
+        // Check if the API call was successful
+        if ($response->successful() && isset($responseData['items']['item']['name'])) {
+            return response()->json([
+                'url' => $responseData['items']['item']['name'],  // Adjust according to the actual API response structure
+            ]);
+        } else {
+            return response()->json([
+                'error' => true,
+                'messages' => 'external_api_error',
+                'details' => $responseData,  // Return error details from the API
+            ], 500);
+        }
     }
 
 
