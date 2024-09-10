@@ -1134,16 +1134,10 @@ class ProductController extends Controller
         $base64Image = base64_encode($imageData);
 
         // Build the API URL with query parameters
-        $apiUrl = 'https://api-gw.onebound.cn/taobao/upload_img/';
-        $queryParams = [
-            'key' => 't3832825558',
-            'cache' => 'no',
-            'lang' => 'zh-CN',
-            'secret' => '20240731',
-        ];
+        $apiUrl = 'https://api-gw.onebound.cn/taobao/upload_img/?key=t3832825558&&cache=no&&lang=zh-CN&secret=20240731';
 
         // Send POST request to the API with Base64 image in the body
-        $response = Http::asForm()->post($apiUrl . '?' . http_build_query($queryParams), [
+        $response = Http::asForm()->post($apiUrl, [
             'imgcode' => $base64Image,
         ]);
 
