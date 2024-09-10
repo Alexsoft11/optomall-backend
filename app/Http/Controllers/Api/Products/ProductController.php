@@ -1137,7 +1137,7 @@ class ProductController extends Controller
         $apiUrl = 'https://api-gw.onebound.cn/taobao/upload_img/?key=t3832825558&&cache=no&&lang=zh-CN&secret=20240731';
 
         // Send POST request to the API with Base64 image in the body
-        $response = Http::asForm()->post($apiUrl, [
+        $response = Http::post($apiUrl, [
             'imgcode' => $base64Image,
         ]);
 
