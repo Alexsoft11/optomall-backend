@@ -575,6 +575,92 @@ class ProductController extends Controller
 
     /**
      * @OA\Get(
+     *     path="/api/product-detail-onbound",
+     *     summary="Get product detail",
+     *     tags={"Products"},
+     *     @OA\Parameter(
+     *         name="productId",
+     *         in="query",
+     *         required=true,
+     *         @OA\Schema(type="string"),
+     *         description="The ID of the product to retrieve details for"
+     *     ),
+     *  @OA\Parameter(
+     *         name="provider",
+     *         in="query",
+     *         required=false,
+     *         @OA\Schema(type="string")
+     *     ),
+     *    @OA\Parameter(
+     *         name="lang",
+     *         in="query",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *             enum={"uz", "ru", "en"}
+     *         ),
+     *         description="Language code for the product details. Available options: uz, ru, en"
+     *     ),
+     *     @OA\Response(response="200", description="Product detail from taobao"),
+     * )
+     */
+    public function productDetailOnbound(Request $request)
+    {
+        $productId = $request->productId;
+        $lang = $request->lang ?? 'en';
+        $provider = $request->provider ?? 'taobao';
+        $cacheKey = "product-detail?productId={$productId}&lang={$lang}";
+
+        $productDetail = Cache::remember($cacheKey, 60 * 5, function () use ($productId, $lang) {
+            $url = "https://api-gw.onebound.cn/1688/item_get/?key=t3832825558&&num_iid=564801075456&cache=no&&secret=20240731&lang=en";
+
+            try {
+                return Http::timeout(50)->withoutVerifying()->get($url)->json(); // Increased timeout to 10 seconds
+            } catch (\Illuminate\Http\Client\ConnectionException $e) {
+                return null; // Return null on timeout
+            }
+        });
+
+        // Check if provider is 'local' to fetch product from local database
+        if ($provider == 'local') {
+            $productDatabase = Product::where('id', $productId)->first();
+
+            // Handle the case where the product is not found in the local database
+            if (!$productDatabase) {
+                return response()->json(['error' => 'product_not_found'], 404);
+            }
+
+            $product = new ProductDetailDatabase($productDatabase, $lang);
+
+            return $this->respondWithSuccess([
+                'detail' => $product,
+                'score' => [
+                    'rating' => $productDatabase->seller_info['item_score'] ?? 4.6,
+                    'sold' => $productDatabase->sales ?? 1000,
+                ],
+            ]);
+        }
+
+        // Check if product details were successfully retrieved or if an error occurred
+        if (!$productDetail || !isset($productDetail['item'])) {
+            return response()->json(['error' => 'product_not_found', 'productDetail' => $productDetail], 404); // Handle timeout or product not found
+        }
+
+        $product = new ProductDetailResource($productDetail['item'], $provider);
+        // $recommended = ProductResource::collection($productDetail['Result']['RecommendedItems']['Content'] ?? []);
+
+        return $this->respondWithSuccess([
+            'detail' => $product,
+            'score' => [
+                'rating' => $productDetail['item']['seller_info']['item_score'] ?? 4.6,
+                'sold' => $productDetail['item']['sales'] ?? 1000,
+            ],
+            // 'recommended' => $recommended,
+        ]);
+    }
+
+    /**
+     * @OA\Get(
      *     path="/api/product-detail-from-taobao",
      *     summary="Get product detail from taobao",
      *     tags={"Products"},
@@ -847,16 +933,16 @@ class ProductController extends Controller
 
             // Base API URL construction
             $baseApiUrl = $imageUrl
-                ? "http://otapi.net/service-json/SearchItemsFrame?instanceKey=74a68481-54a6-4069-98c0-f19fecf1f58f&language=$lang&signature=&timestamp=&xmlParameters=%3CSearchItemsParameters%3E%3CProvider%3EAlibaba1688%3C%2FProvider%3E%3CImageUrl%3E$imageUrl%3C%2FImageUrl%3E"
-                : "https://otapi.net/service-json/SearchItemsFrame?instanceKey=74a68481-54a6-4069-98c0-f19fecf1f58f&language=$lang&signature=&timestamp=&xmlParameters=%3CSearchItemsParameters%3E%3CProvider%3EAlibaba1688%3C%2FProvider%3E%3CItemTitle%3E" . ($subcategory ? $subcategory : $value) . "%3C%2FItemTitle%3E";
+                ? "https://api-gw.onebound.cn/$provider/item_search_img/?key=t3832825558&&imgid=$imageUrl&cache=no&&lang=$lang&secret=20240731"
+                : "https://api-gw.onebound.cn/$provider/item_search/?key=t3832825558&&q=" . ($subcategory ? $subcategory : $value) . "&page=$page&sort=$sort&page_size=$productsCount&cache=no&&lang=$lang&secret=20240731";
 
             // Append OrderBy parameter if sorting is provided
-            $orderBy = $sort ? "%0D%0A%3COrderBy%3E$sort%3C%2FOrderBy%3E" : '';
-            $apiUrl = $baseApiUrl . $orderBy . "%0D%0A%3C%2FSearchItemsParameters%3E&framePosition=$page&frameSize=$productsCount&blockList=Description";
+            // $orderBy = $sort ? "%0D%0A%3COrderBy%3E$sort%3C%2FOrderBy%3E" : '';
+            // $apiUrl = $baseApiUrl . $orderBy . "%0D%0A%3C%2FSearchItemsParameters%3E&framePosition=$page&frameSize=$productsCount&blockList=Description";
 
             try {
                 // Making the external API request with a longer timeout (async can be implemented here too)
-                $response = Http::timeout(10)->withoutVerifying()->get($apiUrl);
+                $response = Http::timeout(10)->withoutVerifying()->get($baseApiUrl);
                 $products = $response->json();
             } catch (\Exception $e) {
                 Log::error('Error fetching products from Taobao: ' . $e->getMessage());
@@ -864,18 +950,20 @@ class ProductController extends Controller
             }
 
             // Check if products are found
-            if (empty($products['Result']['Items']['Content'])) {
+            if (empty($products['items']['item'])) {
                 return response()->json([
                     'error' => 'product_not_found',
                     'details' => $products,
                 ], 404);
             }
 
-            $productData = $products['Result']['Items']['Content'];
+            $productData = $products['items']['item'];
 
             // Optimize resource transformation
             return $this->respondWithSuccess([
-                'products' => ProductResource::collection($productData)->resolve(),
+                'products' => collect($productData)->map(function ($product) use ($provider) {
+                    return (new ProductResource($product, $provider))->resolve();
+                }),
             ]);
         });
     }
