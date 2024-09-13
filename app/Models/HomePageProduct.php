@@ -30,13 +30,9 @@ class HomePageProduct extends Model
             if ($homePageProduct->isDirty('product_id')) {
                 // Inject the ProductController
                 $productController = app(ProductController::class);
-                $productId = '';
 
-                if ($homePageProduct->provider == '1688') {
-                    $productId = 'abb-' . $homePageProduct->product_id;
-                } else {
-                    $productId = $homePageProduct->product_id;
-                }
+                $productId = $homePageProduct->product_id;
+
                 // Call the method to get product details
                 $productDetailResponseuz = $productController->productDetailOtapi(new Request([
                     'productId' => $productId,
