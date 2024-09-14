@@ -1134,7 +1134,7 @@ class ProductController extends Controller
         $base64Image = base64_encode($imageData);
         $img = "data:image/jpeg;base64" . $base64Image;
         // Build the API URL with query parameters
-        $apiUrl = "https://api-gw.onebound.cn/1688/item_search_img/?imgid=$img&key=t3832825558&&cache=no&&lang=zh-CN&secret=20240731";
+        $apiUrl = "https://api-gw.onebound.cn/1688/upload_img/?key=t3832825558&&imgcode=$img&&lang=zh-CN&secret=20240731&&lang=zh-CN&secret=20240731";
 
         // Send POST request to the API with Base64 image in the body
         $response = Http::post($apiUrl);
