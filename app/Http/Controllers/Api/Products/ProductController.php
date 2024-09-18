@@ -681,9 +681,9 @@ class ProductController extends Controller
                 ],
             ]);
         }
-
+        // return $productDetail;
         // Check if product details were successfully retrieved or if an error occurred
-        if (!$productDetail || !isset($productDetail['item'])) {
+        if ($productDetail['item']['format_check'] == 'fail') {
             return response()->json(['error' => 'product_not_found', 'productDetail' => $productDetail], 404); // Handle timeout or product not found
         }
 
