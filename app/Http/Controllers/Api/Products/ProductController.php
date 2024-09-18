@@ -62,9 +62,19 @@ class ProductController extends Controller
         $url = $request->query('url');
 
         preg_match_all('/\b\d{10,14}\b/', $url, $matches);
-        $id = $matches[0] ?? [];
+        $id = $matches[0][0] ?? null;
 
-        return ['id' => $id[0]];
+        $provider = null;
+        if (strpos($url, '1688') !== false) {
+            $provider = '1688';
+        } elseif (strpos($url, 'taobao') !== false) {
+            $provider = 'taobao';
+        }
+
+        return response()->json([
+            'id' => $id,
+            'provider' => $provider,
+        ]);
     }
 
     /**
@@ -643,9 +653,8 @@ class ProductController extends Controller
         $provider = $request->provider ?? 'taobao';
         $cacheKey = "product-detail?productId={$productId}&lang={$lang}";
 
-        $productDetail = Cache::remember($cacheKey, 60 * 5, function () use ($productId, $lang, $provider) {
-            $url = "https://api-gw.onebound.cn/$provider/item_get/?key=t3832825558&&num_iid=$productId&&cache=no&&secret=20240731&lang=$lang";
-
+        $url = "https://api-gw.onebound.cn/$provider/item_get/?key=t3832825558&&num_iid=$productId&&cache=no&&secret=20240731&lang=$lang";
+        $productDetail = Cache::remember($cacheKey, 60 * 5, function () use ($url) {
             try {
                 return Http::timeout(50)->withoutVerifying()->get($url)->json(); // Increased timeout to 10 seconds
             } catch (\Illuminate\Http\Client\ConnectionException $e) {
@@ -682,6 +691,7 @@ class ProductController extends Controller
         // $recommended = ProductResource::collection($productDetail['Result']['RecommendedItems']['Content'] ?? []);
 
         return $this->respondWithSuccess([
+            'url' => $url,
             'detail' => $product,
             'score' => [
                 'rating' => $productDetail['item']['seller_info']['item_score'] ?? 4.6,
