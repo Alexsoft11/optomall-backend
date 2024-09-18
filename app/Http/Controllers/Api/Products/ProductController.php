@@ -36,6 +36,38 @@ class ProductController extends Controller
     use ApiResponseHelpers;
 
     /**
+     * @OA\Get(
+     *     path="/api/extract-id",
+     *     tags={"Extract id"},
+     *     summary="Extract 10-14 character IDs from URL",
+     *     description="Extract IDs that are exactly 10 to 14 digits from the given URL passed as a query parameter",
+     *     @OA\Parameter(
+     *         name="url",
+     *         in="query",
+     *         description="The URL to extract the ID from",
+     *         required=true,
+     *         @OA\Schema(type="string", example="https://detail.1688.com/offer/624044966215.html")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful extraction",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="ids", type="array", @OA\Items(type="string", example="624044966215"))
+     *         )
+     *     ),
+     * )
+     */
+    public function extractId(Request $request)
+    {
+        $url = $request->query('url');
+
+        preg_match_all('/\b\d{10,14}\b/', $url, $matches);
+        $id = $matches[0] ?? [];
+
+        return ['id' => $id[0]];
+    }
+
+    /**
      * @OA\Post(
      *     path="/api/liked-product",
      *     tags={"Liked products"},

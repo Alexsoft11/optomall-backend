@@ -15,6 +15,8 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware('throttle:1200,60')->group(function () {
 
+    Route::get('extract-id', [ProductController::class, 'extractId']);
+
     Route::post('register', [AuthController::class, 'register']);
     Route::get('verify-email/{token}', [AuthController::class, 'verifyEmail']);
     Route::post('/personal-data', [AuthController::class, 'personalData']);
