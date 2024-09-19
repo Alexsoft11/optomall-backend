@@ -36,6 +36,113 @@ class ProductController extends Controller
     use ApiResponseHelpers;
 
     /**
+     * @OA\Post(
+     *     path="/api/translate",
+     *     summary="Translate values in props_list",
+     *     description="Translate the values inside the props_list array from one language to another using Deep Translate API.",
+     *     tags={"Translation"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             @OA\Property(
+     *                 property="props_list",
+     *                 type="object",
+     *                 example={
+     *                     "0:0": ":黑色",
+     *                     "0:1": ":红色",
+     *                     "1:0": "尺码:S",
+     *                     "1:1": "尺码:M"
+     *                 }
+     *             ),
+     *             @OA\Property(property="source", type="string", example="zh"),
+     *             @OA\Property(property="target", type="string", example="en")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Translated props_list",
+     *         @OA\JsonContent(
+     *             @OA\Property(
+     *                 property="translated_props_list",
+     *                 type="object",
+     *                 example={
+     *                     "0:0": ":Black",
+     *                     "0:1": ":Red",
+     *                     "1:0": "Size:S",
+     *                     "1:1": "Size:M"
+     *                 }
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Bad request"
+     *     )
+     * )
+     */
+    public function translate(Request $request)
+    {
+        // Get the props_list from the request
+        $propsList = $request->input('props_list');
+        $translatedPropsList = [];
+        $chineseValues = [];
+
+        // Collect all Chinese values for batch translation
+        foreach ($propsList as $key => $value) {
+            $parts = explode(':', $value);
+            foreach ($parts as $part) {
+                $trimmedPart = trim($part);
+                if (preg_match('/[\p{Han}]/u', $trimmedPart)) {
+                    $chineseValues[] = $trimmedPart; // Collect Chinese values
+                }
+            }
+            // Add non-Chinese parts directly
+            $translatedPropsList[$key] = $value;
+        }
+
+        // Check if we have Chinese values to translate
+        if (!empty($chineseValues)) {
+            // Make a batch API call to translate all Chinese values
+            $url = "https://deep-translate1.p.rapidapi.com/language/translate/v2";
+            $response = Http::withHeaders([
+                'Content-Type' => 'application/json',
+                'x-rapidapi-host' => 'deep-translate1.p.rapidapi.com',
+                'x-rapidapi-key' => 'a28a93b0c5msh3dcfd7d0796e3a2p170a1djsnfef0a6b1bd13',
+            ])->post($url, [
+                'q' => $chineseValues,
+                'source' => 'zh',
+                'target' => 'en',
+            ]);
+            // return $response;
+
+            if ($response->successful() && isset($response['data']['translations'])) {
+                // Map translated values back to their original keys
+                $translations = [];
+                foreach ($response['data']['translations'] as $translation) {
+                    $translations = $translation;
+                }
+
+                // Replace Chinese values with their translations
+                foreach ($propsList as $key => $value) {
+                    $parts = explode(':', $value);
+                    foreach ($parts as &$part) {
+                        $trimmedPart = trim($part);
+                        if (in_array($trimmedPart, $chineseValues)) {
+                            $index = array_search($trimmedPart, $chineseValues);
+                            $part = $translations[$index];
+                        }
+                    }
+                    // Rebuild the value with translated parts
+                    $translatedPropsList[$key] = implode(':', $parts);
+                }
+            }
+        }
+
+        // Return the updated props_list with translated values
+        return response()->json(['translated_props_list' => $translatedPropsList]);
+    }
+
+    /**
      * @OA\Get(
      *     path="/api/extract-id",
      *     tags={"Extract id"},
@@ -651,7 +758,7 @@ class ProductController extends Controller
         $productId = $request->productId;
         $lang = $request->lang ?? 'en';
         $provider = $request->provider ?? 'taobao';
-        $cacheKey = "product-detail?productId={$productId}&lang={$lang}";
+        $cacheKey = "product-detail?productId={$productId}&lang={$lang}&provider={$provider}";
 
         $url = "https://api-gw.onebound.cn/$provider/item_get/?key=t3832825558&&num_iid=$productId&&cache=no&&secret=20240731&lang=$lang";
         $productDetail = Cache::remember($cacheKey, 60 * 5, function () use ($url) {
