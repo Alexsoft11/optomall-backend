@@ -22,12 +22,26 @@ class ProductDetailResource extends JsonResource
 
     public function toArray($request)
     {
+
+        $quantityRanges = [];
+
+        foreach (isset($this['priceRange']) ? $this['priceRange'] : [] as $range) {
+            $quantityRanges[] = [
+                'minQuantity' => $range[0],
+                'price' => round($this->addPercentToPrice($range[1], $this->amount, $this->percent)),
+            ];
+        }
+
+        usort($quantityRanges, function ($a, $b) {
+            return $a['minQuantity'] <=> $b['minQuantity'];
+        });
         return [
             'id' => $this['num_iid'],
             'title' => $this['title'],
             'price' => round($this->addPercentToPrice($this['price'] ?? $this['orginal_price'], $this->amount, $this->percent)),
             'discounted_price' => round($this->addPercentToPrice($this['orginal_price'], $this->amount, $this->percent)),
             'discount_percentage' => round((($this['orginal_price'] - $this['price']) / $this['orginal_price']) * 100),
+            'quantityRanges' => $quantityRanges,
             'image' => preg_replace('/^\/\//', 'https://', $this['pic_url']),
             'quantity' => $this['num'],
             'seller_info' => $this['seller_info'],

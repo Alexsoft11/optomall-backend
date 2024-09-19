@@ -19,6 +19,8 @@ class BasketResource extends JsonResource
                 'id' => "$property->id",
                 'name' => $property->name,
                 'value' => $property->value,
+                'originalName' => $property->originalName,
+                'originalValue' => $property->originalValue
             ];
         });
         return [

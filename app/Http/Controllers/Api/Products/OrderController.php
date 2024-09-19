@@ -71,7 +71,9 @@ class OrderController extends Controller
      *                 @OA\Property(property="properties", type="array", @OA\Items(
      *                     @OA\Property(property="id", type="string", example="1"),
      *                     @OA\Property(property="name", type="string", example="name"),
-     *                     @OA\Property(property="value", type="string", example="value")
+     *                     @OA\Property(property="value", type="string", example="value"),
+     *                     @OA\Property(property="originalName", type="string", example="original name"), // New property
+     *                     @OA\Property(property="originalValue", type="string", example="original value") // New property
      *                 )),
      *             )),
      *             @OA\Property(property="total_price", type="number", example="50.99")
@@ -116,6 +118,8 @@ class OrderController extends Controller
             'items.*.properties.*.id' => 'required|string',
             'items.*.properties.*.name' => 'required|string',
             'items.*.properties.*.value' => 'required|string',
+            'items.*.properties.*.originalName' => 'nullable|string', // New validation rule
+            'items.*.properties.*.originalValue' => 'nullable|string', // New validation rule
             'total_price' => 'nullable|numeric|min:0',
         ]);
 
@@ -141,8 +145,6 @@ class OrderController extends Controller
                 'user_id' => $user->id,
                 'is_paid' => false,
             ]);
-
-            $client = new Client();
 
             foreach ($groupedItems as $sellerId => $items) {
                 $order = Order::create([
@@ -172,9 +174,7 @@ class OrderController extends Controller
                         $applicableRange = null;
 
                         foreach ($item['quantityRanges'] as $range) {
-                            if (
-                                $quantity >= $range['minQuantity']
-                            ) {
+                            if ($quantity >= $range['minQuantity']) {
                                 $applicableRange = $range;
                             }
                         }
@@ -201,6 +201,8 @@ class OrderController extends Controller
                             "property_id" => $property['id'],
                             "name" => $property['name'],
                             "value" => $property['value'],
+                            "originalName" => $property['originalName'] ?? null, // New property
+                            "originalValue" => $property['originalValue'] ?? null, // New property
                             "order_item_id" => $orderItem->id,
                         ]);
                     }
@@ -217,26 +219,26 @@ class OrderController extends Controller
         return response()->json(['message' => 'order_created_successfully', 'order_group' => $orderGroup->id], 201);
     }
 
-    private function saveOrderItemImage($client, $url)
-    {
-        try {
-            // Generate a random name for the image file
-            $randomName = Str::random(40) . '.' . pathinfo($url, PATHINFO_EXTENSION);
-            // Define the path where the image will be stored
-            $imagePath = 'order_images/' . $randomName;
+    // private function saveOrderItemImage($client, $url)
+    // {
+    //     try {
+    //         // Generate a random name for the image file
+    //         $randomName = Str::random(40) . '.' . pathinfo($url, PATHINFO_EXTENSION);
+    //         // Define the path where the image will be stored
+    //         $imagePath = 'order_images/' . $randomName;
 
-            // Use Guzzle to make an HTTP GET request to the image URL
-            $response = $client->get($url);
+    //         // Use Guzzle to make an HTTP GET request to the image URL
+    //         $response = $client->get($url);
 
-            // Store the image in the public disk (storage/app/public/order_images/)
-            Storage::disk('public')->put($imagePath, $response->getBody());
+    //         // Store the image in the public disk (storage/app/public/order_images/)
+    //         Storage::disk('public')->put($imagePath, $response->getBody());
 
-            return $imagePath; // Return the path where the image was stored
-        } catch (\Exception $e) {
-            // Handle the exception, e.g., log the error and return null
-            return null;
-        }
-    }
+    //         return $imagePath; // Return the path where the image was stored
+    //     } catch (\Exception $e) {
+    //         // Handle the exception, e.g., log the error and return null
+    //         return null;
+    //     }
+    // }
 
     private function removeBasket($userId, $skuId)
     {
@@ -580,7 +582,9 @@ class OrderController extends Controller
      *                 @OA\Property(property="properties", type="array", @OA\Items(
      *                     @OA\Property(property="id", type="string", example="1"),
      *                     @OA\Property(property="name", type="string", example="Color"),
-     *                     @OA\Property(property="value", type="string", example="Red")
+     *                     @OA\Property(property="value", type="string", example="Red"),
+     *                     @OA\Property(property="originalName", type="string", example="Color"),
+     *                     @OA\Property(property="originalValue", type="string", example="Red")
      *                 )),
      *             ),
      *         ),
@@ -616,6 +620,8 @@ class OrderController extends Controller
             '*.properties.*.id' => 'required|string',
             '*.properties.*.name' => 'required|string',
             '*.properties.*.value' => 'required|string',
+            '*.properties.*.originalName' => 'required|string', // Add validation for originalName
+            '*.properties.*.originalValue' => 'required|string', // Add validation for originalValue
         ]);
 
         if ($validator->fails()) {
@@ -647,7 +653,7 @@ class OrderController extends Controller
 
             // Check if the basket item with the same sku_id already exists
             $existingBasketItem = BasketItem::where('skuId', $item['sku_id'])
-                ->where('user_id', auth()->user()->id)
+            ->where('user_id', auth()->user()->id)
                 ->first();
 
             if ($existingBasketItem) {
@@ -681,6 +687,8 @@ class OrderController extends Controller
                             'property_id' => $property['id'],
                             'name' => $property['name'],
                             'value' => $property['value'],
+                            'originalName' => $property['originalName'], // Save originalName
+                            'originalValue' => $property['originalValue'], // Save originalValue
                         ]);
                     }
                 }

@@ -13,6 +13,8 @@ class Properties extends Model
         'property_id',
         'name',
         'value',
+        'originalName',
+        'originalValue',
         'order_item_id',
         'basket_item_id',
     ];

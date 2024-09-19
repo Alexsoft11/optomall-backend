@@ -45,7 +45,7 @@ class ProductController extends Controller
      *         required=true,
      *         @OA\JsonContent(
      *             @OA\Property(
-     *                 property="props_list",
+     *                 property="data",
      *                 type="object",
      *                 example={
      *                     "0:0": ":黑色",
@@ -54,8 +54,8 @@ class ProductController extends Controller
      *                     "1:1": "尺码:M"
      *                 }
      *             ),
-     *             @OA\Property(property="source", type="string", example="zh"),
-     *             @OA\Property(property="target", type="string", example="en")
+     *             @OA\Property(property="from", type="string", example="auto"),
+     *             @OA\Property(property="to", type="string", example="en")
      *         )
      *     ),
      *     @OA\Response(
@@ -83,63 +83,38 @@ class ProductController extends Controller
     public function translate(Request $request)
     {
         // Get the props_list from the request
-        $propsList = $request->input('props_list');
-        $translatedPropsList = [];
-        $chineseValues = [];
+        $list = $request->input('data');
+        $from = $request->input('from');
+        $to = $request->input('to');
+        $translatedList = [];
 
-        // Collect all Chinese values for batch translation
-        foreach ($propsList as $key => $value) {
-            $parts = explode(':', $value);
-            foreach ($parts as $part) {
-                $trimmedPart = trim($part);
-                if (preg_match('/[\p{Han}]/u', $trimmedPart)) {
-                    $chineseValues[] = $trimmedPart; // Collect Chinese values
-                }
-            }
-            // Add non-Chinese parts directly
-            $translatedPropsList[$key] = $value;
-        }
+        // Prepare the data for the new API
+        $data = [
+            'from' => $from,
+            'to' => $to,
+            'protected_paths' => ["extra.last_comment.author"],
+            'common_protected_paths' => ["image"],
+            'json' => [$list],
+        ];
 
-        // Check if we have Chinese values to translate
-        if (!empty($chineseValues)) {
-            // Make a batch API call to translate all Chinese values
-            $url = "https://deep-translate1.p.rapidapi.com/language/translate/v2";
-            $response = Http::withHeaders([
-                'Content-Type' => 'application/json',
-                'x-rapidapi-host' => 'deep-translate1.p.rapidapi.com',
-                'x-rapidapi-key' => 'a28a93b0c5msh3dcfd7d0796e3a2p170a1djsnfef0a6b1bd13',
-            ])->post($url, [
-                'q' => $chineseValues,
-                'source' => 'zh',
-                'target' => 'en',
-            ]);
-            // return $response;
+        // Make the API call
+        $url = "https://aibit-translator.p.rapidapi.com/api/v1/translator/json";
+        $response = Http::withHeaders([
+            'Content-Type' => 'application/json',
+            'x-rapidapi-host' => 'aibit-translator.p.rapidapi.com',
+            'x-rapidapi-key' => 'a28a93b0c5msh3dcfd7d0796e3a2p170a1djsnfef0a6b1bd13',
+        ])->post($url, $data);
 
-            if ($response->successful() && isset($response['data']['translations'])) {
-                // Map translated values back to their original keys
-                $translations = [];
-                foreach ($response['data']['translations'] as $translation) {
-                    $translations = $translation;
-                }
-
-                // Replace Chinese values with their translations
-                foreach ($propsList as $key => $value) {
-                    $parts = explode(':', $value);
-                    foreach ($parts as &$part) {
-                        $trimmedPart = trim($part);
-                        if (in_array($trimmedPart, $chineseValues)) {
-                            $index = array_search($trimmedPart, $chineseValues);
-                            $part = $translations[$index];
-                        }
-                    }
-                    // Rebuild the value with translated parts
-                    $translatedPropsList[$key] = implode(':', $parts);
-                }
-            }
+        if ($response->successful()) {
+            // Extract translated props_list from the response
+            $translatedList = $response['trans'];
+        } else {
+            // Handle error
+            \Log::error("Translation failed: " . $response->body());
         }
 
         // Return the updated props_list with translated values
-        return response()->json(['translated_props_list' => $translatedPropsList]);
+        return response()->json(['translated' => $translatedList]);
     }
 
     /**
