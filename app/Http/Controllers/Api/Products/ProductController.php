@@ -731,6 +731,9 @@ class ProductController extends Controller
     public function productDetailOnbound(Request $request)
     {
         $productId = $request->productId;
+        if (strpos($productId, 'abb-') !== false) {
+            $productId = str_replace('abb-', '', $productId);
+        }
         $lang = $request->lang ?? 'en';
         $provider = $request->provider ?? 'taobao';
         $cacheKey = "product-detail?productId={$productId}&lang={$lang}&provider={$provider}";
@@ -768,8 +771,25 @@ class ProductController extends Controller
         if ($productDetail['item']['format_check'] == 'fail') {
             return response()->json(['error' => 'product_not_found', 'productDetail' => $productDetail], 404); // Handle timeout or product not found
         }
-
         $product = new ProductDetailResource($productDetail['item'], $provider);
+        $data = [
+            'from' => 'auto',
+            'to' => $lang,
+            'protected_paths' => ["extra.last_comment.author"],
+            'common_protected_paths' => ["image"],
+            'json' => [$product['title'], $product['props']],
+        ];
+
+        // Make the API call
+        $url = "https://aibit-translator.p.rapidapi.com/api/v1/translator/json";
+        $response = Http::withHeaders([
+            'Content-Type' => 'application/json',
+            'x-rapidapi-host' => 'aibit-translator.p.rapidapi.com',
+            'x-rapidapi-key' => 'a28a93b0c5msh3dcfd7d0796e3a2p170a1djsnfef0a6b1bd13',
+        ])->post($url, $data);
+        // return $response->json();
+        $product['title'] = $response['trans'][0];
+        $product['props'] = $response['trans'][1];
         // $recommended = ProductResource::collection($productDetail['Result']['RecommendedItems']['Content'] ?? []);
 
         return $this->respondWithSuccess([

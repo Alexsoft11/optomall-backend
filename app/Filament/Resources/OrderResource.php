@@ -218,12 +218,22 @@ class OrderResource extends Resource
                     ->relationship()
                     ->label(trans("properties"))
                     ->schema([
-                        Textarea::make('name')
+                        $locale == 'zh_CN'
+                            ? Textarea::make('originalName')
+                            ->label(trans("name"))
+                            ->required()
+                            ->columnSpan(6)
+                            : Textarea::make('name')
                             ->label(trans("name"))
                             ->required()
                             ->columnSpan(6),
 
-                        Textarea::make('value')
+                        $locale == 'zh_CN'
+                            ? Textarea::make('originalValue')
+                            ->label(trans("value"))
+                            ->required()
+                            ->columnSpan(6)
+                            : Textarea::make('value')
                             ->label(trans("value"))
                             ->required()
                             ->columnSpan(6),
