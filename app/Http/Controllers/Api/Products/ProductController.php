@@ -779,6 +779,13 @@ class ProductController extends Controller
             'common_protected_paths' => ["image"],
             'json' => [$product['title']],
         ];
+        $data1 = [
+            'from' => 'auto',
+            'to' => 'zh-CN',
+            'protected_paths' => ["extra.last_comment.author"],
+            'common_protected_paths' => ["image"],
+            'json' => [$product['props_list']],
+        ];
 
         // Make the API call
         $translateUrl = "https://aibit-translator.p.rapidapi.com/api/v1/translator/json";
@@ -787,8 +794,14 @@ class ProductController extends Controller
             'x-rapidapi-host' => 'aibit-translator.p.rapidapi.com',
             'x-rapidapi-key' => 'a28a93b0c5msh3dcfd7d0796e3a2p170a1djsnfef0a6b1bd13',
         ])->post($translateUrl, $data);
+        $response1 = Http::withHeaders([
+            'Content-Type' => 'application/json',
+            'x-rapidapi-host' => 'aibit-translator.p.rapidapi.com',
+            'x-rapidapi-key' => 'a28a93b0c5msh3dcfd7d0796e3a2p170a1djsnfef0a6b1bd13',
+        ])->post($translateUrl, $data1);
         // return $response->json();
         $product['title'] = $response['trans'][0];
+        $product['props_list'] = $response1['trans'][0];
         // $recommended = ProductResource::collection($productDetail['Result']['RecommendedItems']['Content'] ?? []);
 
         return $this->respondWithSuccess([
