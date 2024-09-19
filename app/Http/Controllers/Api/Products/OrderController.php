@@ -72,8 +72,8 @@ class OrderController extends Controller
      *                     @OA\Property(property="id", type="string", example="1"),
      *                     @OA\Property(property="name", type="string", example="name"),
      *                     @OA\Property(property="value", type="string", example="value"),
-     *                     @OA\Property(property="originalName", type="string", example="original name"), // New property
-     *                     @OA\Property(property="originalValue", type="string", example="original value") // New property
+     *                     @OA\Property(property="originalName", type="string", example="original name"),
+     *                     @OA\Property(property="originalValue", type="string", example="original value")
      *                 )),
      *             )),
      *             @OA\Property(property="total_price", type="number", example="50.99")
@@ -201,8 +201,8 @@ class OrderController extends Controller
                             "property_id" => $property['id'],
                             "name" => $property['name'],
                             "value" => $property['value'],
-                            "originalName" => $property['originalName'] ?? null, // New property
-                            "originalValue" => $property['originalValue'] ?? null, // New property
+                            "originalName" => $property['originalName'] ?? null,
+                            "originalValue" => $property['originalValue'] ?? null,
                             "order_item_id" => $orderItem->id,
                         ]);
                     }
