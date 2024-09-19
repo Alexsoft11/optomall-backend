@@ -781,12 +781,12 @@ class ProductController extends Controller
         ];
 
         // Make the API call
-        $url = "https://aibit-translator.p.rapidapi.com/api/v1/translator/json";
+        $translateUrl = "https://aibit-translator.p.rapidapi.com/api/v1/translator/json";
         $response = Http::withHeaders([
             'Content-Type' => 'application/json',
             'x-rapidapi-host' => 'aibit-translator.p.rapidapi.com',
             'x-rapidapi-key' => 'a28a93b0c5msh3dcfd7d0796e3a2p170a1djsnfef0a6b1bd13',
-        ])->post($url, $data);
+        ])->post($translateUrl, $data);
         // return $response->json();
         $product['title'] = $response['trans'][0];
         $product['props'] = $response['trans'][1];
