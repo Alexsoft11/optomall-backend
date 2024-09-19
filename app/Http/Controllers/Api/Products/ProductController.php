@@ -774,7 +774,7 @@ class ProductController extends Controller
         $product = new ProductDetailResource($productDetail['item'], $provider);
         $data = [
             'from' => 'auto',
-            'to' => $lang,
+            'to' => $request->lang,
             'protected_paths' => ["extra.last_comment.author"],
             'common_protected_paths' => ["image"],
             'json' => [$product['title'], $product['props']],
