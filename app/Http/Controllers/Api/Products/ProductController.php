@@ -777,7 +777,7 @@ class ProductController extends Controller
             'to' => $lang,
             'protected_paths' => ["extra.last_comment.author"],
             'common_protected_paths' => ["image"],
-            'json' => [$product['title']],
+            'json' => [$product['title'], $product['props']],
         ];
 
         // Make the API call
@@ -789,6 +789,7 @@ class ProductController extends Controller
         ])->post($translateUrl, $data);
         // return $response->json();
         $product['title'] = $response['trans'][0];
+        $product['props'] = $response['trans'][1];
         // $recommended = ProductResource::collection($productDetail['Result']['RecommendedItems']['Content'] ?? []);
 
         return $this->respondWithSuccess([
