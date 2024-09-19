@@ -788,7 +788,7 @@ class ProductController extends Controller
             'x-rapidapi-key' => 'a28a93b0c5msh3dcfd7d0796e3a2p170a1djsnfef0a6b1bd13',
         ])->post($translateUrl, $data);
         // return $response->json();
-        $product['title'] = $response['trans'];
+        $product['title'] = $response['trans'][0];
         // $recommended = ProductResource::collection($productDetail['Result']['RecommendedItems']['Content'] ?? []);
 
         return $this->respondWithSuccess([
