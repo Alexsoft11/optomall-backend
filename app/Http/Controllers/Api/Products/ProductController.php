@@ -777,7 +777,7 @@ class ProductController extends Controller
             'to' => $lang,
             'protected_paths' => ["extra.last_comment.author"],
             'common_protected_paths' => ["image"],
-            'json' => [$product],
+            'json' => [$product['title']],
         ];
 
         // Make the API call
@@ -788,13 +788,12 @@ class ProductController extends Controller
             'x-rapidapi-key' => 'a28a93b0c5msh3dcfd7d0796e3a2p170a1djsnfef0a6b1bd13',
         ])->post($translateUrl, $data);
         // return $response->json();
-        // $product['title'] = $response['trans'][0];
-        // $product['props'] = $response['trans'][1];
+        $product['title'] = $response['trans'];
         // $recommended = ProductResource::collection($productDetail['Result']['RecommendedItems']['Content'] ?? []);
 
         return $this->respondWithSuccess([
             'url' => $url,
-            'detail' => $response['trans'],
+            'detail' => $product,
             'score' => [
                 'rating' => $productDetail['item']['seller_info']['item_score'] ?? 4.6,
                 'sold' => $productDetail['item']['sales'] ?? 1000,
