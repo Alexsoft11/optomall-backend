@@ -804,26 +804,26 @@ class ProductController extends Controller
         // Construct product resource from the fetched details
         $product = new ProductDetailResource($productDetail['item'], $provider);
 
-        // Prepare the data for translation
-        $data = [
-            'from' => 'auto',
-            'to' => $request->lang,
-            'protected_paths' => ["extra.last_comment.author"],
-            'common_protected_paths' => ["image"],
-            'json' => [$product['title'], $product['props']],
-        ];
+        // // Prepare the data for translation
+        // $data = [
+        //     'from' => 'auto',
+        //     'to' => $request->lang,
+        //     'protected_paths' => ["extra.last_comment.author"],
+        //     'common_protected_paths' => ["image"],
+        //     'json' => [$product['title'], $product['props']],
+        // ];
 
-        // Make the translation API call
-        $translateUrl = "https://aibit-translator.p.rapidapi.com/api/v1/translator/json";
-        $response = Http::withHeaders([
-            'Content-Type' => 'application/json',
-            'x-rapidapi-host' => 'aibit-translator.p.rapidapi.com',
-            'x-rapidapi-key' => 'a28a93b0c5msh3dcfd7d0796e3a2p170a1djsnfef0a6b1bd13',
-        ])->post($translateUrl, $data);
+        // // Make the translation API call
+        // $translateUrl = "https://aibit-translator.p.rapidapi.com/api/v1/translator/json";
+        // $response = Http::withHeaders([
+        //     'Content-Type' => 'application/json',
+        //     'x-rapidapi-host' => 'aibit-translator.p.rapidapi.com',
+        //     'x-rapidapi-key' => '74e939e778mshea2f00b1b0170dap1cc6eajsnf05e5c9be03a',
+        // ])->post($translateUrl, $data);
 
-        // Update product details with the translated text
-        $product['title'] = $response['trans'][0];
-        $product['props'] = $response['trans'][1];
+        // // Update product details with the translated text
+        // $product['title'] = $response['trans'][0];
+        // $product['props'] = $response['trans'][1];
 
         // Return success response with product details and score
         return $this->respondWithSuccess([
