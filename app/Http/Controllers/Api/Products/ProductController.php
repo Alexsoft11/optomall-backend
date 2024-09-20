@@ -172,7 +172,13 @@ class ProductController extends Controller
      *         description="Liked products details",
      *         @OA\JsonContent(
      *             type="array",
-     *             @OA\Items(type="string")
+     *             @OA\Items(type="object",
+     *                 @OA\Property(property="product_id", type="string"),
+     *                 @OA\Property(property="title", type="string"),
+     *                 @OA\Property(property="price", type="number", format="float"),
+     *                 @OA\Property(property="provider", type="string"),
+     *                 @OA\Property(property="image", type="string")
+     *             )
      *         )
      *     ),
      *     @OA\Response(
@@ -197,9 +203,12 @@ class ProductController extends Controller
      */
     public function addLikedProduct(Request $request)
     {
-        $validator = Validator::make(['product_ids' => $request->all()], [
-            'product_ids' => 'required|array',
-            'product_ids.*' => 'string',
+        $validator = Validator::make($request->all(), [
+            '*.product_id' => 'required|string',
+            '*.title' => 'required|string',
+            '*.price' => 'required|numeric',
+            '*.provider' => 'required|string',
+            '*.image' => 'required|string',
         ]);
 
         if ($validator->fails()) {
@@ -207,11 +216,11 @@ class ProductController extends Controller
         }
 
         $userId = auth()->user()->id;
-        $productIds = $request->all();
         $messages = [];
 
-        foreach ($productIds as $productId) {
-            // return $productId;
+        foreach ($request->all() as $productData) {
+            $productId = $productData['product_id'];
+
             $likedProduct = LikedProduct::where('user_id', $userId)
                 ->where('product_id', $productId)
                 ->first();
@@ -220,18 +229,15 @@ class ProductController extends Controller
                 $likedProduct->delete();
                 $messages[] = "Product ID {$productId} successfully removed";
             } else {
-                // $productDetailResponse = $this->productDetailFromTaoBao(new Request(['productId' => $productId, 'lang' => 'uz']));
-                // return $productDetailResponse;
-                // $productDetail = json_decode($productDetailResponse->getContent(), true)['detail'];
                 LikedProduct::create([
                     'user_id' => $userId,
                     'product_id' => $productId,
-                    'title_uz' => 'tit',
-                    'title_en' => 'tit',
-                    'title_ru' => 'tit',
-                    'image' => 'ok',
-                    'price' => 'ok',
+                    'title' => $productData['title'],
+                    'price' => $productData['price'],
+                    'provider' => $productData['provider'],
+                    'image' => $productData['image'],
                 ]);
+                $messages[] = "Product ID {$productId} successfully added";
             }
         }
 
@@ -300,26 +306,15 @@ class ProductController extends Controller
         $likedProducts = LikedProduct::where('user_id', $user->id)->get();
 
         $likedProductsArray = $likedProducts->map(function ($product) use ($lang) {
-            $cacheKey = "liked-product-{$product->product_id}-{$lang}";
-
-            return Cache::remember($cacheKey, 60 * 5, function () use ($product, $lang) {
-                $productDetailResponse = $this->productDetailOnbound(new Request([
-                    'productId' => $product->product_id,
-                    'lang' => $lang,
-                    // 'provider' => '1688'
-                ]));
-                $productDetail = json_decode($productDetailResponse->getContent(), true)['detail'];
-
-                return [
-                    'id' => $product->id,
-                    'product_id' => $product->product_id,
-                    'title' => $productDetail['title'],
-                    'price' => $productDetail['price'],
-                    'image' => $productDetail['image'],
-                    'provider' => $productDetail['provider'],
-                    'is_liked' => true,
-                ];
-            });
+            return [
+                'id' => $product->id,
+                'product_id' => $product->product_id,
+                'title' => $product->title, // You can adjust this based on the language if needed
+                'price' => $product->price,
+                'image' => $product->image,
+                'provider' => $product->provider,
+                'is_liked' => true,
+            ];
         });
 
         return response()->json($likedProductsArray, 200);
@@ -778,27 +773,8 @@ class ProductController extends Controller
             ]);
         }
 
-        // If there's a format check failure, change the provider
         if ($productDetail['item']['format_check'] == 'fail') {
-            $provider = ($provider == 'taobao') ? '1688' : 'taobao';
-
-            // Update cache key with the new provider
-            $cacheKey = "product-detail?productId={$productId}&lang={$lang}&provider={$provider}";
-            $url = "https://api-gw.onebound.cn/$provider/item_get/?key=t3832825558&&num_iid=$productId&&cache=no&&secret=20240731&lang=$lang";
-
-            // Retry fetching product details with the new provider
-            $productDetail = Cache::remember($cacheKey, 60 * 5, function () use ($url) {
-                try {
-                    return Http::timeout(50)->withoutVerifying()->get($url)->json();
-                } catch (\Illuminate\Http\Client\ConnectionException $e) {
-                    return null;
-                }
-            });
-
-            // If still no success, return an error
-            if ($productDetail['item']['format_check'] == 'fail') {
-                return response()->json(['error' => 'product_not_found', 'productDetail' => $productDetail], 404);
-            }
+            return response()->json(['error' => 'product_not_found', 'productDetail' => $productDetail], 404);
         }
 
         // Construct product resource from the fetched details
