@@ -303,7 +303,11 @@ class ProductController extends Controller
             $cacheKey = "liked-product-{$product->product_id}-{$lang}";
 
             return Cache::remember($cacheKey, 60 * 5, function () use ($product, $lang) {
-                $productDetailResponse = $this->productDetailOtapi(new Request(['productId' => $product->product_id, 'lang' => $lang]));
+                $productDetailResponse = $this->productDetailOnbound(new Request([
+                    'productId' => $product->product_id,
+                    'lang' => $lang,
+                    // 'provider' => '1688'
+                ]));
                 $productDetail = json_decode($productDetailResponse->getContent(), true)['detail'];
 
                 return [
@@ -731,27 +735,34 @@ class ProductController extends Controller
     public function productDetailOnbound(Request $request)
     {
         $productId = $request->productId;
+
+        // Remove 'abb-' if present in the product ID
         if (strpos($productId, 'abb-') !== false) {
             $productId = str_replace('abb-', '', $productId);
         }
-        $lang = 'zh-CN';
-        $provider = $request->provider ?? 'taobao';
+
+        $lang = 'zh-CN'; // Default language
+        $provider = $request->input('provider', 'taobao'); // Default provider is 'taobao'
+
+        // Construct the cache key for product details
         $cacheKey = "product-detail?productId={$productId}&lang={$lang}&provider={$provider}";
 
+        // Build the URL to fetch product details
         $url = "https://api-gw.onebound.cn/$provider/item_get/?key=t3832825558&&num_iid=$productId&&cache=no&&secret=20240731&lang=$lang";
+
+        // Fetch product details from cache or make an API call if not cached
         $productDetail = Cache::remember($cacheKey, 60 * 5, function () use ($url) {
             try {
-                return Http::timeout(50)->withoutVerifying()->get($url)->json(); // Increased timeout to 10 seconds
+                return Http::timeout(50)->withoutVerifying()->get($url)->json(); // Increased timeout
             } catch (\Illuminate\Http\Client\ConnectionException $e) {
-                return null; // Return null on timeout
+                return null; // Return null on timeout or error
             }
         });
 
-        // Check if provider is 'local' to fetch product from local database
+        // Handle local provider case (if the provider is 'local')
         if ($provider == 'local') {
             $productDatabase = Product::where('id', $productId)->first();
 
-            // Handle the case where the product is not found in the local database
             if (!$productDatabase) {
                 return response()->json(['error' => 'product_not_found'], 404);
             }
@@ -766,12 +777,34 @@ class ProductController extends Controller
                 ],
             ]);
         }
-        // return $productDetail;
-        // Check if product details were successfully retrieved or if an error occurred
+
+        // If there's a format check failure, change the provider
         if ($productDetail['item']['format_check'] == 'fail') {
-            return response()->json(['error' => 'product_not_found', 'productDetail' => $productDetail], 404); // Handle timeout or product not found
+            $provider = ($provider == 'taobao') ? '1688' : 'taobao';
+
+            // Update cache key with the new provider
+            $cacheKey = "product-detail?productId={$productId}&lang={$lang}&provider={$provider}";
+            $url = "https://api-gw.onebound.cn/$provider/item_get/?key=t3832825558&&num_iid=$productId&&cache=no&&secret=20240731&lang=$lang";
+
+            // Retry fetching product details with the new provider
+            $productDetail = Cache::remember($cacheKey, 60 * 5, function () use ($url) {
+                try {
+                    return Http::timeout(50)->withoutVerifying()->get($url)->json();
+                } catch (\Illuminate\Http\Client\ConnectionException $e) {
+                    return null;
+                }
+            });
+
+            // If still no success, return an error
+            if ($productDetail['item']['format_check'] == 'fail') {
+                return response()->json(['error' => 'product_not_found', 'productDetail' => $productDetail], 404);
+            }
         }
+
+        // Construct product resource from the fetched details
         $product = new ProductDetailResource($productDetail['item'], $provider);
+
+        // Prepare the data for translation
         $data = [
             'from' => 'auto',
             'to' => $request->lang,
@@ -780,18 +813,19 @@ class ProductController extends Controller
             'json' => [$product['title'], $product['props']],
         ];
 
-        // Make the API call
+        // Make the translation API call
         $translateUrl = "https://aibit-translator.p.rapidapi.com/api/v1/translator/json";
         $response = Http::withHeaders([
             'Content-Type' => 'application/json',
             'x-rapidapi-host' => 'aibit-translator.p.rapidapi.com',
             'x-rapidapi-key' => 'a28a93b0c5msh3dcfd7d0796e3a2p170a1djsnfef0a6b1bd13',
         ])->post($translateUrl, $data);
-        // return $response->json();
+
+        // Update product details with the translated text
         $product['title'] = $response['trans'][0];
         $product['props'] = $response['trans'][1];
-        // $recommended = ProductResource::collection($productDetail['Result']['RecommendedItems']['Content'] ?? []);
 
+        // Return success response with product details and score
         return $this->respondWithSuccess([
             'url' => $url,
             'detail' => $product,
@@ -799,7 +833,6 @@ class ProductController extends Controller
                 'rating' => $productDetail['item']['seller_info']['item_score'] ?? 4.6,
                 'sold' => $productDetail['item']['sales'] ?? 1000,
             ],
-            // 'recommended' => $recommended,
         ]);
     }
 
