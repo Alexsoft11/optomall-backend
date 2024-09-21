@@ -197,7 +197,7 @@ class ListController extends Controller
      *         in="query",
      *         required=true,
      *         description="ID of the product to retrieve comments for",
-     *         @OA\Schema(type="integer", example=1)
+     *         @OA\Schema(type="string", example=1)
      *     ),
      *     @OA\Response(response="200", description="List of comments retrieved successfully",
      *          @OA\JsonContent(
@@ -222,7 +222,7 @@ class ListController extends Controller
     public function getComments(Request $request)
     {
         // $validator = Validator::make($request->all(), [
-        //     'product_id' => 'required|integer|exists:products,id'
+        //     'product_id' => 'required|string|exists:products,id'
         // ]);
 
         // if ($validator->fails()) {
