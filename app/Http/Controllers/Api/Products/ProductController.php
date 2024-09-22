@@ -102,7 +102,7 @@ class ProductController extends Controller
         $response = Http::withHeaders([
             'Content-Type' => 'application/json',
             'x-rapidapi-host' => 'aibit-translator.p.rapidapi.com',
-            'x-rapidapi-key' => 'a28a93b0c5msh3dcfd7d0796e3a2p170a1djsnfef0a6b1bd13',
+            'x-rapidapi-key' => 'a86600a0famshe7d03592130f05ep15f088jsn0633f219bb6c',
         ])->post($url, $data);
 
         if ($response->successful()) {
