@@ -102,7 +102,7 @@ class ProductController extends Controller
         $response = Http::withHeaders([
             'Content-Type' => 'application/json',
             'x-rapidapi-host' => 'aibit-translator.p.rapidapi.com',
-            'x-rapidapi-key' => 'a86600a0famshe7d03592130f05ep15f088jsn0633f219bb6c',
+            'x-rapidapi-key' => '74e939e778mshea2f00b1b0170dap1cc6eajsnf05e5c9be03a',
         ])->post($url, $data);
 
         if ($response->successful()) {
@@ -794,7 +794,7 @@ class ProductController extends Controller
         $response = Http::withHeaders([
             'Content-Type' => 'application/json',
             'x-rapidapi-host' => 'aibit-translator.p.rapidapi.com',
-            'x-rapidapi-key' => 'a86600a0famshe7d03592130f05ep15f088jsn0633f219bb6c',
+            'x-rapidapi-key' => '74e939e778mshea2f00b1b0170dap1cc6eajsnf05e5c9be03a',
         ])->post($translateUrl, $data);
 
         // Update product details with the translated text
