@@ -1075,7 +1075,6 @@ class ProductController extends Controller
             $provider = strtolower($request->input('provider', 'taobao'));
             $lang = $request->input('lang', 'en');
             $imageUrl = $request->input('imageUrl');
-            $apiKey = 'kingdev5809@gmail.com';
 
             // Fetch the subcategory based on catId
             $subcategory = TaobaoSubcategory::where('unique_id', $request->catId)
@@ -1084,17 +1083,16 @@ class ProductController extends Controller
                 ->pluck('unique')
                 ->first();
 
+            // Check if we need to translate the value before the API call
+            $translatedValue = $subcategory ? $subcategory : $this->translateText($value); // Translate to Chinese for search
+
             // Base API URL construction
             $baseApiUrl = $imageUrl
                 ? "https://api-gw.onebound.cn/$provider/item_search_img/?key=t3832825558&&imgid=$imageUrl&cache=no&&lang=$lang&secret=20240731"
-                : "https://api-gw.onebound.cn/$provider/item_search/?key=t3832825558&&q=" . ($subcategory ? $subcategory : $value) . "&page=$page&sort=$sort&page_size=$productsCount&cache=no&&lang=$lang&secret=20240731";
-
-            // Append OrderBy parameter if sorting is provided
-            // $orderBy = $sort ? "%0D%0A%3COrderBy%3E$sort%3C%2FOrderBy%3E" : '';
-            // $apiUrl = $baseApiUrl . $orderBy . "%0D%0A%3C%2FSearchItemsParameters%3E&framePosition=$page&frameSize=$productsCount&blockList=Description";
+                : "https://api-gw.onebound.cn/$provider/item_search/?key=t3832825558&&q=" . $translatedValue . "&page=$page&sort=$sort&page_size=$productsCount&cache=no&&lang=$lang&secret=20240731";
 
             try {
-                // Making the external API request with a longer timeout (async can be implemented here too)
+                // Making the external API request
                 $response = Http::timeout(10)->withoutVerifying()->get($baseApiUrl);
                 $products = $response->json();
             } catch (\Exception $e) {
@@ -1112,33 +1110,40 @@ class ProductController extends Controller
 
             $productData = $products['items']['item'];
 
-            // Optimize resource transformation
             return $this->respondWithSuccess([
-                'products' => collect($productData)->map(function ($product) use ($provider) {
-                    return (new ProductResource($product, $provider))->resolve();
+                'products' => collect($productData)->map(function ($product) use ($provider, $lang) {
+                    return (new ProductResource($product, $provider, $lang))->resolve();
                 }),
             ]);
         });
     }
 
-    // private function translateText($text, $lang)
-    // {
-    //     $apiKey = 'dc8c6250d5104f57a59c55ad546d1f20';
-    //     $endpoint = "https://api.cognitive.microsofttranslator.com/translate?api-version=3.0&from=$lang&to=zh-cn";
+    private function translateText($text)
+    {
+        $data = [
+            'from' => 'auto',
+            'to' => 'zh-CN',
+            'text' => $text
+        ];
 
-    //     $response = Http::withHeaders([
-    //         'Ocp-Apim-Subscription-Key' => $apiKey,
-    //         'Ocp-Apim-Subscription-Region' => 'eastus',
-    //         'Content-Type' => 'application/json',
-    //     ])->post($endpoint, [
-    //         [
-    //             'Text' => $text
-    //         ]
-    //     ]);
+        // Make the translation API call
+        $translateUrl = "https://aibit-translator.p.rapidapi.com/api/v1/translator/text";
+        try {
+            $response = Http::withHeaders([
+                'Content-Type' => 'application/json',
+                'x-rapidapi-host' => 'aibit-translator.p.rapidapi.com',
+                'x-rapidapi-key' => '74e939e778mshea2f00b1b0170dap1cc6eajsnf05e5c9be03a',
+            ])->post($translateUrl, $data);
 
-    //     $result = $response->json();
-    //     return $result[0]['translations'][0]['text'] ?? $text;
-    // }
+            $result = $response->json();
+            // return $result;
+            // Return the translated text or original if not available
+            return $result['trans'] ?? $text;
+        } catch (\Exception $e) {
+            Log::error('Translation API error: ' . $e->getMessage());
+            return $text; // Return original text if translation fails
+        }
+    }
 
     /**
      * @OA\Get(
