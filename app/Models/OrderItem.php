@@ -20,6 +20,7 @@ class OrderItem extends Model
         'price',
         'skuId',
         'provider',
+        'delivery_price'
     ];
 
     public function order()

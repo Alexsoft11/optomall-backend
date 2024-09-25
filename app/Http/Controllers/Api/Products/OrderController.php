@@ -164,17 +164,23 @@ class OrderController extends Controller
                     'order_group_id' => $orderGroup->id,
                 ]);
 
-                foreach ($items as $item) {
-                    $quantity = $item['quantity'];
-                    $basePrice = $item['price'];
+                $groupedItems = collect($items)->groupBy('product_id');
+                foreach ($groupedItems as $productId => $grouped) {
+                    $totalQuantity = 0;
+                    $basePrice = $grouped->first()['price'];
                     $finalPrice = $basePrice;
 
-                    // Determine the final price based on quantity ranges
-                    if (isset($item['quantityRanges']) && count($item['quantityRanges']) > 0) {
+                    // Sum up the total quantity of items with the same product_id
+                    foreach ($grouped as $item) {
+                        $totalQuantity += $item['quantity'];
+                    }
+
+                    // Determine the final price based on the total quantity and quantity ranges
+                    if (isset($grouped->first()['quantityRanges']) && count($grouped->first()['quantityRanges']) > 0) {
                         $applicableRange = null;
 
-                        foreach ($item['quantityRanges'] as $range) {
-                            if ($quantity >= $range['minQuantity']) {
+                        foreach ($grouped->first()['quantityRanges'] as $range) {
+                            if ($totalQuantity >= $range['minQuantity']) {
                                 $applicableRange = $range;
                             }
                         }
@@ -183,31 +189,44 @@ class OrderController extends Controller
                             $finalPrice = $applicableRange['price'];
                         }
                     }
+                    foreach ($grouped as $item) {
+                        // Make the delivery price request (you may want to handle it outside the loop if the delivery URL is the same)
+                        $deliveryUrl = "https://api-gw.onebound.cn/1688/item_fee/?key=t3832825558&&num_iid={$item['product_id']}&area_id=130200&temp_id=20066088&nick=%E6%AD%A6%E4%B9%89%E9%9F%A9%E6%81%BA%E6%99%BA%E8%83%BD%E7%A7%91%E6%8A%80%E6%9C%89%E9%99%90%E5%85%AC%E5%8F%B8&location=34620202&unitweight=0&sku_id=&qyt=&price=&cache=no&&lang=zh-CN&secret=20240731";
+                        $response = Http::get($deliveryUrl);
+                        $deliveryData = $response->json();
 
-                    $orderItem = OrderItem::create([
-                        'order_id' => $order->id,
-                        'product_id' => $item['product_id'],
-                        'title' => $item['title'],
-                        'provider' => $item['provider'],
-                        'image_url' => $item['image_url'],
-                        'quantity' => $quantity,
-                        'price' => $finalPrice,
-                        'product_url' => $item['product_url'],
-                        'skuId' => $item['sku_id'],
-                    ]);
-
-                    foreach ($item['properties'] as $property) {
-                        Properties::create([
-                            "property_id" => $property['id'],
-                            "name" => $property['name'],
-                            "value" => $property['value'],
-                            "originalName" => $property['originalName'] ?? null,
-                            "originalValue" => $property['originalValue'] ?? null,
-                            "order_item_id" => $orderItem->id,
+                        // Ensure delivery price is numeric, otherwise set it to 0
+                        $delivery_price = isset($deliveryData['item']['price']) && is_numeric($deliveryData['item']['price'])
+                            ? $deliveryData['item']['price']
+                            : 0;
+                        // Create order items for each item in the group
+                        $orderItem = OrderItem::create([
+                            'order_id' => $order->id,
+                            'product_id' => $productId,
+                            'title' => $item['title'],
+                            'provider' => $item['provider'],
+                            'image_url' => $item['image_url'],
+                            'quantity' => $item['quantity'], // individual item's quantity
+                            'price' => $finalPrice, // final price based on total quantity
+                            'product_url' => $item['product_url'],
+                            'skuId' => $item['sku_id'],
+                            'delivery_price' => $delivery_price,
                         ]);
-                    }
 
-                    $this->removeBasket($user->id, $item['sku_id']);
+                        foreach ($item['properties'] as $property) {
+                            Properties::create([
+                                "property_id" => $property['id'],
+                                "name" => $property['name'],
+                                "value" => $property['value'],
+                                "originalName" => $property['originalName'] ?? null,
+                                "originalValue" => $property['originalValue'] ?? null,
+                                "order_item_id" => $orderItem->id,
+                            ]);
+                        }
+
+                        // Remove item from basket
+                        $this->removeBasket($user->id, $item['sku_id']);
+                    }
                 }
 
                 $orders[] = $order;
@@ -653,7 +672,7 @@ class OrderController extends Controller
 
             // Check if the basket item with the same sku_id already exists
             $existingBasketItem = BasketItem::where('skuId', $item['sku_id'])
-            ->where('user_id', auth()->user()->id)
+                ->where('user_id', auth()->user()->id)
                 ->first();
 
             if ($existingBasketItem) {
@@ -1052,48 +1071,57 @@ class OrderController extends Controller
      * @OA\Delete(
      *     path="/api/remove",
      *     tags={"Order"},
-     *     summary="Remove size and color from the user's basket",
-     *     description="Remove a specific size and associated color by size_id and color_id in the user's basket",
-     *     operationId="removeBasketItem",
+     *     summary="Remove sizes and colors from the user's basket",
+     *     description="Remove specific sizes and associated colors by an array of basket_ids in the user's basket",
+     *     operationId="removeBasketItems",
      *     security={{ "bearerAuth":{} }},
      *     @OA\RequestBody(
      *         required=true,
      *         description="Basket item details",
      *         @OA\JsonContent(
-     *             required={"basket_id"},
-     *             @OA\Property(property="basket_id", type="integer", example="1"),
+     *             required={"basket_ids"},
+     *             @OA\Property(
+     *                 property="basket_ids",
+     *                 type="array",
+     *                 @OA\Items(type="integer"),
+     *                 example={1, 2}
+     *             ),
      *         ),
      *     ),
-
+     *
      *     @OA\Response(
      *         response=404,
      *         description="Not found",
      *         @OA\JsonContent(
      *             type="object",
-     *             @OA\Property(property="message", type="string", example="Basket item size not found"),
+     *             @OA\Property(property="message", type="string", example="Basket items not found"),
      *         ),
      *     ),
      * )
      */
-    public function removeBasketItem(Request $request)
+    public function removeBasketItems(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'basket_id' => 'required|integer',
+            'basket_ids' => 'required|array',
+            'basket_ids.*' => 'integer',
         ]);
 
         if ($validator->fails()) {
             return response()->json(['message' => 'Invalid data', 'errors' => $validator->errors()], 400);
         }
 
-        // Find the basket item size by basket_id and size_id
-        $basket = BasketItem::where('id', $request->basket_id)->where('user_id', auth()->user()->id)->first();
+        // Find the basket items by basket_ids
+        $baskets = BasketItem::whereIn('id', $request->basket_ids)
+            ->where('user_id', auth()->user()->id)
+            ->get();
 
-        if (!$basket) {
-            return response()->json(['message' => 'Basket item not found'], 404);
+        if ($baskets->isEmpty()) {
+            return response()->json(['message' => 'Basket items not found'], 404);
         }
 
-        // Remove the size and associated colors from the basket
-        $basket->delete();
+        foreach ($baskets as $basket) {
+            $basket->delete();
+        }
 
         return response()->json($this->getUserBasket($request), 200);
     }
