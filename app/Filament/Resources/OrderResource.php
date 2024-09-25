@@ -198,6 +198,14 @@ class OrderResource extends Resource
                             ->required()
                             ->columnSpan(6),
 
+                        TextInput::make('delivery_price')
+                            ->label('Delivery' . trans("Price"))
+                            ->numeric()
+                            ->placeholder('Enter price')
+                            ->disabled()
+                            ->required()
+                            ->columnSpan(6),
+
                         TextInput::make('quantity')
                             ->label(trans("Quantity"))
                             ->numeric()
