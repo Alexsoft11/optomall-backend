@@ -65,7 +65,7 @@ Route::middleware('throttle:1200,60')->group(function () {
         Route::put('/edit-order', [OrderController::class, 'editOrder']);
         Route::get('/get-cargo', [OrderController::class, 'getCargo']);
         Route::put('/add', [OrderController::class, 'updateBasketItemSizeQuantity']);
-        Route::delete('/remove', [OrderController::class, 'removeBasketItem']);
+        Route::delete('/remove', [OrderController::class, 'removeBasketItems']);
         Route::post('/add-check', [OrderController::class, 'addCheck']);
         Route::get('/success-orders', [OrderController::class, 'getSuccessOrders']);
         Route::post('/liked-product', [ProductController::class, 'addLikedProduct']);

@@ -727,6 +727,12 @@ class ProductController extends Controller
      *     @OA\Response(response="200", description="Product detail from taobao"),
      * )
      */
+    /**
+     * Handles the API call to retrieve product details from OneBound API for a given product ID.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function productDetailOnbound(Request $request)
     {
         $productId = $request->productId;
@@ -748,9 +754,11 @@ class ProductController extends Controller
         // Fetch product details from cache or make an API call if not cached
         $productDetail = Cache::remember($cacheKey, 60 * 5, function () use ($url) {
             try {
-                return Http::timeout(50)->withoutVerifying()->get($url)->json(); // Increased timeout
+                // Make the API call with a 50 second timeout
+                return Http::timeout(50)->withoutVerifying()->get($url)->json();
             } catch (\Illuminate\Http\Client\ConnectionException $e) {
-                return null; // Return null on timeout or error
+                // Return null on timeout or error
+                return null;
             }
         });
 
@@ -1287,32 +1295,34 @@ class ProductController extends Controller
         $imagePath = $request->file('image')->store('images', 'public');
         $imageFullPath = url('storage/' . $imagePath);
 
-        // Convert the image to Base64
-        $imageData = file_get_contents($imageFullPath);
-        $base64Image = base64_encode($imageData);
+        // // Convert the image to Base64
+        // $imageData = file_get_contents($imageFullPath);
+        // $base64Image = base64_encode($imageData);
 
-        // Build the API URL with query parameters
-        $apiUrl = 'https://api-gw.onebound.cn/taobao/upload_img/?key=t3832825558&&cache=no&&lang=zh-CN&secret=20240731';
+        // // Build the API URL with query parameters
+        // $apiUrl = 'https://api-gw.onebound.cn/taobao/upload_img/?key=t3832825558&&cache=no&&lang=zh-CN&secret=20240731';
 
-        // Send POST request to the API with Base64 image in the body
-        $response = Http::asForm()->post($apiUrl, [
-            'imgcode' => 'data:image/jpeg;base64,' . $base64Image,
-        ]);
+        // // Send POST request to the API with Base64 image in the body
+        // $response = Http::asForm()->post($apiUrl, [
+        //     'imgcode' => 'data:image/jpeg;base64,' . $base64Image,
+        // ]);
 
-        // Decode the response from the API
-        $responseData = $response->json();
-        // Check if the API call was successful
-        if (isset($responseData['items']['item']['name'])) {
-            return response()->json([
-                'url' => $responseData['items']['item']['name'],  // Adjust according to the actual API response structure
-            ]);
-        } else {
-            return response()->json([
-                'error' => true,
-                'messages' => 'external_api_error',
-                'details' => $responseData,  // Return error details from the API
-            ], 500);
-        }
+        // // Decode the response from the API
+        // $responseData = $response->json();
+        // // Check if the API call was successful
+        // if (isset($responseData['items']['item']['name'])) {
+        //     return response()->json([
+        //         'url' => $responseData['items']['item']['name'],  // Adjust according to the actual API response structure
+        //     ]);
+        // } else {
+        //     return response()->json([
+        //         'error' => true,
+        //         'messages' => 'external_api_error',
+        //         'details' => $responseData,  // Return error details from the API
+        //     ], 500);
+        // }
+
+        return response()->json(['url' => $imageFullPath]);
     }
 
 

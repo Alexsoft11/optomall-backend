@@ -150,7 +150,7 @@ class OrderController extends Controller
                 $order = Order::create([
                     'user_id' => $user->id,
                     'total_price' => $items->reduce(function ($carry, $item) {
-                        return $carry + ($item['price'] + $item['delivery_price'] * $item['quantity']);
+                        return $carry + ($item['price'] * $item['quantity']);
                     }, 0),
                     'seller_id' => $sellerId,
                     'user_name' => '.',
@@ -200,6 +200,7 @@ class OrderController extends Controller
                         $delivery_price = isset($deliveryData['item']['price']) && is_numeric($deliveryData['item']['price'])
                             ? $deliveryData['item']['price']
                             : 0;
+                        dd($delivery_price);
                         // Create order items for each item in the group
                         $orderItem = OrderItem::create([
                             'order_id' => $order->id,
@@ -1125,10 +1126,12 @@ class OrderController extends Controller
             return response()->json(['message' => 'Basket items not found'], 404);
         }
 
+        // Delete the found basket items
         foreach ($baskets as $basket) {
             $basket->delete();
         }
 
-        return response()->json($this->getUserBasket($request), 200);
+        // Return the updated user's basket
+        return response()->json(['message' => 'basket_items_removed_successfully', 'baskets' => $baskets], 200);
     }
 }
