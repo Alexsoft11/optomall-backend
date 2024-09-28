@@ -22,6 +22,6 @@
     <p><strong>Parol:</strong> {{ $userPassword }}</p>
     <p>Siz istalgan vaqtda ushbu vaqtinchalik parolni o'zgartia olasiz</p>
     <p>Bizni tanlaganingiz uchun raxmat!</p>
-    <p>Hurmat ila OnWay jamoasi</p>
+    <p>Hurmat ila OptomAll jamoasi</p>
 </body>
 </html>

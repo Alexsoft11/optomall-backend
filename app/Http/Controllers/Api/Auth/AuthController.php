@@ -18,6 +18,7 @@ use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
 use App\Mail\GoogleLoginSuccess;
 use Illuminate\Support\Carbon;
+use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 
 class AuthController extends Controller
 {
@@ -60,7 +61,14 @@ class AuthController extends Controller
         $token = Str::random(60);
         Cache::put($token, $tempUser->id, now()->addMinutes(60));
 
-        $tempUser->notify(new VerifyEmailNotification($token, $tempUser->id));
+        try {
+            $tempUser->notify(new VerifyEmailNotification($token, $tempUser->id));
+        } catch (TransportExceptionInterface $e) {
+            return response()->json([
+                'message' => 'email_sending_failed',
+                'error' => 'not_found',
+            ], 400);
+        }
 
         return response()->json(['message' => 'verification_email_sent'], 201);
     }
