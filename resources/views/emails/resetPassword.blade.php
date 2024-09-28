@@ -16,8 +16,8 @@
     </style>
 </head>
 <body>
-    <p><strong>Maxfiy son:</strong> {{ $otp }}</p>
-    <p>Ushbu maxfiy sonni yangi parol qo'yish uchun ishlating</p>
-    <p>Hurmat ila OnWay jamoasi</p>
+    <p><strong>Maxfiy raqam:</strong> {{ $otp }}</p>
+    <p>Ushbu maxfiy raqamni yangi parol qo'yish uchun ishlating</p>
+    <p>Hurmat ila OptomAll jamoasi</p>
 </body>
 </html>
