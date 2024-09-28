@@ -28,6 +28,6 @@
     <p>Iltimos emailingizni tasdiqlang:</p>
     <a href="{{ $url }}" class="button">Shu yerga bosing</a>
     <p>Bizni tanlaganingiz uchun raxmat!</p>
-    <p>Hurmat ila OnWay jamoasi</p>
+    <p>Hurmat ila OptomAll jamoasi</p>
 </body>
 </html>
