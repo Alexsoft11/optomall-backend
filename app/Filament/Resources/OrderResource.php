@@ -203,7 +203,6 @@ class OrderResource extends Resource
                             ->numeric()
                             ->placeholder('Enter price')
                             ->disabled()
-                            ->required()
                             ->columnSpan(6),
 
                         TextInput::make('quantity')

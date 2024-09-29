@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Models\Exchanges;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -15,6 +16,8 @@ class OrderResource extends JsonResource
      */
     public function toArray($request)
     {
+        $kgPrice = Exchanges::where('currency', 'kg')->first();
+        
         $items = $this->items->map(function ($item) {
             $properties = $item->properties->map(function ($property) {
                 return [
@@ -39,7 +42,6 @@ class OrderResource extends JsonResource
                 'product_total_price' => $item->delivery_price + $item->price,
             ];
         });
-
         return [
             'unique_id' => $this->unique_id,
             'id' => $this->orderGroup->id,
@@ -57,7 +59,7 @@ class OrderResource extends JsonResource
             'location_region' => $this->region,
             'location_district' => $this->district,
             'kg' => $this->kg,
-            'cargo_price' => $this->kg * ($request->kgPrice ?? 0),
+            'cargo_price' => $this->kg * ($kgPrice->amount ?? 0),
             'created_at' => $this->created_at,
             'items' => $items,
         ];

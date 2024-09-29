@@ -40,7 +40,7 @@ class Order extends Model
         'seller_id',
         'provider',
         'order_group_id',
-        'is_paid'
+        'is_paid',
     ];
 
 
@@ -65,7 +65,7 @@ class Order extends Model
         });
     }
 
-    private function generateUniqueId()
+    public function generateUniqueId()
     {
         $letters = strtoupper(substr(str_shuffle('ABCDEFGHIJKLMNOPQRSTUVWXYZ'), 0, 2));
         $numbers = substr(str_shuffle('0123456789'), 0, 6);
