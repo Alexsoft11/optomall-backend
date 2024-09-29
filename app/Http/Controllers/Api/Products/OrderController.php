@@ -200,7 +200,6 @@ class OrderController extends Controller
                         $delivery_price = isset($deliveryData['item']['price']) && is_numeric($deliveryData['item']['price'])
                             ? $deliveryData['item']['price']
                             : 0;
-                        dd($delivery_price);
                         // Create order items for each item in the group
                         $orderItem = OrderItem::create([
                             'order_id' => $order->id,
