@@ -10,6 +10,7 @@ use App\Http\Resources\ProductDetailDatabase;
 use App\Http\Resources\ProductDetailDatabaseToken;
 use App\Http\Resources\ProductDetailOtapi;
 use App\Http\Resources\ProductDetailResource;
+use App\Http\Resources\ProductDetailTmapi;
 use App\Http\Resources\ProductDetailTokenResource;
 use OpenApi\Annotations as OA;
 use App\Http\Resources\ProductResource;
@@ -808,6 +809,126 @@ class ProductController extends Controller
         // Update product details with the translated text
         $product['title'] = $response['trans'][0];
         $product['props'] = $response['trans'][1];
+
+        // Return success response with product details and score
+        return $this->respondWithSuccess([
+            'url' => $url,
+            'detail' => $product,
+            'score' => [
+                'rating' => $productDetail['item']['seller_info']['item_score'] ?? 4.6,
+                'sold' => $productDetail['item']['sales'] ?? 1000,
+            ],
+        ]);
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/product-detail-tmapi",
+     *     summary="Get product detail tmapi",
+     *     tags={"Products"},
+     *     @OA\Parameter(
+     *         name="productId",
+     *         in="query",
+     *         required=true,
+     *         @OA\Schema(type="string"),
+     *         description="The ID of the product to retrieve details for"
+     *     ),
+     *  @OA\Parameter(
+     *         name="provider",
+     *         in="query",
+     *         required=false,
+     *         @OA\Schema(type="string")
+     *     ),
+     *    @OA\Parameter(
+     *         name="lang",
+     *         in="query",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *             enum={"uz", "ru", "en"}
+     *         ),
+     *         description="Language code for the product details. Available options: uz, ru, en"
+     *     ),
+     *     @OA\Response(response="200", description="Product detail from taobao tmapi"),
+     * )
+     */
+    public function productDetailTmapi(Request $request)
+    {
+        $productId = $request->productId;
+
+        // Remove 'abb-' if present in the product ID
+        if (strpos($productId, 'abb-') !== false) {
+            $productId = str_replace('abb-', '', $productId);
+        }
+
+        $lang = 'zh-CN'; // Default language
+        $provider = $request->input('provider', 'taobao'); // Default provider is 'taobao'
+
+        // Construct the cache key for product details
+        $cacheKey = "product-detail-tmapi?productId={$productId}&lang={$lang}&provider={$provider}";
+
+        // Build the URL to fetch product details
+        $url = $provider == 'taobao' ? "http://api.tmapi.top/taobao/item_detail?item_id=$productId&apiToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VybmFtZSI6Im9wdG9tYWxsIiwiQ29taWQiOm51bGwsIlJvbGVpZCI6bnVsbCwiaXNzIjoidG1hcGkiLCJzdWIiOiJvcHRvbWFsbCIsImF1ZCI6WyIiXSwiaWF0IjoxNzI3ODQzODA3fQ.MjSYALtr8x19ybMi8aJvRJk2Pl_hNwMpuNpWyAwx9AQ" : "http://api.tmapi.top/1688/v2/item_detail?item_id=$productId&apiToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VybmFtZSI6Im9wdG9tYWxsIiwiQ29taWQiOm51bGwsIlJvbGVpZCI6bnVsbCwiaXNzIjoidG1hcGkiLCJzdWIiOiJvcHRvbWFsbCIsImF1ZCI6WyIiXSwiaWF0IjoxNzI3ODQzODA3fQ.MjSYALtr8x19ybMi8aJvRJk2Pl_hNwMpuNpWyAwx9AQ";
+
+        // Fetch product details from cache or make an API call if not cached
+        $productDetail = Cache::remember($cacheKey, 60 * 5, function () use ($url) {
+            try {
+                // Make the API call with a 50 second timeout
+                return Http::timeout(50)->withoutVerifying()->get($url)->json();
+            } catch (\Illuminate\Http\Client\ConnectionException $e) {
+                // Return null on timeout or error
+                return null;
+            }
+        });
+
+        // Handle local provider case (if the provider is 'local')
+        if ($provider == 'local') {
+            $productDatabase = Product::where('id', $productId)->first();
+
+            if (!$productDatabase) {
+                return response()->json(['error' => 'product_not_found'], 404);
+            }
+
+            $product = new ProductDetailDatabase($productDatabase, $lang);
+
+            return $this->respondWithSuccess([
+                'detail' => $product,
+                'score' => [
+                    'rating' => $productDatabase->seller_info['item_score'] ?? 4.6,
+                    'sold' => $productDatabase->sales ?? 1000,
+                ],
+            ]);
+        }
+
+
+        // if ($productDetail['item']['format_check'] == 'fail') {
+        //     return response()->json(['error' => 'product_not_found', 'productDetail' => $productDetail], 404);
+        // }
+
+        // Construct product resource from the fetched details
+        // return $productDetail;
+        $product = new ProductDetailTmapi($productDetail['data'], $provider);
+
+        // Prepare the data for translation
+        // $data = [
+        //     'from' => 'auto',
+        //     'to' => $request->lang,
+        //     'protected_paths' => ["extra.last_comment.author"],
+        //     'common_protected_paths' => ["image"],
+        //     'json' => [$product['title'], $product['props']],
+        // ];
+        //
+        // // Make the translation API call
+        // $translateUrl = "https://aibit-translator.p.rapidapi.com/api/v1/translator/json";
+        // $response = Http::withHeaders([
+        //     'Content-Type' => 'application/json',
+        //     'x-rapidapi-host' => 'aibit-translator.p.rapidapi.com',
+        //     'x-rapidapi-key' => '74e939e778mshea2f00b1b0170dap1cc6eajsnf05e5c9be03a',
+        // ])->post($translateUrl, $data);
+
+        // // Update product details with the translated text
+        // $product['title'] = $response['trans'][0];
+        // $product['props'] = $response['trans'][1];
 
         // Return success response with product details and score
         return $this->respondWithSuccess([
