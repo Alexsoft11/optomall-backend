@@ -728,12 +728,6 @@ class ProductController extends Controller
      *     @OA\Response(response="200", description="Product detail from taobao"),
      * )
      */
-    /**
-     * Handles the API call to retrieve product details from OneBound API for a given product ID.
-     *
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
-     */
     public function productDetailOnbound(Request $request)
     {
         $productId = $request->productId;
