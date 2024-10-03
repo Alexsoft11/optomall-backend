@@ -1220,7 +1220,7 @@ class ProductController extends Controller
                 $products = $response->json();
             } catch (\Exception $e) {
                 Log::error('Error fetching products from Taobao: ' . $e->getMessage());
-                return response()->json(['error' => 'service_unavailable'], 503);
+                return response()->json(['error' => 'service_unavailable', 'message' => $e->getMessage()], 503);
             }
 
             // Check if products are found
