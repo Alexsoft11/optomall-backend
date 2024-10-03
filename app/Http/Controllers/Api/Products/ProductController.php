@@ -1216,7 +1216,7 @@ class ProductController extends Controller
 
             try {
                 // Making the external API request
-                $response = Http::timeout(10)->withoutVerifying()->get($baseApiUrl);
+                $response = Http::timeout(50)->withoutVerifying()->get($baseApiUrl);
                 $products = $response->json();
             } catch (\Exception $e) {
                 Log::error('Error fetching products from Taobao: ' . $e->getMessage());
