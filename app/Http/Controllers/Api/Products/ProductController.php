@@ -862,7 +862,9 @@ class ProductController extends Controller
         $cacheKey = "product-detail-tmapi?productId={$productId}&lang={$lang}&provider={$provider}";
 
         // Build the URL to fetch product details
-        $url = $provider == 'taobao' ? "http://api.tmapi.top/taobao/item_detail?item_id=$productId&apiToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VybmFtZSI6Im9wdG9tYWxsIiwiQ29taWQiOm51bGwsIlJvbGVpZCI6bnVsbCwiaXNzIjoidG1hcGkiLCJzdWIiOiJvcHRvbWFsbCIsImF1ZCI6WyIiXSwiaWF0IjoxNzI3ODQzODA3fQ.MjSYALtr8x19ybMi8aJvRJk2Pl_hNwMpuNpWyAwx9AQ" : "http://api.tmapi.top/1688/v2/item_detail?item_id=$productId&apiToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VybmFtZSI6Im9wdG9tYWxsIiwiQ29taWQiOm51bGwsIlJvbGVpZCI6bnVsbCwiaXNzIjoidG1hcGkiLCJzdWIiOiJvcHRvbWFsbCIsImF1ZCI6WyIiXSwiaWF0IjoxNzI3ODQzODA3fQ.MjSYALtr8x19ybMi8aJvRJk2Pl_hNwMpuNpWyAwx9AQ";
+        $url = $provider == 'taobao' ?
+        "http://api.tmapi.top/taobao/item_detail?item_id=$productId&apiToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VybmFtZSI6Im9wdG9tYWxsIiwiQ29taWQiOm51bGwsIlJvbGVpZCI6bnVsbCwiaXNzIjoidG1hcGkiLCJzdWIiOiJvcHRvbWFsbCIsImF1ZCI6WyIiXSwiaWF0IjoxNzI3ODQzODA3fQ.MjSYALtr8x19ybMi8aJvRJk2Pl_hNwMpuNpWyAwx9AQ" :
+        "http://api.tmapi.top/1688/v2/item_detail?item_id=$productId&apiToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VybmFtZSI6Im9wdG9tYWxsIiwiQ29taWQiOm51bGwsIlJvbGVpZCI6bnVsbCwiaXNzIjoidG1hcGkiLCJzdWIiOiJvcHRvbWFsbCIsImF1ZCI6WyIiXSwiaWF0IjoxNzI3ODQzODA3fQ.MjSYALtr8x19ybMi8aJvRJk2Pl_hNwMpuNpWyAwx9AQ";
 
         // Fetch product details from cache or make an API call if not cached
         $productDetail = Cache::remember($cacheKey, 60 * 5, function () use ($url) {
@@ -894,13 +896,12 @@ class ProductController extends Controller
             ]);
         }
 
-
-        // if ($productDetail['item']['format_check'] == 'fail') {
-        //     return response()->json(['error' => 'product_not_found', 'productDetail' => $productDetail], 404);
-        // }
+        // Check for failed format
+        if ($productDetail['item']['format_check'] == 'fail') {
+            return response()->json(['error' => 'product_not_found', 'productDetail' => $productDetail], 404);
+        }
 
         // Construct product resource from the fetched details
-        // return $productDetail;
         $product = new ProductDetailTmapi($productDetail['data'], $provider);
 
         // Prepare the data for translation
@@ -911,7 +912,7 @@ class ProductController extends Controller
         //     'common_protected_paths' => ["image"],
         //     'json' => [$product['title'], $product['props']],
         // ];
-        //
+
         // // Make the translation API call
         // $translateUrl = "https://aibit-translator.p.rapidapi.com/api/v1/translator/json";
         // $response = Http::withHeaders([
@@ -1190,7 +1191,14 @@ class ProductController extends Controller
         // Cache the API response for 5 minutes to avoid repeated external API calls
         $cacheKey = 'search_products_' . md5(json_encode($request->all()));
 
-        return Cache::remember($cacheKey, 300, function () use ($request) {
+        // Try to get the cached response
+        $cachedResponse = Cache::get($cacheKey);
+        if ($cachedResponse) {
+            return $cachedResponse; // Return cached response if exists
+        }
+
+        // If cache is not available, make an API call
+        try {
             $value = $request->input('value');
             $sort = $request->input('sort'); // Expecting format like 'VendorRating:Desc'
             $page = $request->input('page', 0);
@@ -1214,14 +1222,9 @@ class ProductController extends Controller
                 ? "https://api-gw.onebound.cn/$provider/item_search_img/?key=t3832825558&imgid=$imageUrl&seller_info=no&lang=$lang&page=$page&sort=$sort&page_size=$productsCount&secret=20240731"
                 : "https://api-gw.onebound.cn/$provider/item_search/?key=t3832825558&q=" . $translatedValue . "&page=$page&sort=$sort&page_size=$productsCount&seller_info=no&lang=$lang&secret=20240731";
 
-            try {
-                // Making the external API request
-                $response = Http::timeout(50)->withoutVerifying()->get($baseApiUrl);
-                $products = $response->json();
-            } catch (\Exception $e) {
-                Log::error('Error fetching products from Taobao: ' . $e->getMessage());
-                return response()->json(['error' => 'service_unavailable', 'message' => $e->getMessage()], 503);
-            }
+            // Making the external API request
+            $response = Http::timeout(50)->withoutVerifying()->get($baseApiUrl);
+            $products = $response->json();
 
             // Check if products are found
             if (empty($products['items']['item'])) {
@@ -1231,14 +1234,22 @@ class ProductController extends Controller
                 ], 404);
             }
 
-            $productData = $products['items']['item'];
+            // Cache the successful response
+            Cache::put($cacheKey, $this->respondWithSuccess([
+                'products' => collect($products['items']['item'])->map(function ($product) use ($provider, $lang) {
+                    return (new ProductResource($product, $provider, $lang))->resolve();
+                }),
+            ]), 600); // Store in cache for 10 minutes
 
             return $this->respondWithSuccess([
-                'products' => collect($productData)->map(function ($product) use ($provider, $lang) {
+                'products' => collect($products['items']['item'])->map(function ($product) use ($provider, $lang) {
                     return (new ProductResource($product, $provider, $lang))->resolve();
                 }),
             ]);
-        });
+        } catch (\Exception $e) {
+            Log::error('Error fetching products from Taobao: ' . $e->getMessage());
+            return response()->json(['error' => 'service_unavailable', 'message' => $e->getMessage()], 503);
+        }
     }
 
     private function translateText($text)
