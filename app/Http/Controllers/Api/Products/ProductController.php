@@ -1211,8 +1211,8 @@ class ProductController extends Controller
 
             // Base API URL construction
             $baseApiUrl = $imageUrl
-                ? "https://api-gw.onebound.cn/$provider/item_search_img/?key=t3832825558&&imgid=$imageUrl&cache=no&&lang=$lang&secret=20240731"
-                : "https://api-gw.onebound.cn/$provider/item_search/?key=t3832825558&&q=" . $translatedValue . "&page=$page&sort=$sort&page_size=$productsCount&cache=no&&lang=$lang&secret=20240731";
+                ? "https://api-gw.onebound.cn/$provider/item_search_img/?key=t3832825558&&imgid=$imageUrl&seller_info=no&&lang=$lang&secret=20240731"
+                : "https://api-gw.onebound.cn/$provider/item_search/?key=t3832825558&&q=" . $translatedValue . "&page=$page&sort=$sort&page_size=$productsCount&seller_info=no&&lang=$lang&secret=20240731";
 
             try {
                 // Making the external API request
