@@ -1129,7 +1129,9 @@ class OrderController extends Controller
             $basket->delete();
         }
 
+        $newBaskets = BasketItem::all();
+
         // Return the updated user's basket
-        return response()->json(['message' => 'basket_items_removed_successfully', 'original' => BasketResource::collection($baskets)], 200);
+        return response()->json(['message' => 'basket_items_removed_successfully', 'original' => BasketResource::collection($newBaskets)], 200);
     }
 }
