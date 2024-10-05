@@ -43,7 +43,7 @@ class ListController extends Controller
                 'id' => $social->id,
                 'name' => $social->name,
                 'path' => $social->path,
-                'icon' => url('storage/' . $social->icon_url),
+                'icon' => $social->icon_url,
             ];
         });
 
@@ -173,7 +173,7 @@ class ListController extends Controller
             ->map(function ($order) {
                 return [
                     'id' => $order->id,
-                    'image_url' => url('storage/' . $order->items->first()->image_url),
+                    'image_url' => $order->items->first()->image_url,
                     'name' => $order->items->first()->title,
                     'date' => $order->created_at->format('Y-m-d'),
                 ];
