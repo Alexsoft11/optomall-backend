@@ -863,8 +863,8 @@ class ProductController extends Controller
 
         // Build the URL to fetch product details
         $url = $provider == 'taobao' ?
-        "http://api.tmapi.top/taobao/item_detail?item_id=$productId&apiToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VybmFtZSI6Im9wdG9tYWxsIiwiQ29taWQiOm51bGwsIlJvbGVpZCI6bnVsbCwiaXNzIjoidG1hcGkiLCJzdWIiOiJvcHRvbWFsbCIsImF1ZCI6WyIiXSwiaWF0IjoxNzI3ODQzODA3fQ.MjSYALtr8x19ybMi8aJvRJk2Pl_hNwMpuNpWyAwx9AQ" :
-        "http://api.tmapi.top/1688/v2/item_detail?item_id=$productId&apiToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VybmFtZSI6Im9wdG9tYWxsIiwiQ29taWQiOm51bGwsIlJvbGVpZCI6bnVsbCwiaXNzIjoidG1hcGkiLCJzdWIiOiJvcHRvbWFsbCIsImF1ZCI6WyIiXSwiaWF0IjoxNzI3ODQzODA3fQ.MjSYALtr8x19ybMi8aJvRJk2Pl_hNwMpuNpWyAwx9AQ";
+            "http://api.tmapi.top/taobao/item_detail?item_id=$productId&apiToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VybmFtZSI6Im9wdG9tYWxsIiwiQ29taWQiOm51bGwsIlJvbGVpZCI6bnVsbCwiaXNzIjoidG1hcGkiLCJzdWIiOiJvcHRvbWFsbCIsImF1ZCI6WyIiXSwiaWF0IjoxNzI3ODQzODA3fQ.MjSYALtr8x19ybMi8aJvRJk2Pl_hNwMpuNpWyAwx9AQ" :
+            "http://api.tmapi.top/1688/v2/item_detail?item_id=$productId&apiToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VybmFtZSI6Im9wdG9tYWxsIiwiQ29taWQiOm51bGwsIlJvbGVpZCI6bnVsbCwiaXNzIjoidG1hcGkiLCJzdWIiOiJvcHRvbWFsbCIsImF1ZCI6WyIiXSwiaWF0IjoxNzI3ODQzODA3fQ.MjSYALtr8x19ybMi8aJvRJk2Pl_hNwMpuNpWyAwx9AQ";
 
         // Fetch product details from cache or make an API call if not cached
         $productDetail = Cache::remember($cacheKey, 60 * 5, function () use ($url) {
@@ -1662,6 +1662,13 @@ class ProductController extends Controller
      *         required=false,
      *         @OA\Schema(type="integer", example=3)
      *     ),
+     *     @OA\Parameter(
+     *         name="lang",
+     *         in="query",
+     *         required=false,
+     *         description="Language code (uz, ru, en)",
+     *         @OA\Schema(type="string", enum={"uz", "ru", "en"}, example="uz")
+     *     ),
      *     @OA\Response(
      *         response=200,
      *         description="List of active categories with products",
@@ -1702,8 +1709,9 @@ class ProductController extends Controller
     public function categories(Request $request)
     {
         $limit = $request->query('limit', 3);
+        $lang = $request->query('lang', 'uz'); // Default lang is 'uz'
         $categories = Category::where('is_active', true)
-            ->with(['bannerProducts' => function ($query) use ($limit) {
+            ->with(['bannerProducts' => function ($query) use ($limit, $lang) {
                 $query->limit($limit)
                     ->select(
                         'id',
@@ -1725,7 +1733,7 @@ class ProductController extends Controller
                 'image_mobile',
                 'is_active'
             ])
-            ->map(function ($category) {
+            ->map(function ($category) use ($lang) {
                 return [
                     'id' => $category->id,
                     'name' => [
@@ -1737,16 +1745,15 @@ class ProductController extends Controller
                     'image' => url('storage/' . $category->image),
                     'image_mobile' =>  url('storage/' . $category->image_mobile),
                     'is_active' => $category->is_active,
-                    'products' => $category->bannerProducts->map(function ($product) {
+                    'products' => $category->bannerProducts->map(function ($product) use ($lang) {
                         return [
                             'id' => $product->id,
-                            'title' => [
-                                'uz' => $product->title_uz,
-                                'ru' => $product->title_ru,
-                                'en' => $product->title_en,
-                            ],
+                            'title' => $product->{'title_' . $lang}, // Dynamic language field
                             'price' => $product->price,
+                            'discounted_price' => $product->discounted_price,
+                            'discount_percent' => $product->price > 0 ? round((($product->price - $product->discounted_price) / $product->price) * 100, 2) : 0, // Discount percent calculation
                             'image' => $product->image,
+                            'provider' => $product->provider,
                             'is_liked' => false,
                         ];
                     })
