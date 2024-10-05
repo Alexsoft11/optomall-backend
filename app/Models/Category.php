@@ -18,6 +18,11 @@ class Category extends Model
     {
         return $this->hasMany(Product::class);
     }
+    
+    public function bannerProducts()
+    {
+        return $this->hasMany(BannerProduct::class);
+    }
 
     public function getSlugOptions(): SlugOptions
     {

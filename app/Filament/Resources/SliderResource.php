@@ -36,14 +36,13 @@ class SliderResource extends Resource
                 FileUpload::make('image')
                     ->directory('slider-images')
                     ->image()
-                    ->required()
                     ->label(trans('image'))
-                    ->maxSize(10000),
+                    ->maxSize(10000)
+                    ->required(),
                 FileUpload::make('mobile_image')
                     ->directory('slider-images')
                     ->image()
                     ->label(trans('mobile_image'))
-                    ->required()
                     ->maxSize(10000),
                 TextInput::make('url')->required()->url()->label(trans('url')),
             ]);

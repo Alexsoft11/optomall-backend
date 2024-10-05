@@ -1703,7 +1703,7 @@ class ProductController extends Controller
     {
         $limit = $request->query('limit', 3);
         $categories = Category::where('is_active', true)
-            ->with(['products' => function ($query) use ($limit) {
+            ->with(['bannerProducts' => function ($query) use ($limit) {
                 $query->limit($limit)
                     ->select(
                         'id',
@@ -1737,7 +1737,7 @@ class ProductController extends Controller
                     'image' => url('storage/' . $category->image),
                     'image_mobile' =>  url('storage/' . $category->image_mobile),
                     'is_active' => $category->is_active,
-                    'products' => $category->products->map(function ($product) {
+                    'products' => $category->bannerProducts->map(function ($product) {
                         return [
                             'id' => $product->id,
                             'title' => [
@@ -1746,7 +1746,7 @@ class ProductController extends Controller
                                 'en' => $product->title_en,
                             ],
                             'price' => $product->price,
-                            'image' => url('storage/' . $product->image),
+                            'image' => $product->image,
                             'is_liked' => false,
                         ];
                     })

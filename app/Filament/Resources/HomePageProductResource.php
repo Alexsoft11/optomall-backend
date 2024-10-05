@@ -39,7 +39,7 @@ class HomePageProductResource extends Resource
                     ->maxLength(255),
                 Forms\Components\TextInput::make('discounted_price')
                     ->maxLength(255),
-                Forms\Components\FileUpload::make('image')->disk('public'),
+                // Forms\Components\FileUpload::make('image')->disk('public'),
                 Forms\Components\View::make('image')
                     ->label('Image Preview')
                     ->view('filament.components.image'),
@@ -120,5 +120,4 @@ class HomePageProductResource extends Resource
     {
         return trans('home_page');
     }
-
 }

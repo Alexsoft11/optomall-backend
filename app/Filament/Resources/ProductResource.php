@@ -47,13 +47,13 @@ class ProductResource extends Resource
                     ->relationship('category', 'name_uz')
                     ->required(),
                 Forms\Components\TextInput::make('title_uz')
-                ->required()
-                ->maxLength(255)
-                ->label(trans('title_uz')),
+                    ->required()
+                    ->maxLength(255)
+                    ->label(trans('title_uz')),
                 Forms\Components\TextInput::make('title_ru')
-                ->required()
-                ->maxLength(255)
-                ->label(trans('title_ru')),
+                    ->required()
+                    ->maxLength(255)
+                    ->label(trans('title_ru')),
                 Forms\Components\TextInput::make('title_en')
                     ->required()
                     ->maxLength(255)
@@ -72,11 +72,11 @@ class ProductResource extends Resource
                 TextInput::make('description_en')
                     ->nullable()
                     ->label(trans('description_en')),
-                    Forms\Components\TextInput::make('rating')
+                Forms\Components\TextInput::make('rating')
                     ->numeric()
                     ->nullable()
                     ->label(trans('rating')),
-                    Forms\Components\TextInput::make('quantity')
+                Forms\Components\TextInput::make('quantity')
                     ->numeric()
                     ->nullable()
                     ->label(trans('quantity')),
@@ -90,9 +90,9 @@ class ProductResource extends Resource
                     ->relationship('pictures')
                     ->schema([
                         Forms\Components\FileUpload::make('image_url')
-                        ->label(trans('image_url')),
+                            ->label(trans('image_url')),
                         Forms\Components\Toggle::make('is_main')->label('Main Picture')
-                        ->label(trans('main_picture')),
+                            ->label(trans('main_picture')),
                     ]),
                 Repeater::make('colors')
                     ->relationship('colors')
@@ -116,7 +116,7 @@ class ProductResource extends Resource
                     ->schema([
                         Forms\Components\TextInput::make('value')->nullable()->label(trans('value')),
                     ]),
-                    Toggle::make('is_active')
+                Toggle::make('is_active')
                     ->label(trans('is_active'))
             ]);
     }
@@ -173,5 +173,10 @@ class ProductResource extends Resource
     public static function getNavigationGroup(): string
     {
         return trans('products');
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return false;
     }
 }
