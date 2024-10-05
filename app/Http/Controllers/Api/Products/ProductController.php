@@ -1720,7 +1720,9 @@ class ProductController extends Controller
                         'title_ru',
                         'title_en',
                         'price',
-                        'image'
+                        'image',
+                        'provider',
+                        'discounted_price',
                     );
             }])
             ->get([
