@@ -1752,8 +1752,8 @@ class ProductController extends Controller
                         return [
                             'id' => $product->product_id,
                             'title' => $product->{'title_' . $lang}, // Dynamic language field
-                            'price' => rtrim($product->price, '0.'),
-                            'discounted_price' => $product->discounted_price ? rtrim($product->discounted_price, '0.') : null,
+                            'price' => round($product->price),
+                            'discounted_price' => $product->discounted_price ? round($product->discounted_price) : null,
                             'discount_percent' => $product->price > 0 ? round((($product->price - $product->discounted_price) / $product->price) * 100, 2) : 0, // Discount percent calculation
                             'image' => $product->image,
                             'provider' => $product->provider,
