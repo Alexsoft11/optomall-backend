@@ -17,6 +17,7 @@ use App\Http\Resources\ProductResource;
 use App\Http\Resources\ProductTokenResource;
 use App\Http\Resources\ScoreResource;
 use App\Http\Resources\SubCategoryResource;
+use App\Models\BannerProduct;
 use App\Models\Category;
 use App\Models\HomePageProduct;
 use App\Models\LikedProduct;
@@ -1880,52 +1881,106 @@ class ProductController extends Controller
      *     path="/api/additional-products",
      *     summary="Get list of all products",
      *     tags={"Products"},
+     *     @OA\Parameter(
+     *         name="category_id",
+     *         in="query",
+     *         required=true,
+     *         description="Category ID to filter products",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\Parameter(
+     *         name="limit",
+     *         in="query",
+     *         required=false,
+     *         description="Number of products per page (limit)",
+     *         @OA\Schema(type="integer", example=10)
+     *     ),
+     *     @OA\Parameter(
+     *         name="page",
+     *         in="query",
+     *         required=false,
+     *         description="Page number for pagination",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\Parameter(
+     *         name="lang",
+     *         in="query",
+     *         required=false,
+     *         description="Language code (uz, ru, en)",
+     *         @OA\Schema(type="string", enum={"uz", "ru", "en"}, example="uz")
+     *     ),
      *     @OA\Response(
      *         response=200,
      *         description="List of products",
      *         @OA\JsonContent(
-     *             type="array",
-     *             @OA\Items(type="object",
-     *                 @OA\Property(property="id", type="integer"),
-     *                 @OA\Property(property="title", type="object",
-     *                     @OA\Property(property="uz", type="string"),
-     *                     @OA\Property(property="ru", type="string"),
-     *                     @OA\Property(property="en", type="string")
-     *                 ),
-     *                 @OA\Property(property="image", type="string"),
-     *                 @OA\Property(property="price", type="string"),
-     *                 @OA\Property(property="rating", type="number", format="float")
+     *             type="object",
+     *             @OA\Property(property="products", type="array",
+     *                 @OA\Items(type="object",
+     *                     @OA\Property(property="id", type="integer"),
+     *                     @OA\Property(property="title", type="object",
+     *                         @OA\Property(property="uz", type="string"),
+     *                         @OA\Property(property="ru", type="string"),
+     *                         @OA\Property(property="en", type="string")
+     *                     ),
+     *                     @OA\Property(property="image", type="string"),
+     *                     @OA\Property(property="price", type="string"),
+     *                     @OA\Property(property="rating", type="number", format="float")
+     *                 )
+     *             ),
+     *             @OA\Property(property="pagination", type="object",
+     *                 @OA\Property(property="current_page", type="integer"),
+     *                 @OA\Property(property="last_page", type="integer"),
+     *                 @OA\Property(property="per_page", type="integer"),
+     *                 @OA\Property(property="total", type="integer"),
+     *                 @OA\Property(property="next_page_url", type="string"),
+     *                 @OA\Property(property="prev_page_url", type="string"),
+     *                 @OA\Property(property="page_count", type="integer")
      *             )
      *         )
      *     )
      * )
      */
-    public function additionalProducts()
+    public function additionalProducts(Request $request)
     {
-        $products = Product::select(
+        $category = Category::where('is_active', true)->where('id', $request->category_id)->first();
+        $lang = $request->query('lang', 'uz'); // Default language is 'uz'
+
+        $limit = $request->query('limit', 10); // Default limit is 10
+        $products = BannerProduct::select(
             'id',
+            'product_id',
+            'category_id',
             'title_uz',
             'title_ru',
             'title_en',
+            'price',
             'image',
-            'price'
-        )
-            ->where('is_active', true)
-            ->get()
-            ->map(function ($product) {
-                return [
-                    'id' => $product->id,
-                    'title' => [
-                        'uz' => $product->title_uz,
-                        'ru' => $product->title_ru,
-                        'en' => $product->title_en,
-                    ],
-                    'image' => url('storage/' . $product->image),
-                    'price' => $product->price
-                ];
-            });
+            'provider',
+            'discounted_price',
+        )->where('category_id', $category->id)->paginate($limit);
 
-        return response()->json($products);
+        $mappedProducts = $products->getCollection()->map(function ($product) use ($lang) {
+            return [
+                'id' => $product->product_id,
+                'title' => $product->{'title_' . $lang}, // Dynamic language field
+                'price' => round($product->price),
+                'discounted_price' => $product->discounted_price ? round($product->discounted_price) : null,
+                'discount_percent' => $product->price > 0 ? round((($product->price - $product->discounted_price) / $product->price) * 100, 2) : 0,
+                'image' => $product->image,
+                'provider' => $product->provider,
+                'is_liked' => false,
+            ];
+        });
+
+        return response()->json([
+            'products' => $mappedProducts,
+            'pagination' => [
+                'current_page' => $products->currentPage(),
+                'last_page' => $products->lastPage(),
+                'per_page' => $products->perPage(),
+                'total' => $products->total(),
+            ]
+        ]);
     }
 
 
