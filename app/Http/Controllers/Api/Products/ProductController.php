@@ -1749,7 +1749,7 @@ class ProductController extends Controller
                     'is_active' => $category->is_active,
                     'products' => $category->bannerProducts->map(function ($product) use ($lang) {
                         return [
-                            'id' => $product->id,
+                            'id' => $product->product_id,
                             'title' => $product->{'title_' . $lang}, // Dynamic language field
                             'price' => $product->price,
                             'discounted_price' => $product->discounted_price,
