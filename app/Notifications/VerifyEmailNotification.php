@@ -27,12 +27,11 @@ class VerifyEmailNotification extends Notification
 
     public function toMail($notifiable)
     {
-        $url = url("/api/verify-email/{$this->token}");
-
         return (new MailMessage)
-            ->subject('Optomall.uz')
-            ->view('emails.register', ['url' => $url]);
+            ->subject('Optomall.uz Email Verification')
+            ->view('emails.register', ['token' => $this->token]);
     }
+    
 
     public function toArray($notifiable)
     {
