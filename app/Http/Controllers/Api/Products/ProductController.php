@@ -1715,6 +1715,7 @@ class ProductController extends Controller
                 $query->limit($limit)
                     ->select(
                         'id',
+                        'product_id',
                         'category_id',
                         'title_uz',
                         'title_ru',
