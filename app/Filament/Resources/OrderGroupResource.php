@@ -46,6 +46,7 @@ class OrderGroupResource extends Resource
                 TextInput::make('unique_id'),
                 Fieldset::make('Foydalanuvchi')->relationship('user')->label(trans("users"))
                     ->schema([
+                        TextInput::make('unique_id'),
                         TextInput::make('name')->label(trans("ism")),
                         TextInput::make('last_name')->label(trans("last_name")),
                         TextInput::make('phone')->label(trans("phone")),
