@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Emailingizni tasdiqlang</title>
     <style>
@@ -7,12 +8,15 @@
             font-family: Arial, sans-serif;
             line-height: 1.6;
         }
+
         h1 {
             color: #333;
         }
+
         p {
             margin: 10px 0;
         }
+
         .button {
             display: inline-block;
             padding: 10px 20px;
@@ -24,10 +28,12 @@
         }
     </style>
 </head>
+
 <body>
     <p>Iltimos emailingizni tasdiqlang:</p>
-    <a href="{{ url('/verify-email/' . $token) }}" class="button">Shu yerga bosing</a>
+    <a href="{{ url('/verify-email/' . $this->token) }}" class="button">Shu yerga bosing</a>
     <p>Bizni tanlaganingiz uchun raxmat!</p>
     <p>Hurmat ila OptomAll jamoasi</p>
 </body>
+
 </html>
