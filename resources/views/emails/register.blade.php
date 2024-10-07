@@ -31,7 +31,7 @@
 
 <body>
     <p>Iltimos emailingizni tasdiqlang:</p>
-    <a href="{{ url('/verify-email/' . $this->token) }}" class="button">Shu yerga bosing</a>
+    <a href="{{ url('/verify-email/' . $token) }}" class="button">Shu yerga bosing</a>
     <p>Bizni tanlaganingiz uchun raxmat!</p>
     <p>Hurmat ila OptomAll jamoasi</p>
 </body>
