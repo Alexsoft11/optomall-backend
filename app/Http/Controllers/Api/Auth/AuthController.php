@@ -186,6 +186,45 @@ class AuthController extends Controller
     }
 
 
+    /**
+     * @OA\Post(
+     *     path="/api/refresh-token",
+     *     summary="Refresh user's token",
+     *     tags={"Auth"},
+     *     security={{ "bearerAuth": {} }},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"token"},
+     *             @OA\Property(property="token", type="string", example="Bearer eyJhbGciOiJIUzI1...")
+     *         )
+     *     ),
+     *     @OA\Response(response="200", description="Token refreshed successfully"),
+     *     @OA\Response(response="401", description="Invalid or expired token"),
+     *     @OA\Response(response="404", description="User not found")
+     * )
+     */
+    public function refreshToken(Request $request)
+    {
+        $user = auth('sanctum')->user();
+
+        if (!$user) {
+            return response()->json(['message' => 'token_not_found'], 404);
+        }
+
+        $user->tokens()->delete();
+
+        $newToken = $user->createToken('AuthToken')->plainTextToken;
+        $createdAt = Carbon::now();
+        $expiresAt = $createdAt->copy()->addDays(3);
+
+        return response()->json([
+            'new_token' => $newToken,
+            'created_at' => $createdAt->toDateTimeString(),
+            'expires_at' => $expiresAt->toDateTimeString()
+        ], 200);
+    }
+
 
 
     /**
