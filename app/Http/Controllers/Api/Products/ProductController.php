@@ -1767,6 +1767,127 @@ class ProductController extends Controller
         return response()->json(['categories' => $categories]);
     }
 
+    /**
+     * @OA\Get(
+     *     path="/api/get-one-additional-category",
+     *     summary="Get list of active categories with products",
+     *     tags={"Products"},
+     *     @OA\Parameter(
+     *         name="category_id",
+     *         in="query",
+     *         required=true,
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\Parameter(
+     *         name="limit",
+     *         in="query",
+     *         required=false,
+     *         @OA\Schema(type="integer", example=3)
+     *     ),
+     *     @OA\Parameter(
+     *         name="lang",
+     *         in="query",
+     *         required=false,
+     *         description="Language code (uz, ru, en)",
+     *         @OA\Schema(type="string", enum={"uz", "ru", "en"}, example="uz")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="List of active categories with products",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="categories", type="array",
+     *                 @OA\Items(type="object",
+     *                     @OA\Property(property="name", type="object",
+     *                         @OA\Property(property="uz", type="string"),
+     *                         @OA\Property(property="ru", type="string"),
+     *                         @OA\Property(property="en", type="string")
+     *                     ),
+     *                     @OA\Property(property="slug", type="string"),
+     *                     @OA\Property(property="image", type="string"),
+     *                     @OA\Property(property="image_mobile", type="string"),
+     *                     @OA\Property(property="is_active", type="boolean"),
+     *                     @OA\Property(property="products", type="array",
+     *                         @OA\Items(type="object",
+     *                             @OA\Property(property="title", type="object",
+     *                                 @OA\Property(property="uz", type="string"),
+     *                                 @OA\Property(property="ru", type="string"),
+     *                                 @OA\Property(property="en", type="string")
+     *                             ),
+     *                             @OA\Property(property="price", type="string"),
+     *                             @OA\Property(property="description", type="object",
+     *                                 @OA\Property(property="uz", type="string"),
+     *                                 @OA\Property(property="ru", type="string"),
+     *                                 @OA\Property(property="en", type="string")
+     *                             )
+     *                         )
+     *                     )
+     *                 )
+     *             )
+     *         )
+     *     )
+     * )
+     */
+    public function getOnecategory(Request $request)
+    {
+        $limit = $request->query('limit', 3);
+        $lang = $request->query('lang', 'uz'); // Default lang is 'uz'
+        $categories = Category::where('is_active', true)->where('id', $request->category_id)
+            ->with(['bannerProducts' => function ($query) use ($limit, $lang) {
+                $query->limit($limit)
+                    ->select(
+                        'id',
+                        'product_id',
+                        'category_id',
+                        'title_uz',
+                        'title_ru',
+                        'title_en',
+                        'price',
+                        'image',
+                        'provider',
+                        'discounted_price',
+                    );
+            }])
+            ->get([
+                'id',
+                'name_uz',
+                'name_ru',
+                'name_en',
+                'slug',
+                'image',
+                'image_mobile',
+                'is_active'
+            ])
+            ->map(function ($category) use ($lang) {
+                return [
+                    'id' => $category->id,
+                    'name' => [
+                        'uz' => $category->name_uz,
+                        'ru' => $category->name_ru,
+                        'en' => $category->name_en,
+                    ],
+                    'slug' => $category->slug,
+                    'image' => url('storage/' . $category->image),
+                    'image_mobile' =>  url('storage/' . $category->image_mobile),
+                    'is_active' => $category->is_active,
+                    'products' => $category->bannerProducts->map(function ($product) use ($lang) {
+                        return [
+                            'id' => $product->product_id,
+                            'title' => $product->{'title_' . $lang}, // Dynamic language field
+                            'price' => round($product->price),
+                            'discounted_price' => $product->discounted_price ? round($product->discounted_price) : null,
+                            'discount_percent' => $product->price > 0 ? round((($product->price - $product->discounted_price) / $product->price) * 100, 2) : 0, // Discount percent calculation
+                            'image' => $product->image,
+                            'provider' => $product->provider,
+                            'is_liked' => false,
+                        ];
+                    })
+                ];
+            });
+
+        return response()->json(['category' => $categories]);
+    }
+
 
     /**
      * @OA\Get(

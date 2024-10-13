@@ -38,6 +38,7 @@ Route::middleware('throttle:1200,60')->group(function () {
     Route::get('/product-detail-from-taobao', [ProductController::class, 'productDetailFromTaoBao']);
     Route::get('/get-comments', [ListController::class, 'getComments']);
     Route::get('additional-categories', [ProductController::class, 'categories']);
+    Route::get('get-one-additional-category', [ProductController::class, 'getOneCategory']);
     Route::get('additional-products', [ProductController::class, 'additionalProducts']);
     Route::post('/image-search', [ProductController::class, 'imageSearch']);
 
