@@ -53,6 +53,7 @@ Route::middleware('throttle:1200,60')->group(function () {
 
 
     Route::middleware('auth:sanctum')->group(function () {
+        Route::post('refresh-token', [AuthController::class, 'refreshToken']);
         Route::post('/orders', [OrderController::class, 'create']);
         Route::middleware('auth:sanctum')->post('/user-basket', [OrderController::class, 'userBasket']);
         Route::middleware('auth:sanctum')->get('/get-user-basket', [OrderController::class, 'getUserBasket']);
