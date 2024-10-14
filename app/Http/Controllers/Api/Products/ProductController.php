@@ -896,9 +896,9 @@ class ProductController extends Controller
                 ],
             ]);
         }
-
+        // return $productDetail;
         // Check for failed format
-        if ($productDetail['item']['format_check'] == 'fail') {
+        if ($productDetail['code'] !== 200) {
             return response()->json(['error' => 'product_not_found', 'productDetail' => $productDetail], 404);
         }
 
