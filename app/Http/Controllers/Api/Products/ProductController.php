@@ -1586,7 +1586,7 @@ class ProductController extends Controller
         //     ], 500);
         // }
 
-        return response()->json(['url' => $response['data']['image_url']]);
+        return response()->json(['url' => $response['data']['image_url'], 'urlOrg' => $imageFullPath]);
     }
 
 
