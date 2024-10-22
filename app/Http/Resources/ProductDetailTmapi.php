@@ -46,6 +46,7 @@ class ProductDetailTmapi extends JsonResource
             'image' => preg_replace('/^\/\//', 'https://', $this['main_imgs'][0]),
             'quantity' => $this['sale_count'] ?? 0,
             'seller_info' => $this['shop_info'] ?? [],
+            'delivery_info' => $this['delivery_info'] ?? [],
             'provider' => $this->provider,
             'description' => str_replace(["\n", "\\"], '', $this['desc'] ?? ''),
             'pictures' => $this->transformPictures($this['main_imgs']),
