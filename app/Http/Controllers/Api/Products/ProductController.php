@@ -1253,6 +1253,141 @@ class ProductController extends Controller
         }
     }
 
+    /**
+     * @OA\Get(
+     *     path="/api/search-products-from-tmapi",
+     *     summary="Search products by title.",
+     *     tags={"Products"},
+     *     @OA\Parameter(
+     *         name="value",
+     *         in="query",
+     *         required=false,
+     *         @OA\Schema(type="string"),
+     *         description="Search products by title."
+     *     ),
+     *     @OA\Parameter(
+     *         name="productsCount",
+     *         in="query",
+     *         required=false,
+     *         @OA\Schema(type="string"),
+     *         description="The count of products"
+     *     ),
+     *  @OA\Parameter(
+     *         name="page",
+     *         in="query",
+     *         required=false,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *  @OA\Parameter(
+     *         name="provider",
+     *         in="query",
+     *         required=false,
+     *         @OA\Schema(type="string")
+     *     ),
+     *  @OA\Parameter(
+     *         name="sort",
+     *         in="query",
+     *         required=false,
+     *         @OA\Schema(type="string")
+     *     ),
+     * @OA\Parameter(
+     *         name="imageUrl",
+     *         in="query",
+     *         required=false,
+     *         @OA\Schema(type="string")
+     *     ),
+     * @OA\Parameter(
+     *         name="catId",
+     *         in="query",
+     *         required=false,
+     *     ),
+     *  @OA\Parameter(
+     *         name="lang",
+     *         in="query",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *             enum={"uz", "ru", "en"}
+     *         ),
+     *         description="Language code for the product details. Available options: uz, ru, en"
+     *  
+     *     ),
+     *     @OA\Response(response="200", description="Products from taobao"),
+     * )
+     */
+    public function searchProductsTmapi(Request $request)
+    {
+        // Cache the API response for 5 minutes to avoid repeated external API calls
+        $cacheKey = 'search_products_tmapi' . md5(json_encode($request->all()));
+
+        // Try to get the cached response
+        $cachedResponse = Cache::get($cacheKey);
+        if ($cachedResponse) {
+            return $cachedResponse; // Return cached response if exists
+        }
+
+        // If cache is not available, make an API call
+        try {
+            $value = $request->input('value');
+            $sort = $request->input('sort', 'default'); // Expecting format like 'VendorRating:Desc'
+            $page = $request->input('page', 1);
+            $productsCount = $request->input('productsCount', 20); // Reduced productsCount to 20 for quicker responses
+            $provider = strtolower($request->input('provider', 'taobao'));
+            $lang = $request->input('lang', 'en');
+            $imageUrl = $request->input('imageUrl');
+
+            // Fetch the subcategory based on catId
+            $subcategory = TaobaoSubcategory::where('unique_id', $request->catId)
+                ->pluck('unique')
+                ->first() ?? TaobaoSubcategoryName::where('unique_id', $request->catId)
+                ->pluck('unique')
+                ->first();
+
+            // Check if we need to translate the value before the API call
+            $translatedValue = $subcategory ? $subcategory : $this->translateText($value); // Translate to Chinese for search
+
+            // Base API URL construction
+            if ($provider == '1688') {
+                $baseApiUrl = $imageUrl
+                    ? "http://api.tmapi.top/1688/search/image?img_url=$imageUrl&page=$page&page_size=$productsCount&sort=$sort&apiToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VybmFtZSI6Im9wdG9tYWxsIiwiQ29taWQiOm51bGwsIlJvbGVpZCI6bnVsbCwiaXNzIjoidG1hcGkiLCJzdWIiOiJvcHRvbWFsbCIsImF1ZCI6WyIiXSwiaWF0IjoxNzI3ODQzODA3fQ.MjSYALtr8x19ybMi8aJvRJk2Pl_hNwMpuNpWyAwx9AQ"
+                    : "http://api.tmapi.top/1688/search/items?keyword=$translatedValue&page=$page&page_size=$productsCount&sort=$sort&apiToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VybmFtZSI6Im9wdG9tYWxsIiwiQ29taWQiOm51bGwsIlJvbGVpZCI6bnVsbCwiaXNzIjoidG1hcGkiLCJzdWIiOiJvcHRvbWFsbCIsImF1ZCI6WyIiXSwiaWF0IjoxNzI3ODQzODA3fQ.MjSYALtr8x19ybMi8aJvRJk2Pl_hNwMpuNpWyAwx9AQ";
+                // return $baseApiUrl;
+            } else { // Taobao as default
+                $baseApiUrl = $imageUrl
+                    ? "https://api-gw.onebound.cn/taobao/item_search_img/?key=t3832825558&imgid=$imageUrl&seller_info=no&lang=$lang&page=$page&sort=$sort&page_size=$productsCount&secret=20240731"
+                    : "https://api-gw.onebound.cn/taobao/item_search/?key=t3832825558&q=" . $translatedValue . "&page=$page&sort=$sort&page_size=$productsCount&seller_info=no&lang=$lang&secret=20240731";
+            }
+            // Making the external API request
+            $response = Http::timeout(100)->withoutVerifying()->get($baseApiUrl);
+            $products = $response->json();
+            // return $products;
+
+            // Check if products are found
+            if ($provider == '1688' ? empty($products['data']['items']) : empty($products['items']['item'])) {
+                return response()->json([
+                    'error' => 'product_not_found',
+                    'details' => $products,
+                ], 404);
+            }
+
+            // Cache the successful response
+            Cache::put($cacheKey, $this->respondWithSuccess([
+                'products' => collect($provider == '1688' ? $products['data']['items'] : $products['items']['item'])->map(function ($product) use ($provider, $lang) {
+                    return (new ProductResource($product, $provider, $lang))->resolve();
+                }),
+            ]), 600); // Store in cache for 10 minutes
+
+            return $this->respondWithSuccess([
+                'products' => collect($provider == '1688' ? $products['data']['items'] : $products['items']['item'])->map(function ($product) use ($provider, $lang) {
+                    return (new ProductResource($product, $provider, $lang))->resolve();
+                }),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error fetching products from Taobao: ' . $e->getMessage());
+            return response()->json(['error' => 'service_unavailable', 'message' => $e->getMessage()], 503);
+        }
+    }
+
     private function translateText($text)
     {
         $data = [
@@ -1422,17 +1557,18 @@ class ProductController extends Controller
         $imagePath = $request->file('image')->store('images', 'public');
         $imageFullPath = url('storage/' . $imagePath);
 
+        $apiUrl = 'http://api.tmapi.top/1688/tools/image/convert_url?apiToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VybmFtZSI6Im9wdG9tYWxsIiwiQ29taWQiOm51bGwsIlJvbGVpZCI6bnVsbCwiaXNzIjoidG1hcGkiLCJzdWIiOiJvcHRvbWFsbCIsImF1ZCI6WyIiXSwiaWF0IjoxNzI3ODQzODA3fQ.MjSYALtr8x19ybMi8aJvRJk2Pl_hNwMpuNpWyAwx9AQ';
+        $response = Http::post($apiUrl, [
+            'url' => $imageFullPath,
+        ]);
+
         // // Convert the image to Base64
         // $imageData = file_get_contents($imageFullPath);
         // $base64Image = base64_encode($imageData);
 
         // // Build the API URL with query parameters
-        // $apiUrl = 'https://api-gw.onebound.cn/taobao/upload_img/?key=t3832825558&&cache=no&&lang=zh-CN&secret=20240731';
 
         // // Send POST request to the API with Base64 image in the body
-        // $response = Http::asForm()->post($apiUrl, [
-        //     'imgcode' => 'data:image/jpeg;base64,' . $base64Image,
-        // ]);
 
         // // Decode the response from the API
         // $responseData = $response->json();
@@ -1449,7 +1585,7 @@ class ProductController extends Controller
         //     ], 500);
         // }
 
-        return response()->json(['url' => $imageFullPath]);
+        return response()->json(['url' => $response['data']['image_url']]);
     }
 
 

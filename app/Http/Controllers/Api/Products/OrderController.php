@@ -711,8 +711,8 @@ class OrderController extends Controller
                             'property_id' => $property['id'],
                             'name' => $property['name'],
                             'value' => $property['value'],
-                            'originalName' => $property['originalName'], // Save originalName
-                            'originalValue' => $property['originalValue'], // Save originalValue
+                            'originalName' => $property['originalName'] ?? ' ', // Save originalName
+                            'originalValue' => $property['originalValue'] ?? ' ', // Save originalValue
                         ]);
                     }
                 }

@@ -33,6 +33,7 @@ Route::middleware('throttle:1200,60')->group(function () {
     Route::get('/categories-from-taobao', [ProductController::class, 'categoriesFromTaoBao']);
     Route::get('/sub-categories-from-taobao', [ProductController::class, 'subCategoriesFromTaoBao']);
     Route::get('/search-products-from-taobao', [ProductController::class, 'searchProductsFromTaobao']);
+    Route::get('/search-products-from-tmapi', [ProductController::class, 'searchProductsTmapi']);
     Route::post('/orders', [OrderController::class, 'create']);
     Route::get('questions', [ListController::class, 'questions']);
     Route::get('/product-detail-from-taobao', [ProductController::class, 'productDetailFromTaoBao']);
