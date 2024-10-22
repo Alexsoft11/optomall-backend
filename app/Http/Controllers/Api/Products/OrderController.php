@@ -644,8 +644,8 @@ class OrderController extends Controller
             '*.properties.*.id' => 'required|string',
             '*.properties.*.name' => 'required|string',
             '*.properties.*.value' => 'required|string',
-            '*.properties.*.originalName' => 'required|string', // Add validation for originalName
-            '*.properties.*.originalValue' => 'required|string', // Add validation for originalValue
+            '*.properties.*.originalName' => 'nullable|string', // Add validation for originalName
+            '*.properties.*.originalValue' => 'nullable|string', // Add validation for originalValue
         ]);
 
         if ($validator->fails()) {
