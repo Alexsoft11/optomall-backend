@@ -877,6 +877,7 @@ class ProductController extends Controller
                 return null;
             }
         });
+        // return $productDetail;
 
         // Handle local provider case (if the provider is 'local')
         if ($provider == 'local') {

@@ -25,10 +25,11 @@ class ProductDetailTmapi extends JsonResource
 
         $quantityRanges = [];
 
-        foreach (isset($this['priceRange']) ? $this['priceRange'] : [] as $range) {
+        foreach (isset($this['tiered_price_info']['prices']) ? $this['tiered_price_info']['prices'] : [] as $range) {
+            // return $range;
             $quantityRanges[] = [
-                'minQuantity' => $range[0],
-                'price' => round($this->addPercentToPrice($range[1], $this->amount, $this->percent)),
+                'minQuantity' => $range['beginAmount'] ?? 1,
+                'price' => round($this->addPercentToPrice($range['price'] ?? $this->resource['price_info']['price'], $this->amount, $this->percent)),
             ];
         }
 
@@ -52,6 +53,7 @@ class ProductDetailTmapi extends JsonResource
             'product_url' => $this['product_url'],
             'videos' => $this['video_url'],
             // 'skus1' => $this['skus']['sku'],
+            'sku_price_range' => $this['sku_price_range'] ?? [],
             'skus' => $this->transformSkus($this['skus'] ?? null),
             'prop_imgs' => [],
             'props_list' => $this['sku_props'],
