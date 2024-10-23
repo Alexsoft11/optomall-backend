@@ -940,6 +940,54 @@ class ProductController extends Controller
 
     /**
      * @OA\Get(
+     *     path="/api/product-detail-desc",
+     *     summary="Get product detail desc",
+     *     tags={"Products"},
+     *     @OA\Parameter(
+     *         name="productId",
+     *         in="query",
+     *         required=true,
+     *         @OA\Schema(type="string"),
+     *         description="The ID of the product to retrieve details for"
+     *     ),
+     *    @OA\Parameter(
+     *         name="lang",
+     *         in="query",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *             enum={"uz", "ru", "en"}
+     *         ),
+     *         description="Language code for the product details. Available options: uz, ru, en"
+     *     ),
+     *     @OA\Response(response="200", description="Product detail from taobao tmapi"),
+     * )
+     */
+    public function productDetailDesc(Request $request)
+    {
+        $productId = $request->productId;
+
+        // Remove 'abb-' if present in the product ID
+        if (strpos($productId, 'abb-') !== false) {
+            $productId = str_replace('abb-', '', $productId);
+        }
+
+        $lang = 'zh-CN'; // Default language
+
+        // Build the URL to fetch product details
+        $url = "http://api.tmapi.top/1688/item_desc?item_id=$productId&apiToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VybmFtZSI6Im9wdG9tYWxsIiwiQ29taWQiOm51bGwsIlJvbGVpZCI6bnVsbCwiaXNzIjoidG1hcGkiLCJzdWIiOiJvcHRvbWFsbCIsImF1ZCI6WyIiXSwiaWF0IjoxNzI3ODQzODA3fQ.MjSYALtr8x19ybMi8aJvRJk2Pl_hNwMpuNpWyAwx9AQ";
+
+        // Fetch product details from cache or make an API call if not cached
+        $response = Http::timeout(50)->withoutVerifying()->get($url)->json();
+
+        return $this->respondWithSuccess([
+            'url' => $url,
+            'desc' => $response['data'],
+        ]);
+    }
+
+    /**
+     * @OA\Get(
      *     path="/api/product-detail-from-taobao",
      *     summary="Get product detail from taobao",
      *     tags={"Products"},
