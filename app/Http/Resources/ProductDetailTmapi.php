@@ -4,6 +4,7 @@ namespace App\Http\Resources;
 
 use App\Models\Exchanges;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Http;
 
 class ProductDetailTmapi extends JsonResource
 {
@@ -18,15 +19,16 @@ class ProductDetailTmapi extends JsonResource
         $this->provider = $provider;
         $this->amount = Exchanges::where('currency', 'yuan')->first()->amount ?? 1800;
         $this->percent = Exchanges::where('currency', 'product_percent')->first()->amount ?? 0;
+
+        // Call the translation method
+        $this->translateProductDetails();
     }
 
     public function toArray($request)
     {
-
         $quantityRanges = [];
 
         foreach (isset($this['tiered_price_info']['prices']) ? $this['tiered_price_info']['prices'] : [] as $range) {
-            // return $range;
             $quantityRanges[] = [
                 'minQuantity' => $range['beginAmount'] ?? 1,
                 'price' => round($this->addPercentToPrice($range['price'] ?? $this->resource['price_info']['price'], $this->amount, $this->percent)),
@@ -36,6 +38,7 @@ class ProductDetailTmapi extends JsonResource
         usort($quantityRanges, function ($a, $b) {
             return $a['minQuantity'] <=> $b['minQuantity'];
         });
+
         return [
             'id' => $this['item_id'],
             'title' => $this['title'],
@@ -53,7 +56,6 @@ class ProductDetailTmapi extends JsonResource
             'location' => $this['location'] ?? 'China',
             'product_url' => $this['product_url'],
             'videos' => $this['video_url'],
-            // 'skus1' => $this['skus']['sku'],
             'sku_price_range' => $this['sku_price_range'] ?? [],
             'skus' => $this->transformSkus($this['skus'] ?? null),
             'prop_imgs' => [],
@@ -68,6 +70,22 @@ class ProductDetailTmapi extends JsonResource
         $priceInSum = intval($priceInYuan) * intval($amount);
         $additionalAmount = $priceInSum * ($percent / 100);
         return $priceInSum + $additionalAmount;
+    }
+
+    private function transformProductProps($props)
+    {
+        $composition = [];
+
+        foreach ($props as $prop) {
+            foreach ($prop as $key => $value) {
+                $composition[] = [
+                    'key' => $key,
+                    'value' => $value,
+                ];
+            }
+        }
+
+        return $composition;
     }
 
     private function transformPictures($pictures)
@@ -114,46 +132,26 @@ class ProductDetailTmapi extends JsonResource
         }, $skus);
     }
 
-    // private function transformAttributes($attributes)
-    // {
-    //     return array_map(function ($attribute) {
-    //         return [
-    //             'properties' => $attribute['properties'],
-    //             'url' => preg_replace('/^\/\//', 'https://', $attribute['url']),
-    //         ];
-    //     }, $attributes);
-    // }
+    private function translateProductDetails()
+    {
+        $data = [
+            'from' => 'auto',
+            'to' => request()->lang,
+            'protected_paths' => ["extra.last_comment.author"],
+            'common_protected_paths' => ["image"],
+            'json' => [$this['title'], $this->transformProductProps($this['product_props'])],
+        ];
 
-    // private function findAttributeUrl($attributes, $colorId)
-    // {
-    //     // return $colorId;
-    //     foreach ($attributes as $attribute) {
-    //         if ($attribute['properties'] == $colorId) {
-    //             return $attribute['url'];
-    //         }
-    //     }
-    //     return null;
-    // }
+        // Make the translation API call
+        $translateUrl = "https://aibit-translator.p.rapidapi.com/api/v1/translator/json";
+        $response = Http::withHeaders([
+            'Content-Type' => 'application/json',
+            'x-rapidapi-host' => 'aibit-translator.p.rapidapi.com',
+            'x-rapidapi-key' => '74e939e778mshea2f00b1b0170dap1cc6eajsnf05e5c9be03a',
+        ])->post($translateUrl, $data);
 
-    // private function extractPropertiesDetails($properties_name)
-    // {
-    //     $properties = explode(';', $properties_name);
-    //     $results = [];
-
-    //     foreach ($properties as $property) {
-    //         $parts = explode(':', $property);
-    //         if (isset($parts[2]) && isset($parts[3])) {
-    //             $results[] = [
-    //                 'name' => $parts[2],
-    //                 'value' => $parts[3],
-    //                 'propertyFir' => $parts[0],
-    //                 'propertySec' => $parts[1],
-    //                 'displayName' => $parts[2],
-    //                 'displayValue' => $parts[3],
-    //             ];
-    //         }
-    //     }
-
-    //     return $results;
-    // }
+        // Update product details with the translated text
+        $this['title'] = $response['trans'][0];
+        $this['product_props'] = $response['trans'][1];
+    }
 }

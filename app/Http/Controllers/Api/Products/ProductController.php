@@ -877,7 +877,6 @@ class ProductController extends Controller
                 return null;
             }
         });
-        // return $productDetail;
 
         // Handle local provider case (if the provider is 'local')
         if ($provider == 'local') {
@@ -897,39 +896,17 @@ class ProductController extends Controller
                 ],
             ]);
         }
-        // return $productDetail;
+
         // Check for failed format
         if ($productDetail['code'] !== 200) {
             return response()->json(['error' => 'product_not_found', 'productDetail' => $productDetail], 404);
         }
 
-        // Construct product resource from the fetched details
+        // Make an asynchronous call to construct product resource
         $product = new ProductDetailTmapi($productDetail['data'], $provider);
-
-        // Prepare the data for translation
-        // $data = [
-        //     'from' => 'auto',
-        //     'to' => $request->lang,
-        //     'protected_paths' => ["extra.last_comment.author"],
-        //     'common_protected_paths' => ["image"],
-        //     'json' => [$product['title'], $product['props']],
-        // ];
-
-        // // Make the translation API call
-        // $translateUrl = "https://aibit-translator.p.rapidapi.com/api/v1/translator/json";
-        // $response = Http::withHeaders([
-        //     'Content-Type' => 'application/json',
-        //     'x-rapidapi-host' => 'aibit-translator.p.rapidapi.com',
-        //     'x-rapidapi-key' => '74e939e778mshea2f00b1b0170dap1cc6eajsnf05e5c9be03a',
-        // ])->post($translateUrl, $data);
-
-        // // Update product details with the translated text
-        // $product['title'] = $response['trans'][0];
-        // $product['props'] = $response['trans'][1];
 
         // Return success response with product details and score
         return $this->respondWithSuccess([
-            'url' => $url,
             'detail' => $product,
             'score' => [
                 'rating' => $productDetail['item']['seller_info']['item_score'] ?? 4.6,
@@ -950,6 +927,12 @@ class ProductController extends Controller
      *         @OA\Schema(type="string"),
      *         description="The ID of the product to retrieve details for"
      *     ),
+     *      @OA\Parameter(
+     *         name="provider",
+     *         in="query",
+     *         required=false,
+     *         @OA\Schema(type="string")
+     *     ),
      *    @OA\Parameter(
      *         name="lang",
      *         in="query",
@@ -966,6 +949,7 @@ class ProductController extends Controller
     public function productDetailDesc(Request $request)
     {
         $productId = $request->productId;
+        $provider = $request->provider;
 
         // Remove 'abb-' if present in the product ID
         if (strpos($productId, 'abb-') !== false) {
@@ -975,13 +959,12 @@ class ProductController extends Controller
         $lang = 'zh-CN'; // Default language
 
         // Build the URL to fetch product details
-        $url = "http://api.tmapi.top/1688/item_desc?item_id=$productId&apiToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VybmFtZSI6Im9wdG9tYWxsIiwiQ29taWQiOm51bGwsIlJvbGVpZCI6bnVsbCwiaXNzIjoidG1hcGkiLCJzdWIiOiJvcHRvbWFsbCIsImF1ZCI6WyIiXSwiaWF0IjoxNzI3ODQzODA3fQ.MjSYALtr8x19ybMi8aJvRJk2Pl_hNwMpuNpWyAwx9AQ";
+        $url = "http://api.tmapi.top/$provider/item_desc?item_id=$productId&apiToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VybmFtZSI6Im9wdG9tYWxsIiwiQ29taWQiOm51bGwsIlJvbGVpZCI6bnVsbCwiaXNzIjoidG1hcGkiLCJzdWIiOiJvcHRvbWFsbCIsImF1ZCI6WyIiXSwiaWF0IjoxNzI3ODQzODA3fQ.MjSYALtr8x19ybMi8aJvRJk2Pl_hNwMpuNpWyAwx9AQ";
 
         // Fetch product details from cache or make an API call if not cached
         $response = Http::timeout(50)->withoutVerifying()->get($url)->json();
 
         return $this->respondWithSuccess([
-            'url' => $url,
             'desc' => $response['data'],
         ]);
     }
