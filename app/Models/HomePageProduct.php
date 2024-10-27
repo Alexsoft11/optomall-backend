@@ -34,17 +34,17 @@ class HomePageProduct extends Model
                 $productId = $homePageProduct->product_id;
 
                 // Call the method to get product details
-                $productDetailResponseuz = $productController->productDetailOnbound(new Request([
+                $productDetailResponseuz = $productController->productDetailTmapi(new Request([
                     'productId' => $productId,
                     'lang' => 'uz',
                     'provider' => $homePageProduct->provider,
                 ]));
-                $productDetailResponseen = $productController->productDetailOnbound(new Request([
+                $productDetailResponseen = $productController->productDetailTmapi(new Request([
                     'productId' => $productId,
                     'lang' => 'en',
                     'provider' => $homePageProduct->provider,
                 ]));
-                $productDetailResponseru = $productController->productDetailOnbound(new Request([
+                $productDetailResponseru = $productController->productDetailTmapi(new Request([
                     'productId' => $productId,
                     'lang' => 'ru',
                     'provider' => $homePageProduct->provider,
