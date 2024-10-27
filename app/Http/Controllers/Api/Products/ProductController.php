@@ -856,7 +856,7 @@ class ProductController extends Controller
             $productId = str_replace('abb-', '', $productId);
         }
 
-        $lang = 'zh-CN'; // Default language
+        $lang =$request->input('lang'); // Default language
         $provider = $request->input('provider', 'taobao'); // Default provider is 'taobao'
 
         // Construct the cache key for product details

@@ -136,7 +136,7 @@ class ProductDetailTmapi extends JsonResource
     {
         $data = [
             'from' => 'auto',
-            'to' => request()->lang,
+            'to' => request()->input('lang', 'uz'),
             'protected_paths' => ["extra.last_comment.author"],
             'common_protected_paths' => ["image"],
             'json' => [$this['title'], $this->transformProductProps($this['product_props'])],
