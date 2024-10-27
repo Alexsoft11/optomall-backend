@@ -151,7 +151,11 @@ class ProductDetailTmapi extends JsonResource
         ])->post($translateUrl, $data);
 
         // Update product details with the translated text
-        $this['title'] = $response['trans'][0];
-        $this['product_props'] = $response['trans'][1];
+        if ($response->successful() && isset($response['trans'])) {
+            $this['title'] = $response['trans'][0];
+            $this['product_props'] = $response['trans'][1];
+        } else {
+            return 'Api is not working';
+        }
     }
 }
