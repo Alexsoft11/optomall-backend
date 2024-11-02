@@ -42,9 +42,9 @@ class ProductDetailTmapi extends JsonResource
         return [
             'id' => $this['item_id'],
             'title' => $this['title'],
-            'price' => round($this->addPercentToPrice($this['price_info']['price'] ?? $this['orginal_price'], $this->amount, $this->percent)),
+            'price' => round($this->addPercentToPrice($this['price_info']['price'], $this->amount, $this->percent)),
             'discounted_price' => round($this->addPercentToPrice($this['price_info']['discount_price'] ?? 0, $this->amount, $this->percent)),
-            'discount_percentage' => round(((intval($this['price_info']['price']) - intval($this['price_info']['discount_price'] ?? 0)) / 1) * 100),
+            'discount_percentage' => round(((floatval($this['price_info']['price']) - floatval($this['price_info']['discount_price'] ?? 0)) / 1) * 100),
             'quantityRanges' => $quantityRanges,
             'image' => preg_replace('/^\/\//', 'https://', $this['main_imgs'][0]),
             'quantity' => $this['sale_count'] ?? 0,
@@ -67,7 +67,7 @@ class ProductDetailTmapi extends JsonResource
 
     private function addPercentToPrice($priceInYuan, $amount, $percent = 0)
     {
-        $priceInSum = intval($priceInYuan) * intval($amount);
+        $priceInSum = floatval($priceInYuan) * floatval($amount);
         $additionalAmount = $priceInSum * ($percent / 100);
         return $priceInSum + $additionalAmount;
     }
