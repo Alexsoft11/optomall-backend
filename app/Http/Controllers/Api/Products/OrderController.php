@@ -557,7 +557,7 @@ class OrderController extends Controller
                     'image' => $request->image->store('order_checks', 'public'), // Store the image and save the path
                     'card_number_id' => $cardNumber->id,
                 ]);
-                $defaultStatus = OrderStatus::where('for_first', true)->first();
+                $defaultStatus = OrderStatus::where('name_uz', 'Tekshirilmoqda')->first();
                 $statusId = $defaultStatus ? $defaultStatus->id : '3';
                 Order::where('order_group_id', $request->order_group_id)->update(['status' => $statusId]);
                 // Update order status
