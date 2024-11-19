@@ -1893,7 +1893,7 @@ class ProductController extends Controller
                         'image',
                         'provider',
                         'discounted_price',
-                    );
+                    )->inRandomOrder();
             }])
             ->get([
                 'id',
@@ -2014,7 +2014,7 @@ class ProductController extends Controller
                         'image',
                         'provider',
                         'discounted_price',
-                    );
+                    )->inRandomOrder();
             }])
             ->get([
                 'id',
@@ -2246,7 +2246,7 @@ class ProductController extends Controller
             'image',
             'provider',
             'discounted_price',
-        )->where('category_id', $category->id)->paginate($limit);
+        )->inRandomOrder()->where('category_id', $category->id)->paginate($limit);
 
         $mappedProducts = $products->getCollection()->map(function ($product) use ($lang) {
             return [
