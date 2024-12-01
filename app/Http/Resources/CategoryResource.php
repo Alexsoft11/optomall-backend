@@ -18,6 +18,7 @@ class CategoryResource extends JsonResource
 
         return [
             'name' => $this->{"name_$lang"},
+            'image_url' => $this->image ? url('/storage/' . $this->image) : null,
             'slug' => $this->unique,
             'subcategories' => SubcategoryResource::collection($this->subcategories->where('is_active', true)),
         ];
