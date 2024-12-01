@@ -6,6 +6,7 @@ use App\Filament\Resources\TaobaoCategoryResource\Pages;
 use App\Filament\Resources\TaobaoCategoryResource\RelationManagers;
 use App\Models\TaobaoCategory;
 use Filament\Forms;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
@@ -37,6 +38,12 @@ class TaobaoCategoryResource extends Resource
                 TextInput::make('name_uz')->label(trans("title_uz"))->nullable(),
                 TextInput::make('name_en')->label(trans("title_en"))->nullable(),
                 TextInput::make('name_ru')->label(trans("title_ru"))->nullable(),
+                FileUpload::make('image')
+                    ->directory('category-images')
+                    ->image()
+                    ->label(trans('image'))
+                    ->maxSize(10000)
+                    ->nullable(),
                 Toggle::make('is_active')->label(trans("is_active"))->default(false),
             ]);
     }
