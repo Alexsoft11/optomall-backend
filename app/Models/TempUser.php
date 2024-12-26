@@ -11,6 +11,10 @@ class TempUser extends Model
     use HasFactory, Notifiable;
 
     protected $fillable = [
-        'email', 'password', 'confirm_password',
+        'email',
+        'password',
+        'confirm_password',
+        'otp',
+        'phone_number',
     ];
 }

@@ -22,6 +22,9 @@ Route::middleware('throttle:1200,60')->group(function () {
     Route::get('verify-email/{token}', [AuthController::class, 'verifyEmail']);
     Route::post('/personal-data', [AuthController::class, 'personalData']);
 
+    Route::post('/send-otp', [AuthController::class, 'sendOTP']);
+    Route::post('verify-otp', [AuthController::class, 'verifyOTP']);
+
     Route::post('login', [AuthController::class, 'login']);
     Route::post('check-email', [AuthController::class, 'checkEmail']);
     Route::post('/google-login', [AuthController::class, 'googleLoginViaAccessToken']);

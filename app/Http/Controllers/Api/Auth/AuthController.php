@@ -18,8 +18,11 @@ use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
 use App\Mail\GoogleLoginSuccess;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Session;
 use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 
+session_start();
 class AuthController extends Controller
 {
     /**
@@ -136,7 +139,7 @@ class AuthController extends Controller
      *         required=true,
      *         @OA\JsonContent(
      *             required={"email","password"},
-     *             @OA\Property(property="email", type="string", format="email", example="khamidovsherzod003@gmail.com"),
+     *             @OA\Property(property="email", type="string", format="string", example="khamidovsherzod003@gmail.com"),
      *             @OA\Property(property="password", type="string", format="password", example="12345678")
      *         ),
      *     ),
@@ -148,7 +151,7 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'email' => 'required|email',
+            'email' => 'required|string',
             'password' => 'required|string|min:8',
         ]);
 
@@ -157,21 +160,25 @@ class AuthController extends Controller
         }
 
         $credentials = $request->only('email', 'password');
-
-        $user = User::where('email', $credentials['email'])->first();
+        $user = null;
+        if (filter_var($credentials['email'], FILTER_VALIDATE_EMAIL)) {
+            $user = User::where('email', $credentials['email'])->first();
+            if (!$user->info_filled) {
+                return response()->json(['message' => 'add_personal_data', "unique_id" => $user->unique_id]);
+            }
+            if (!$user->email_verified) {
+                return response()->json(['message' => 'email_not_verified', 'error' => false], 403);
+            }
+        } else {
+            $user = User::where('phone', $credentials['email'])->first();
+        }
         if (!$user) {
             return response()->json(['message' => 'email_doesnt_exist', 'error' => false], 401);
         }
         if (!Hash::check($credentials['password'], $user->password)) {
             return response()->json(['message' => 'wrong_password', 'error' => false], 401);
         }
-        if (!$user->info_filled) {
-            return response()->json(['message' => 'add_personal_data', "unique_id" => $user->unique_id]);
-        }
 
-        if (!$user->email_verified) {
-            return response()->json(['message' => 'email_not_verified', 'error' => false], 403);
-        }
 
         $token = $user->createToken('AuthToken')->plainTextToken;
         $createdAt = Carbon::now();
@@ -394,5 +401,144 @@ class AuthController extends Controller
             'token' => $token->plainTextToken,
             "message" => "sent_your_info_to_your_email"
         ]);
+    }
+
+    /**
+     * Send OTP to a phone number.
+     *
+     * @OA\Post(
+     *     path="/api/send-otp",
+     *     summary="Send OTP",
+     *     description="Send OTP to a specific phone number.",
+     *     tags={"Auth"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"phone_number"},
+     *             @OA\Property(property="phone_number", type="string", example="998900000000")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="OTP sent successfully",
+     *         @OA\JsonContent(@OA\Property(property="message", type="string", example="OTP sent successfully."))
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Failed to send OTP",
+     *         @OA\JsonContent(@OA\Property(property="message", type="string", example="Failed to send OTP."))
+     *     )
+     * )
+     */
+    public function sendOTP(Request $request)
+    {
+        $request->validate([
+            'phone_number' => 'required|regex:/^[0-9]{9,15}$/',
+        ]);
+
+        $phoneNumber = $request->input('phone_number');
+        $otp = $this->otpService($phoneNumber, $this->generateOTP());
+        if ($otp) {
+            return response()->json(['message' => 'OTP sent successfully.']);
+        }
+
+        return response()->json(['message' => 'Failed to send OTP.'], 500);
+    }
+
+    public function otpService($phoneNumber, $otp)
+    {
+        $username = config('sms.username');
+        $password = config('sms.password');
+
+        $response = Http::withBasicAuth($username, $password)->post(config('sms.url'), [
+            "messages" => [
+                [
+                    "recipient" => $phoneNumber,
+                    "message-id" => uniqid("msg_"),
+                    "sms" => [
+                        "originator" => "3700",
+                        "content" => [
+                            "text" => "Your OTP code is: $otp",
+                        ],
+                    ],
+                ],
+            ],
+        ]);
+
+        TempUser::create([
+            'phone_number' => $phoneNumber,
+            'otp' => $otp
+        ]);
+
+        return $response->successful();
+    }
+
+    // Start the session
+
+    public function generateOTP($length = 6)
+    {
+        do {
+            $otp = str_pad(random_int(0, pow(10, $length) - 1), $length, '0', STR_PAD_LEFT);
+        } while (isset($_SESSION['generated_otps']) && in_array($otp, $_SESSION['generated_otps']));
+
+        $_SESSION['generated_otps'][] = $otp;
+
+        $_SESSION['generated_otps'] = array_filter($_SESSION['generated_otps'], function ($otp) {
+            return isset($otp['timestamp']) && (time() - $otp['timestamp']) < 300;
+        });
+
+        return $otp;
+    }
+
+
+    /**
+     * Verify an OTP and set the user's password.
+     *
+     * @OA\Post(
+     *     path="/api/verify-otp",
+     *     summary="Verify OTP and set password",
+     *     description="Verify the provided OTP and set the user's password if OTP is correct.",
+     *     tags={"Auth"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"otp", "password", "confirm_password"},
+     *             @OA\Property(property="otp", type="integer", example=123456),
+     *             @OA\Property(property="password", type="string", example="newpassword123"),
+     *             @OA\Property(property="confirm_password", type="string", example="newpassword123")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="OTP verified and password updated successfully",
+     *         @OA\JsonContent(@OA\Property(property="message", type="string", example="OTP verified and password updated successfully."))
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Invalid OTP or password mismatch",
+     *         @OA\JsonContent(@OA\Property(property="message", type="string", example="Invalid OTP or password mismatch."))
+     *     )
+     * )
+     */
+    public function verifyOTP(Request $request)
+    {
+        $request->validate([
+            'otp' => 'required|numeric',
+            'password' => 'required|string|min:8',
+            'confirm_password' => 'required|string|min:8|same:password',
+        ]);
+        $tempUser = TempUser::where('otp', $request->input('otp'))->first();
+
+        if ($request->input('otp') == $tempUser->otp) {
+            $user = User::createOrUpdate([
+                'phone' => $tempUser->phone_number,
+                'password' => Hash::make($request->input('password')),
+            ]);
+            return response()->json(['message' => 'OTP verified successfully.', $user]);
+        }
+
+        $tempUser->delete();
+
+        return response()->json(['message' => 'Invalid OTP.'], 400);
     }
 }
