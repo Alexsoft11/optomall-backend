@@ -504,6 +504,7 @@ class AuthController extends Controller
      *         @OA\JsonContent(
      *             required={"otp", "password", "confirm_password"},
      *             @OA\Property(property="otp", type="integer", example=123456),
+     *             @OA\Property(property="phone", type="string", example="998917388318"),
      *             @OA\Property(property="password", type="string", example="newpassword123"),
      *             @OA\Property(property="confirm_password", type="string", example="newpassword123")
      *         )
@@ -524,21 +525,34 @@ class AuthController extends Controller
     {
         $request->validate([
             'otp' => 'required|numeric',
+            'phone' => "required|regex:/^[0-9]{9,15}$/",
             'password' => 'required|string|min:8',
             'confirm_password' => 'required|string|min:8|same:password',
         ]);
-        $tempUser = TempUser::where('otp', $request->input('otp'))->first();
 
-        if ($request->input('otp') == $tempUser->otp) {
-            $user = User::createOrUpdate([
-                'phone' => $tempUser->phone_number,
-                'password' => Hash::make($request->input('password')),
-            ]);
-            return response()->json(['message' => 'OTP verified successfully.', $user]);
+        // Foydalanuvchini vaqtinchalik jadvaldan topish
+        $tempUser = TempUser::where('phone_number', $request->input('phone'))->orderBy('created_at', 'desc')->first();
+
+        if (!$tempUser) {
+            return response()->json(['status' => 'error', 'message' => 'Foydalanuvchi topilmadi.'], 400);
+        }
+        // OTP tekshirish
+        if ($request->input('otp') != $tempUser->otp) {
+            return response()->json(['status' => 'error', 'message' => 'Noto‘g‘ri OTP.'], 400);
         }
 
+        // Foydalanuvchini yaratish yoki yangilash
+        $user = User::create(
+            ['phone' => $tempUser->phone_number, 'password' => Hash::make($request->input('password'))],
+        );
+
+        // Vaqtinchalik foydalanuvchini o'chirish
         $tempUser->delete();
 
-        return response()->json(['message' => 'Invalid OTP.'], 400);
+        return response()->json([
+            'status' => 'success',
+            'message' => 'OTP muvaffaqiyatli tasdiqlandi va parol yangilandi.',
+            'user' => $user,
+        ], 200);
     }
 }
