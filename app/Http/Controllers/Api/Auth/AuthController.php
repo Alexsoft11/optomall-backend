@@ -458,7 +458,7 @@ class AuthController extends Controller
                     "sms" => [
                         "originator" => "3700",
                         "content" => [
-                            "text" => "Your OTP code is: $otp",
+                            "text" => "Optomall sizning ro'yhatdan o'tish uchun kodingiz : $otp",
                         ],
                     ],
                 ],
