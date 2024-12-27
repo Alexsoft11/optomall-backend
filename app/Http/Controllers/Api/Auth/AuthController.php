@@ -524,7 +524,7 @@ class AuthController extends Controller
     public function verifyOTP(Request $request)
     {
         $request->validate([
-            'otp' => 'required|integer',
+            'otp' => 'required|string',
             'phone' => "required|regex:/^[0-9]{9,15}$/",
             'password' => 'required|string|min:8',
             'confirm_password' => 'required|string|min:8|same:password',
