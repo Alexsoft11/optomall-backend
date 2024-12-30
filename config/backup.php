@@ -7,16 +7,15 @@ return [
          * The name of this application. You can use this name to monitor
          * the backups.
          */
-        'name' => env('APP_NAME', 'laravel-backup'),
+        'name' => env('APP_NAME', 'taobao'),
+        'dump_command_path' => '/usr/bin',
 
         'source' => [
             'files' => [
                 /*
                  * The list of directories and files that will be included in the backup.
                  */
-                'include' => [
-                    base_path(),
-                ],
+                'include' => [],
 
                 /*
                  * These directories and files will be excluded from the backup.
@@ -97,7 +96,7 @@ return [
         /*
          * If specified, the database dumped file name will contain a timestamp (e.g.: 'Y-m-d-H-i-s').
          */
-        'database_dump_file_timestamp_format' => 'Y-m-d-H-i-s',
+        'database_dump_file_timestamp_format' => null,
 
         /*
          * The base of the dump filename, either 'database' or 'connection'
@@ -105,7 +104,7 @@ return [
          * If 'database' (default), the dumped filename will contain the database name.
          * If 'connection', the dumped filename will contain the connection name.
          */
-        'database_dump_filename_base' => 'connection',
+        'database_dump_filename_base' => 'database',
 
         /*
          * The file extension used for the database dump files.
@@ -113,7 +112,7 @@ return [
          * If not specified, the file extension will be .archive for MongoDB and .sql for all other databases
          * The file extension should be specified without a leading .
          */
-        'database_dump_file_extension' => 'txt',
+        'database_dump_file_extension' => '',
 
         'destination' => [
             /*

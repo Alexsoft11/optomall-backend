@@ -55,8 +55,8 @@ return [
             'strict' => true,
             'engine' => null,
             'dump' => [
-                'dump_binary_path' => 'C:\xampp\mysql\bin',
-          'use_single_transaction' => true,
+                'dump_binary_path' => '/usr/bin',
+                'use_single_transaction' => true,
                 'timeout' => 60 * 5,
             ],
             'options' => extension_loaded('pdo_mysql') ? array_filter([
