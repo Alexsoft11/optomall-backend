@@ -557,6 +557,8 @@ class AuthController extends Controller
             ],
         );
 
+        $token = $user->createToken('AuthToken')->plainTextToken;
+
         // Vaqtinchalik foydalanuvchini o'chirish
         $tempUser->delete();
 
@@ -564,6 +566,7 @@ class AuthController extends Controller
             'status' => 'success',
             'message' => 'successfully_registered',
             'user' => $user,
+            'token' => $token
         ], 200);
     }
 }

@@ -11,6 +11,7 @@ use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Columns\ToggleColumn;
 use Filament\Tables\Table;
 
 class UserResource extends Resource
@@ -32,10 +33,10 @@ class UserResource extends Resource
                     ->preload()
                     ->searchable(),
                 Forms\Components\TextInput::make('name')
-                ->label(trans('ism'))
+                    ->label(trans('ism'))
                     ->maxLength(100),
                 Forms\Components\TextInput::make('last_name')
-                ->label(trans('last_name'))
+                    ->label(trans('last_name'))
                     ->maxLength(100),
                 Forms\Components\TextInput::make('phone')
                     ->tel()
@@ -57,7 +58,7 @@ class UserResource extends Resource
                 // Forms\Components\TextInput::make('post_index')
                 //     ->maxLength(255),
                 Forms\Components\TextInput::make('adress')
-                ->label(trans('location'))
+                    ->label(trans('location'))
                     ->maxLength(255),
             ]);
     }
@@ -69,6 +70,7 @@ class UserResource extends Resource
                 Tables\Columns\TextColumn::make('id')
                     ->numeric()
                     ->sortable(),
+                ToggleColumn::make('is_register'),
                 Tables\Columns\TextColumn::make('unique_id')
                     ->numeric()
                     ->sortable()
