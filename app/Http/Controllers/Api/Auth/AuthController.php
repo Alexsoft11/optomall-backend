@@ -437,18 +437,24 @@ class AuthController extends Controller
             'phone_number' => 'required|regex:/^[0-9]{9,15}$/',
         ]);
 
-        $user = User::where('phone', $request->input('phone_number'))->where('is_register', false);
+        $phoneNumber = $request->input('phone_number');
+
+        // Telefon raqamini saqlash uchun formatga aylantirish
+        $formattedPhone = $this->formatPhoneForStorage($phoneNumber);
+
+        $user = User::where('phone', $formattedPhone)->where('is_register', false);
         if ($user->exists()) {
             return response()->json(['message' => 'user_exists']);
         }
 
-        $phoneNumber = $request->input('phone_number');
-        $otp = $this->otpService($phoneNumber, $this->generateOTP());
+        // Telefon raqamini SMS yuborish uchun formatga aylantirish
+        $phoneForSms = $this->formatPhoneForSms($phoneNumber);
+        $otp = $this->otpService($phoneForSms, $this->generateOTP(), $formattedPhone);
 
         return $otp;
     }
 
-    public function otpService($phoneNumber, $otp)
+    public function otpService($phoneNumber, $otp, $formattedPhone)
     {
         $username = config('sms.username');
         $password = config('sms.password');
@@ -469,15 +475,27 @@ class AuthController extends Controller
         ]);
 
         $tempUser = TempUser::create([
-            'phone_number' => $phoneNumber,
-            'otp' => $otp
+            'phone_number' => $formattedPhone, // Saqlash uchun formatlangan
+            'otp' => $otp,
         ]);
 
         if ($response->failed()) {
-            response()->json(['status' => 'error', 'message' => 'failed_to_send_otp'], 500);
+            return response()->json(['status' => 'error', 'message' => 'failed_to_send_otp'], 500);
         }
 
         return response()->json(['id' => $tempUser->id, 'message' => 'otp_sent_successfully'], 200);
+    }
+
+    // Telefon raqamini saqlash uchun formatlash
+    private function formatPhoneForStorage($phoneNumber)
+    {
+        return preg_replace('/^(\d{3})(\d{2})(\d{3})(\d{2})(\d{2})$/', '998 $2 $3 $4 $5', $phoneNumber);
+    }
+
+    // Telefon raqamini SMS yuborish uchun formatlash
+    private function formatPhoneForSms($phoneNumber)
+    {
+        return preg_replace('/\s+/', '', $phoneNumber); // Bo'sh joylarni olib tashlash
     }
 
     // Start the session
