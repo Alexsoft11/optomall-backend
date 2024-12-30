@@ -279,6 +279,7 @@ class AuthController extends Controller
             'name' => $request->name,
             'last_name' => $request->last_name,
             'phone' => $request->phone,
+            'is_register' => true,
         ]);
         $token = $user->createToken('AuthToken')->plainTextToken;
 
@@ -436,13 +437,15 @@ class AuthController extends Controller
             'phone_number' => 'required|regex:/^[0-9]{9,15}$/',
         ]);
 
-        $phoneNumber = $request->input('phone_number');
-        $otp = $this->otpService($phoneNumber, $this->generateOTP());
-        if ($otp) {
-            return response()->json(['message' => 'OTP sent successfully.']);
+        $user = User::where('phone', $request->input('phone_number'))->where('is_register', false);
+        if ($user->exists()) {
+            return response()->json(['message' => 'user_exists']);
         }
 
-        return response()->json(['message' => 'Failed to send OTP.'], 500);
+        $phoneNumber = $request->input('phone_number');
+        $otp = $this->otpService($phoneNumber, $this->generateOTP());
+
+        return $otp;
     }
 
     public function otpService($phoneNumber, $otp)
@@ -465,12 +468,16 @@ class AuthController extends Controller
             ],
         ]);
 
-        TempUser::create([
+        $tempUser = TempUser::create([
             'phone_number' => $phoneNumber,
             'otp' => $otp
         ]);
 
-        return $response->successful();
+        if ($response->failed()) {
+            response()->json(['status' => 'error', 'message' => 'failed_to_send_otp'], 500);
+        }
+
+        return response()->json(['id' => $tempUser->id, 'message' => 'otp_sent_successfully'], 200);
     }
 
     // Start the session
@@ -503,8 +510,8 @@ class AuthController extends Controller
      *         required=true,
      *         @OA\JsonContent(
      *             required={"otp", "password", "confirm_password"},
-     *             @OA\Property(property="otp", type="integer", example=123456),
-     *             @OA\Property(property="phone", type="string", example="998917388318"),
+     *             @OA\Property(property="otp", type="string", example="123456"),
+     *             @OA\Property(property="id", type="integer", example="1"),
      *             @OA\Property(property="password", type="string", example="newpassword123"),
      *             @OA\Property(property="confirm_password", type="string", example="newpassword123")
      *         )
@@ -525,25 +532,29 @@ class AuthController extends Controller
     {
         $request->validate([
             'otp' => 'required|string',
-            'phone' => "required|regex:/^[0-9]{9,15}$/",
+            'id' => "required|integer",
             'password' => 'required|string|min:8',
             'confirm_password' => 'required|string|min:8|same:password',
         ]);
 
         // Foydalanuvchini vaqtinchalik jadvaldan topish
-        $tempUser = TempUser::where('phone_number', $request->input('phone'))->orderBy('created_at', 'desc')->first();
+        $tempUser = TempUser::where('id', $request->input('id'))->first();
 
         if (!$tempUser) {
-            return response()->json(['status' => 'error', 'message' => 'Foydalanuvchi topilmadi.'], 400);
+            return response()->json(['status' => 'error', 'message' => 'user_not_found'], 400);
         }
-        // OTP tekshirish
+
         if ($request->input('otp') != $tempUser->otp) {
-            return response()->json(['status' => 'error', 'message' => 'Noto‘g‘ri OTP.'], 400);
+            return response()->json(['status' => 'error', 'message' => 'invalid_otp.'], 400);
         }
 
         // Foydalanuvchini yaratish yoki yangilash
         $user = User::create(
-            ['phone' => $tempUser->phone_number, 'password' => Hash::make($request->input('password'))],
+            [
+                'phone' => $tempUser->phone_number,
+                'password' => Hash::make($request->input('password')),
+                'is_register' => false
+            ],
         );
 
         // Vaqtinchalik foydalanuvchini o'chirish
@@ -551,7 +562,7 @@ class AuthController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'message' => 'OTP muvaffaqiyatli tasdiqlandi va parol yangilandi.',
+            'message' => 'successfully_registered',
             'user' => $user,
         ], 200);
     }
