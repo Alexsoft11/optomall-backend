@@ -1407,7 +1407,7 @@ class ProductController extends Controller
                 'products' => collect($provider == '1688' ? $products['data']['items'] : $products['items']['item'])->map(function ($product) use ($provider, $lang) {
                     return (new ProductResource($product, $provider, $lang))->resolve();
                 }),
-            ]), 600); // Store in cache for 10 minutes
+            ]), 259200); // Store in cache for 3 days
 
             return $this->respondWithSuccess([
                 'products' => collect($provider == '1688' ? $products['data']['items'] : $products['items']['item'])->map(function ($product) use ($provider, $lang) {
