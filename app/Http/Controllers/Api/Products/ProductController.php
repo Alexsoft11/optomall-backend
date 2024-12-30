@@ -1349,90 +1349,75 @@ class ProductController extends Controller
      */
     public function searchProductsTmapi(Request $request)
     {
-        $cacheKey = $this->generateCacheKey($request);
+        // Cache the API response for 5 minutes to avoid repeated external API calls
+        $cacheKey = 'search_products_tmapi' . md5(json_encode($request->all()));
 
-        // Check cache
+        // Try to get the cached response
         $cachedResponse = Cache::get($cacheKey);
         if ($cachedResponse) {
-            return $cachedResponse;
+            return $cachedResponse; // Return cached response if exists
         }
 
+        // If cache is not available, make an API call
         try {
-            $params = $this->prepareSearchParams($request);
-            $translatedValue = $this->getTranslatedValue($params['value'], $params['catId']);
-            $baseApiUrl = $this->constructApiUrl($params, $translatedValue);
+            $value = $request->input('value');
+            $sort = $request->input('sort', 'default'); // Expecting format like 'VendorRating:Desc'
+            $page = $request->input('page', 1);
+            $productsCount = $request->input('productsCount', 20); // Reduced productsCount to 20 for quicker responses
+            $provider = strtolower($request->input('provider', 'taobao'));
+            $lang = $request->input('lang', 'en');
+            $imageUrl = $request->input('imageUrl');
 
-            $response = Http::withoutVerifying()->get($baseApiUrl);
+            // Fetch the subcategory based on catId
+            $subcategory = TaobaoSubcategory::where('unique_id', $request->catId)
+                ->pluck('unique')
+                ->first() ?? TaobaoSubcategoryName::where('unique_id', $request->catId)
+                ->pluck('unique')
+                ->first();
+
+            // Check if we need to translate the value before the API call
+            $translatedValue = $subcategory ? $subcategory : $this->translateText($value); // Translate to Chinese for search
+
+            // Base API URL construction
+            if ($provider == '1688') {
+                $baseApiUrl = $imageUrl
+                    ? "http://api.tmapi.top/1688/search/image?img_url=$imageUrl&page=$page&page_size=$productsCount&sort=$sort&apiToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VybmFtZSI6Im9wdG9tYWxsIiwiQ29taWQiOm51bGwsIlJvbGVpZCI6bnVsbCwiaXNzIjoidG1hcGkiLCJzdWIiOiJvcHRvbWFsbCIsImF1ZCI6WyIiXSwiaWF0IjoxNzI3ODQzODA3fQ.MjSYALtr8x19ybMi8aJvRJk2Pl_hNwMpuNpWyAwx9AQ"
+                    : "http://api.tmapi.top/1688/search/items?keyword=$translatedValue&page=$page&page_size=$productsCount&sort=$sort&apiToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VybmFtZSI6Im9wdG9tYWxsIiwiQ29taWQiOm51bGwsIlJvbGVpZCI6bnVsbCwiaXNzIjoidG1hcGkiLCJzdWIiOiJvcHRvbWFsbCIsImF1ZCI6WyIiXSwiaWF0IjoxNzI3ODQzODA3fQ.MjSYALtr8x19ybMi8aJvRJk2Pl_hNwMpuNpWyAwx9AQ";
+                // return $baseApiUrl;
+            } else { // Taobao as default
+                $baseApiUrl = $imageUrl
+                    ? "https://api-gw.onebound.cn/taobao/item_search_img/?key=t3832825558&imgid=$imageUrl&seller_info=no&lang=$lang&page=$page&sort=$sort&page_size=$productsCount&secret=20240731"
+                    : "https://api-gw.onebound.cn/taobao/item_search/?key=t3832825558&q=" . $translatedValue . "&page=$page&sort=$sort&page_size=$productsCount&seller_info=no&lang=$lang&secret=20240731";
+            }
+            // Making the external API request
+            $response = Http::timeout(100)->withoutVerifying()->get($baseApiUrl);
             $products = $response->json();
+            // return $products;
 
-            if (empty($products['data']['items']) && empty($products['items']['item'])) {
-                return response()->json(['error' => 'product_not_found'], 404);
+            // Check if products are found
+            if ($provider == '1688' ? empty($products['data']['items']) : empty($products['items']['item'])) {
+                return response()->json([
+                    'error' => 'product_not_found',
+                    'details' => $products,
+                ], 404);
             }
 
-            $mappedProducts = $this->mapProducts($products, $params['provider'], $params['lang']);
-            Cache::put($cacheKey, $mappedProducts, 600); // Cache for 10 minutes
+            // Cache the successful response
+            Cache::put($cacheKey, $this->respondWithSuccess([
+                'products' => collect($provider == '1688' ? $products['data']['items'] : $products['items']['item'])->map(function ($product) use ($provider, $lang) {
+                    return (new ProductResource($product, $provider, $lang))->resolve();
+                }),
+            ]), 600); // Store in cache for 10 minutes
 
-            // return $mappedProducts;
+            return $this->respondWithSuccess([
+                'products' => collect($provider == '1688' ? $products['data']['items'] : $products['items']['item'])->map(function ($product) use ($provider, $lang) {
+                    return (new ProductResource($product, $provider, $lang))->resolve();
+                }),
+            ]);
         } catch (\Exception $e) {
-            Log::error('Error fetching products: ' . $e->getMessage());
+            Log::error('Error fetching products from Taobao: ' . $e->getMessage());
             return response()->json(['error' => 'service_unavailable', 'message' => $e->getMessage()], 503);
         }
-    }
-
-    private function generateCacheKey(Request $request)
-    {
-        $params = $request->only(['value', 'lang', 'provider', 'catId', 'sort', 'imageUrl', 'page', 'productsCount']);
-        return 'search_products_tmapi_' . md5(json_encode($params));
-    }
-
-    private function prepareSearchParams(Request $request)
-    {
-        return [
-            'value' => $request->input('value'),
-            'sort' => $request->input('sort', 'default'),
-            'page' => $request->input('page', 1),
-            'productsCount' => $request->input('productsCount', 20),
-            'provider' => strtolower($request->input('provider', 'taobao')),
-            'lang' => $request->input('lang', 'en'),
-            'imageUrl' => $request->input('imageUrl'),
-            'catId' => $request->input('catId'),
-        ];
-    }
-
-    private function getTranslatedValue($value, $catId)
-    {
-        if ($catId) {
-            return TaobaoSubcategory::where('unique_id', $catId)->value('unique')
-                ?? TaobaoSubcategoryName::where('unique_id', $catId)->value('unique');
-        }
-
-        // Cache translation results
-        $cacheKey = 'translated_value_' . md5($value);
-        return Cache::remember($cacheKey, 600, function () use ($value) {
-            return $this->translateText($value);
-        });
-    }
-
-    private function constructApiUrl($params, $translatedValue)
-    {
-        $baseUrls = [
-            '1688' => $params['imageUrl']
-                ? "http://api.tmapi.top/1688/en/search/image?img_url={$params['imageUrl']}&page={$params['page']}&page_size={$params['productsCount']}&sort={$params['sort']}&apiToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VybmFtZSI6Im9wdG9tYWxsIiwiQ29taWQiOm51bGwsIlJvbGVpZCI6bnVsbCwiaXNzIjoidG1hcGkiLCJzdWIiOiJvcHRvbWFsbCIsImF1ZCI6WyIiXSwiaWF0IjoxNzI3ODQzODA3fQ.MjSYALtr8x19ybMi8aJvRJk2Pl_hNwMpuNpWyAwx9AQ"
-                : "http://api.tmapi.top/1688/search/items?keyword=$translatedValue&page={$params['page']}&page_size={$params['productsCount']}&sort={$params['sort']}&apiToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VybmFtZSI6Im9wdG9tYWxsIiwiQ29taWQiOm51bGwsIlJvbGVpZCI6bnVsbCwiaXNzIjoidG1hcGkiLCJzdWIiOiJvcHRvbWFsbCIsImF1ZCI6WyIiXSwiaWF0IjoxNzI3ODQzODA3fQ.MjSYALtr8x19ybMi8aJvRJk2Pl_hNwMpuNpWyAwx9AQ",
-            'taobao' => $params['imageUrl']
-                ? "https://api-gw.onebound.cn/taobao/item_search_img/?key=t3832825558&imgid={$params['imageUrl']}&seller_info=no&lang={$params['lang']}&page={$params['page']}&sort={$params['sort']}&page_size={$params['productsCount']}&secret=20240731"
-                : "https://api-gw.onebound.cn/taobao/item_search/?key=t3832825558&q=$translatedValue&page={$params['page']}&sort={$params['sort']}&page_size={$params['productsCount']}&seller_info=no&lang={$params['lang']}&secret=20240731",
-        ];
-
-        return $baseUrls[$params['provider']] ?? $baseUrls['taobao'];
-    }
-
-    private function mapProducts($products, $provider, $lang)
-    {
-        $items = $provider === '1688' ? $products['data']['items'] : $products['items']['item'];
-        return [
-            'products' => collect($items)->map(fn($product) => (new ProductResource($product, $provider, $lang))->resolve()),
-        ];
     }
 
     private function translateText($text)
