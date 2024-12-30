@@ -28,6 +28,7 @@ class ProductResource extends JsonResource
      */
     public function toArray($request)
     {
+        // return $this->resource;
         $amount = Exchanges::where('currency', 'yuan')->first()->amount ?? 1800;
 
         // Convert price to float
@@ -49,11 +50,11 @@ class ProductResource extends JsonResource
             : 0;
 
         // Translate the title
-        $translatedTitle = $this->translateText($this->resource['title'], $this->lang);
+        // $translatedTitle = $this->translateText($this->resource['title'], $this->lang);
 
         return [
             'id' => $this->resource['num_iid'] ?? $this->resource['item_id'],
-            'title' => $translatedTitle, // Return translated title
+            'title' => $this->resource['title'], // Return translated title
             'price' => round($this->addPercentToPrice($calculatedPrice, $this->percent)),
             'discounted_price' => round($calculatedPromotionPrice
                 ? $this->addPercentToPrice($calculatedPromotionPrice, $this->percent)
