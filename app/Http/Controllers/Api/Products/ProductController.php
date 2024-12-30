@@ -1381,7 +1381,7 @@ class ProductController extends Controller
             // Base API URL construction
             if ($provider == '1688') {
                 $baseApiUrl = $imageUrl
-                    ? "http://api.tmapi.top/1688/search/image?img_url=$imageUrl&page=$page&page_size=$productsCount&sort=$sort&apiToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VybmFtZSI6Im9wdG9tYWxsIiwiQ29taWQiOm51bGwsIlJvbGVpZCI6bnVsbCwiaXNzIjoidG1hcGkiLCJzdWIiOiJvcHRvbWFsbCIsImF1ZCI6WyIiXSwiaWF0IjoxNzI3ODQzODA3fQ.MjSYALtr8x19ybMi8aJvRJk2Pl_hNwMpuNpWyAwx9AQ"
+                    ? "http://api.tmapi.top/1688/en/search/image?img_url=$imageUrl&page=$page&page_size=$productsCount&sort=$sort&apiToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VybmFtZSI6Im9wdG9tYWxsIiwiQ29taWQiOm51bGwsIlJvbGVpZCI6bnVsbCwiaXNzIjoidG1hcGkiLCJzdWIiOiJvcHRvbWFsbCIsImF1ZCI6WyIiXSwiaWF0IjoxNzI3ODQzODA3fQ.MjSYALtr8x19ybMi8aJvRJk2Pl_hNwMpuNpWyAwx9AQ"
                     : "http://api.tmapi.top/1688/search/items?keyword=$translatedValue&page=$page&page_size=$productsCount&sort=$sort&apiToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VybmFtZSI6Im9wdG9tYWxsIiwiQ29taWQiOm51bGwsIlJvbGVpZCI6bnVsbCwiaXNzIjoidG1hcGkiLCJzdWIiOiJvcHRvbWFsbCIsImF1ZCI6WyIiXSwiaWF0IjoxNzI3ODQzODA3fQ.MjSYALtr8x19ybMi8aJvRJk2Pl_hNwMpuNpWyAwx9AQ";
                 // return $baseApiUrl;
             } else { // Taobao as default
