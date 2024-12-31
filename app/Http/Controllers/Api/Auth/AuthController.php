@@ -153,33 +153,48 @@ class AuthController extends Controller
         $validator = Validator::make($request->all(), [
             'email' => 'required|string',
             'password' => 'required|string|min:8',
+            'type' => 'nullable|string|in:email,phone', // Ensure type is either email or phone
         ]);
 
         if ($validator->fails()) {
             return response()->json(['message' => 'validation_errors', 'errors' => $validator->errors()], 422);
         }
 
+        $type = $request->input('type', 'email'); // Default type to 'email' if null
         $credentials = $request->only('email', 'password');
+
         $user = null;
-        if (filter_var($credentials['email'], FILTER_VALIDATE_EMAIL)) {
+
+        if ($type === 'email') {
+            if (!filter_var($credentials['email'], FILTER_VALIDATE_EMAIL)) {
+                return response()->json(['message' => 'invalid_email_format', 'error' => true], 422);
+            }
             $user = User::where('email', $credentials['email'])->first();
-            if (!$user->info_filled) {
-                return response()->json(['message' => 'add_personal_data', "unique_id" => $user->unique_id]);
-            }
-            if (!$user->email_verified) {
-                return response()->json(['message' => 'email_not_verified', 'error' => false], 403);
-            }
-        } else {
+        } elseif ($type === 'phone') {
             $user = User::where('phone', $credentials['email'])->first();
         }
+
+        // Check if user exists
         if (!$user) {
-            return response()->json(['message' => 'email_doesnt_exist', 'error' => false], 401);
+            return response()->json(['message' => "{$type}_doesnt_exist", 'error' => false], 401);
         }
+
+        // Check if the user's password matches
         if (!Hash::check($credentials['password'], $user->password)) {
             return response()->json(['message' => 'wrong_password', 'error' => false], 401);
         }
 
+        // Check if the user needs to add personal data
+        if (!$user->info_filled && $type === 'email') {
+            return response()->json(['message' => 'add_personal_data', "unique_id" => $user->unique_id]);
+        }
 
+        // Check if the email is verified
+        if ($type === 'email' && !$user->email_verified) {
+            return response()->json(['message' => 'email_not_verified', 'error' => false], 403);
+        }
+
+        // Generate token
         $token = $user->createToken('AuthToken')->plainTextToken;
         $createdAt = Carbon::now();
         $expiresAt = $createdAt->copy()->addDays(7);
@@ -188,7 +203,7 @@ class AuthController extends Controller
             'token' => $token,
             'info_filled' => $user->info_filled,
             'created_at' => $createdAt->toDateTimeString(),
-            'expires_at' => $expiresAt->toDateTimeString()
+            'expires_at' => $expiresAt->toDateTimeString(),
         ], 200);
     }
 
