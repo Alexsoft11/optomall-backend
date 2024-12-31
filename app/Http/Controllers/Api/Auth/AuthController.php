@@ -531,7 +531,7 @@ class AuthController extends Controller
      *             @OA\Property(property="otp", type="string", example="123456"),
      *             @OA\Property(property="id", type="integer", example="1"),
      *             @OA\Property(property="password", type="string", example="newpassword123"),
-     *             @OA\Property(property="confirm_password", type="string", example="newpassword123")
+     *             @OA\Property(property="confirm_password", type="string", example="newpassword123"),
      *             @OA\Property(property="name", type="string", example="AAA")
      *         )
      *     ),
