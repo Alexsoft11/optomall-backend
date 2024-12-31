@@ -444,7 +444,7 @@ class AuthController extends Controller
 
         $user = User::where('phone', $formattedPhone)->where('is_register', false);
         if ($user->exists()) {
-            return response()->json(['message' => 'user_exists']);
+            return response()->json(['message' => 'phone_number_exists']);
         }
 
         // Telefon raqamini SMS yuborish uchun formatga aylantirish
@@ -480,10 +480,10 @@ class AuthController extends Controller
         ]);
 
         if ($response->failed()) {
-            return response()->json(['status' => 'error', 'message' => 'failed_to_send_otp'], 500);
+            return response()->json(['status' => 'error', 'message' => 'send_code_failed'], 500);
         }
 
-        return response()->json(['id' => $tempUser->id, 'message' => 'otp_sent_successfully'], 200);
+        return response()->json(['id' => $tempUser->id, 'message' => 'coniform_code_sended'], 200);
     }
 
     // Telefon raqamini saqlash uchun formatlash
@@ -565,7 +565,7 @@ class AuthController extends Controller
         }
 
         if ($request->input('otp') != $tempUser->otp) {
-            return response()->json(['status' => 'error', 'message' => 'invalid_otp.'], 400);
+            return response()->json(['status' => 'error', 'message' => 'incorect_coniform_code'], 400);
         }
 
         // Foydalanuvchini yaratish yoki yangilash
@@ -585,7 +585,7 @@ class AuthController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'message' => 'successfully_registered',
+            'message' => 'user_registered_successfully',
             'token' => $token,
             'user' => $user
         ], 200);
