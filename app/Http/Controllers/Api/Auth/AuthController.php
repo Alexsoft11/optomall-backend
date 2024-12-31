@@ -444,7 +444,7 @@ class AuthController extends Controller
 
         $user = User::where('phone', $formattedPhone)->where('is_register', false);
         if ($user->exists()) {
-            return response()->json(['message' => 'phone_number_exists']);
+            return response()->json(['message' => 'phone_number_exists'], 400);
         }
 
         // Telefon raqamini SMS yuborish uchun formatga aylantirish
