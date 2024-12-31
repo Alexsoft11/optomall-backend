@@ -532,6 +532,7 @@ class AuthController extends Controller
      *             @OA\Property(property="id", type="integer", example="1"),
      *             @OA\Property(property="password", type="string", example="newpassword123"),
      *             @OA\Property(property="confirm_password", type="string", example="newpassword123")
+     *             @OA\Property(property="name", type="string", example="AAA")
      *         )
      *     ),
      *     @OA\Response(
@@ -553,6 +554,7 @@ class AuthController extends Controller
             'id' => "required|integer",
             'password' => 'required|string|min:8',
             'confirm_password' => 'required|string|min:8|same:password',
+            'name' => 'nullable|string',
         ]);
 
         // Foydalanuvchini vaqtinchalik jadvaldan topish
@@ -571,7 +573,8 @@ class AuthController extends Controller
             [
                 'phone' => $tempUser->phone_number,
                 'password' => Hash::make($request->input('password')),
-                'is_register' => false
+                'is_register' => false,
+                'name' => $request->input('name')
             ],
         );
 
@@ -583,8 +586,8 @@ class AuthController extends Controller
         return response()->json([
             'status' => 'success',
             'message' => 'successfully_registered',
-            'user' => $user,
-            'token' => $token
+            'token' => $token,
+            'user' => $user
         ], 200);
     }
 }
