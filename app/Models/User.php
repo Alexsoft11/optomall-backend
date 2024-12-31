@@ -46,7 +46,8 @@ class User extends Authenticatable implements FilamentUser
         'post_index',
         'location',
         'adress',
-        'is_register'
+        'is_register',
+        'info_filled'
     ];
 
     /**

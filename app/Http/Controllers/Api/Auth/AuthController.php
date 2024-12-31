@@ -182,7 +182,7 @@ class AuthController extends Controller
 
         $token = $user->createToken('AuthToken')->plainTextToken;
         $createdAt = Carbon::now();
-        $expiresAt = $createdAt->copy()->addDays(3);
+        $expiresAt = $createdAt->copy()->addDays(7);
 
         return response()->json([
             'token' => $token,
@@ -574,7 +574,8 @@ class AuthController extends Controller
                 'phone' => $tempUser->phone_number,
                 'password' => Hash::make($request->input('password')),
                 'is_register' => false,
-                'name' => $request->input('name')
+                'name' => $request->input('name'),
+                'info_filled' => true
             ],
         );
 
