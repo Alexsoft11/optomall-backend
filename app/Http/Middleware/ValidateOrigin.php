@@ -27,7 +27,7 @@ class ValidateOrigin
             $origin = $request->headers->get('origin'); // Get the request origin
             // Validate the origin
             if (!in_array($origin, $this->allowedOrigins)) {
-                Log::info('Origin:' . $request->header('Origin'));
+                Log::info('Unauthorized Origin:' . $request->header('Origin'));
                 return response()->json(['error' => 'Unauthorized request origin.'], 403);
             }
         }

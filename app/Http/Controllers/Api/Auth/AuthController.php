@@ -234,7 +234,6 @@ class AuthController extends Controller
             return response()->json(['message' => 'token_not_found'], 404);
         }
 
-        $user->tokens()->delete();
 
         $newToken = $user->createToken('AuthToken')->plainTextToken;
         $createdAt = Carbon::now();
