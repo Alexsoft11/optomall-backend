@@ -171,7 +171,8 @@ class AuthController extends Controller
             }
             $user = User::where('email', $credentials['email'])->first();
         } elseif ($type === 'phone') {
-            $user = User::where('phone', $credentials['email'])->first();
+            $formattedPhone = $this->formatPhoneForStorage($credentials['email']);
+            $user = User::where('phone', $formattedPhone)->first();
         }
 
         // Check if user exists
