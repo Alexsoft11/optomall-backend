@@ -14,6 +14,7 @@ class ValidateOrigin
     protected $allowedOrigins = [
         'https://optomall.uz',
         'https://taobao-optom-uz.vercel.app',
+        'https://optomol.uz',
         'http://localhost:3001'
     ];
 
