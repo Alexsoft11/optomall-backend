@@ -13,7 +13,9 @@ return new class extends Migration
     {
         Schema::create('product_locals', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
+            $table->string('title');
+            $table->integer('sale_count')->default(0);
+            $table->integer('quantity')->default(0);
             $table->text('description')->nullable();
             $table->decimal('price', 10, 2);
             $table->string('status')->default('active');

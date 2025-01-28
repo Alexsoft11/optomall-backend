@@ -9,8 +9,7 @@ use App\Http\Controllers\Api\Auth\UserController;
 use App\Http\Controllers\Api\Slider\SliderController;
 use App\Http\Controllers\Api\Products\OrderController;
 use App\Http\Controllers\Api\Products\ProductController;
-use App\Http\Controllers\ProductLocalController;
-use App\Models\ProductLocal;
+use App\Http\Controllers\Api\Products\ProductLocalController;
 use Illuminate\Support\Facades\Route;
 
 
@@ -56,6 +55,8 @@ Route::middleware('throttle:1200,60')->group(function () {
     Route::get('/get-prices', [ProductController::class, 'getPrices']);
     Route::get('/sliders', [SliderController::class, 'index']);
 
+    Route::apiResource('local-products', ProductLocalController::class);
+
     // Protect post requests
     Route::middleware([\App\Http\Middleware\ValidateOrigin::class])->group(function () {
         Route::post('/send-otp', [AuthController::class, 'sendOTP']);
@@ -91,7 +92,6 @@ Route::middleware('throttle:1200,60')->group(function () {
         Route::get('/user/messages', [ListController::class, 'getUserMessages']);
         Route::get('/products-from-taobao-token', [ProductController::class, 'productsFromTaobaoToken']);
         Route::get('/search-products-from-taobao-token', [ProductController::class, 'searchProductsFromTaobaoToken']);
-        Route::apiResource('products', ProductLocalController::class);
     });
 
 

@@ -10,17 +10,24 @@ class ProductLocal extends Model
     use HasFactory;
 
     protected $fillable = [
-        'name',
+        'title',
         'description',
         'price',
         'status',
         'category_id',
         'brand',
+        'quantity',
+        'sale_count'
     ];
 
     public function skus()
     {
-        return $this->hasMany(PrSku::class, 'product_local_id');
+        return $this->hasMany(Skus::class, 'product_local_id');
+    }
+
+    public function sku_props()
+    {
+        return $this->hasMany(SkuProp::class, 'product_local_id');
     }
 
     public function images()

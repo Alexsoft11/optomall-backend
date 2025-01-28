@@ -11,7 +11,8 @@ class PrImage extends Model
 
     protected $fillable = [
         'product_local_id',
-        'url',
+        'image_url',
+        'is_main'
     ];
 
     public function product()

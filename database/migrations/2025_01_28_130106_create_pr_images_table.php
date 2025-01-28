@@ -14,7 +14,8 @@ return new class extends Migration
         Schema::create('pr_images', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('product_local_id');
-            $table->string('url');
+            $table->string('image_url');
+            $table->boolean('is_main')->default(false);
             $table->timestamps();
 
             $table->foreign('product_local_id')->references('id')->on('product_locals')->onDelete('cascade');

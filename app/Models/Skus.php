@@ -5,15 +5,20 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class PrSku extends Model
+class Skus extends Model
 {
     use HasFactory;
-
+    protected $table = 'skus';
     protected $fillable = [
+        'sku_id',
         'product_local_id',
-        'sku',
-        'stock',
+        'quantity',
         'price',
+        'total_price',
+        'properties',
+        'properties_name',
+        'sale_count',
+        "specid",
     ];
 
     public function product()
