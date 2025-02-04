@@ -4,9 +4,6 @@ namespace App\Http\Controllers\Api\Products;
 
 use App\Http\Controllers\Controller;
 use App\Models\ProductLocal;
-use App\Models\PrSku;
-use App\Models\PrImage;
-use App\Models\SkuProp;
 use App\Models\Skus;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -18,38 +15,6 @@ class ProductLocalController extends Controller
     public function index()
     {
         return ProductLocal::with(['skus', 'images', 'category'])->get();
-    }
-
-
-    public function storeSkuProps(Request $request)
-    {
-        // DB::beginTransaction();
-        // $validatedData = $request->validate([
-        //     'sku_prop_id' => 'required|string|max:255',
-        // ]);
-
-        Log::info('createAnotherDataBasedOnSkuProp called with ID:', ['id' => '$validatedData']);
-
-
-
-        // $skuProp = SkuProp::create([
-        //     'prop_name' => $validatedData['prop_name'],
-        //     'product_local_id' => $request->product_local_id,
-        // ]);
-
-        // if (!empty($validatedData['sku_values'])) {
-        //     foreach ($validatedData['sku_values'] as $value) {
-        //         $skuProp->skuValues()->create([
-        //             'name' => $value['name'],
-        //             'imageUrl' => $value['imageUrl'] ?? null,
-        //         ]);
-        //     }
-        // }
-        // DB::commit();
-        return response()->json([
-            'message' => 'Data saved successfully',
-            // 'data' => $skuProp
-        ], 201);
     }
 
     public function store(Request $request)

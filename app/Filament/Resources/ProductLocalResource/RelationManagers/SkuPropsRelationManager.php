@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\ProductLocalResource\RelationManagers;
 
 use Filament\Forms;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\RelationManagers\RelationManager;
@@ -29,8 +30,10 @@ class SkuPropsRelationManager extends RelationManager
                     TextInput::make('name')
                         ->label('Property value')
                         ->required(),
-                    TextInput::make('imageUrl')
-                        ->label('Image URL')
+                    FileUpload::make('imageUrl')
+                        ->label('Property image')
+                        ->image()
+                        ->directory('product-images')
                         ->nullable(),
                 ])
                 ->addActionLabel('Add SKU Value')
