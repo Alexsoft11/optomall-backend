@@ -62,8 +62,8 @@ class ProductLocalResource extends Resource
     public static function getRelations(): array
     {
         return [
-            SkuRelationManager::class,
             SkuPropsRelationManager::class,
+            SkuRelationManager::class,
             ImagesRelationManager::class,
         ];
     }

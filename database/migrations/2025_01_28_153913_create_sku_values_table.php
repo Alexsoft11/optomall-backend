@@ -17,7 +17,6 @@ return new class extends Migration
             $table->string('name'); // Value name (e.g., S, M, L)
             $table->string('imageUrl')->nullable(); // Image URL for the value
             $table->timestamps();
-
             // Foreign key constraint
             $table->foreign('sku_prop_id')->references('pid')->on('sku_props')->onDelete('cascade');
         });

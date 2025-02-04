@@ -56,6 +56,7 @@ Route::middleware('throttle:1200,60')->group(function () {
     Route::get('/sliders', [SliderController::class, 'index']);
 
     Route::apiResource('local-products', ProductLocalController::class);
+    Route::post('local-products/skus', [ProductLocalController::class, 'storeSkuProps']);
 
     // Protect post requests
     Route::middleware([\App\Http\Middleware\ValidateOrigin::class])->group(function () {
