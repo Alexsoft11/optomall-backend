@@ -2,12 +2,14 @@
 
 namespace App\Http\Resources;
 
-use App\Models\Exchanges;
 use Illuminate\Http\Resources\Json\JsonResource;
-use App\Models\ProductColor;
-use App\Models\ProductComposition;
-use App\Models\ProductPicture;
-use App\Models\ProductSize;
+use App\Models\Exchanges;
+use App\Models\PrImage;
+use App\Models\SkuProp;
+use App\Models\SkuValue;
+use App\Models\PrComposition;
+use App\Models\PrDescription;
+use App\Models\PrSkuProperty;
 
 class ProductDetailDatabase extends JsonResource
 {
@@ -28,53 +30,80 @@ class ProductDetailDatabase extends JsonResource
      */
     public function toArray($request)
     {
-        $pictures = ProductPicture::where('product_id', $this['id'])->get();
-        $colors = ProductColor::where('product_id', $this['id'])->get();
-        $sizes = ProductSize::where('product_id', $this['id'])->get();
-        $compositions = ProductComposition::where('product_id', $this['id'])->get();
+        $images = PrImage::where('product_local_id', $this->id)->get();
+        $descriptions = PrDescription::where('product_local_id', $this->id)->get();
+        $skuProps = SkuProp::where('product_local_id', $this->id)->with('sku_values')->get();
 
-        $amount = Exchanges::where('currency', 'yuan')->first()->amount ?? 1800;
+        $compositions = PrComposition::where('product_local_id', $this->id)->get();
+
 
         return [
-            'id' => $this['id'],
-            'title' => $this['title_' . $this->lang],
+            'id' => $this->id,
+            'title' => $this->title,
             'price' => $this->price,
             'discounted_price' => 0,
             'discount_percentage' => 0,
-            'image' =>  url('storage/' . $this['image']),
+            'quantityRanges' => [],
+            'image' => url('storage/' . $images->where('is_main', true)->first()->image_url) ?? null,
             'quantity' => $this->quantity ?? 1,
-            'description' => $this['description_' . $this->lang],
-            'pictures' => $this->transformPictures($pictures) ?? [],
-            'location' => 'China',
-            'product_url' => $this->product_url,
-            'videos' => [],
-            'colors' => $this->transformEloquentAttributes($colors) ?? [],
-            'sizes' => $sizes ?? [],
-            'composition' => $compositions ?? [],
+            'seller_info' => [],
+            'delivery_info' => [],
+            'provider' => 'local',
+            'description' => $this->transformDescriptions($descriptions) ?? [],
+            'pictures' => $this->transformImages($images) ?? [],
+            'location' => 'Uzbekistan',
+            'product_url' => '',
+            'sku_price_range' => [],
+            'skus' => [],
+            'prop_imgs' => [],
+            'props_list' => $this->transformSkuProps($skuProps) ?? [],
+            'composition' => $this->transformCompositions($compositions) ?? [],
             'is_liked' => false,
         ];
     }
 
-    private function transformPictures($pictures)
+    private function transformImages($images)
     {
-        $pictures->map(function ($picture) {
+        return $images->map(function ($image) {
             return [
-                'image_url' => url('storage/' . $picture->image_url),
-                'is_main' => $picture->is_main,
+                'image_url' => url('storage/' . $image->image_url),
+                'is_main' => $image->is_main,
             ];
         })->toArray();
     }
 
-    private function transformEloquentAttributes($attributes)
+    private function transformDescriptions($descriptions)
     {
-        return $attributes->map(function ($attribute) {
+        return $descriptions->flatMap(function ($description) {
+            return collect($description->image)->map(function ($image) {
+                return url('storage/' . $image);
+            });
+        })->toArray();
+    }
+
+    private function transformCompositions($compositions)
+    {
+        return $compositions->map(function ($composition) {
             return [
-                'id' => $attribute->id ?? $attribute->color_id ?? $attribute->size_id,
-                'product_id' => $attribute->product_id,
-                'property_name' => $attribute->property_name ?? null,
-                'value' => $attribute->value ?? null,
-                'image_url' => url('storage/' . $attribute->image_url) ?? null,
-                'mini_image_url' => url('storage/' . $attribute->mini_image_url) ?? null,
+                $composition->composition_name => $composition->composition,
+            ];
+        })->toArray();
+    }
+
+
+    private function transformSkuProps($skuProps)
+    {
+        return $skuProps->map(function ($skuProp) {
+            return [
+                'prop_id' => $skuProp->pid,
+                'prop_name' => $skuProp->prop_name,
+                'values' => $skuProp->sku_values->map(function ($value) {
+                    return [
+                        'id' => $value->vid,
+                        'name' => $value->name,
+                        'image_url' => $value->imageUrl ? url('storage/' . $value->imageUrl) : null,
+                    ];
+                }),
             ];
         })->toArray();
     }

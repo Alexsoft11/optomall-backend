@@ -3,6 +3,8 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\ProductLocalResource\Pages;
+use App\Filament\Resources\ProductLocalResource\RelationManagers\CompositionsRelationManager;
+use App\Filament\Resources\ProductLocalResource\RelationManagers\DescriptionRelationManager;
 use App\Filament\Resources\ProductLocalResource\RelationManagers\ImagesRelationManager;
 use App\Filament\Resources\ProductLocalResource\RelationManagers\SkuPropsRelationManager;
 use App\Filament\Resources\ProductLocalResource\RelationManagers\SkuRelationManager;
@@ -32,7 +34,9 @@ class ProductLocalResource extends Resource
                     'active' => 'Active',
                     'inactive' => 'Inactive',
                 ])->required(),
-                TextInput::make('category_id')->numeric()->required(),
+                Select::make('category_id')
+                    ->relationship('category', 'name_uz')
+                    ->required(),
                 TextInput::make('brand')->required(),
                 TextInput::make('quantity')->numeric()->required(),
                 TextInput::make('sale_count')->numeric()->default(0),
@@ -65,6 +69,8 @@ class ProductLocalResource extends Resource
             SkuPropsRelationManager::class,
             SkuRelationManager::class,
             ImagesRelationManager::class,
+            DescriptionRelationManager::class,
+            CompositionsRelationManager::class,
         ];
     }
 
