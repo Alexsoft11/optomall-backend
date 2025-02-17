@@ -31,7 +31,7 @@ class ProductDetailDatabase extends JsonResource
         $images = PrImage::where('product_local_id', $this->id)->get();
         $descriptions = PrDescription::where('product_local_id', $this->id)->get();
         $skuProps = SkuProp::where('product_local_id', $this->id)->with('sku_values')->get();
-        $sku = Skus::where('product_local_id', $this->id)->first();
+        $sku = Skus::where('product_local_id', $this->id)->get();
         $compositions = PrComposition::where('product_local_id', $this->id)->get();
 
 
@@ -99,7 +99,7 @@ class ProductDetailDatabase extends JsonResource
                     return [
                         'id' => $value->vid,
                         'name' => $value->name,
-                        'image_url' => $value->imageUrl ? url('storage/' . $value->imageUrl) : null,
+                        'imageUrl' => $value->imageUrl ? url('storage/' . $value->imageUrl) : null,
                     ];
                 }),
             ];
