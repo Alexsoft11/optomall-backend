@@ -3,13 +3,11 @@
 namespace App\Http\Resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
-use App\Models\Exchanges;
 use App\Models\PrImage;
 use App\Models\SkuProp;
-use App\Models\SkuValue;
 use App\Models\PrComposition;
 use App\Models\PrDescription;
-use App\Models\PrSkuProperty;
+use App\Models\Skus;
 
 class ProductDetailDatabase extends JsonResource
 {
@@ -33,7 +31,7 @@ class ProductDetailDatabase extends JsonResource
         $images = PrImage::where('product_local_id', $this->id)->get();
         $descriptions = PrDescription::where('product_local_id', $this->id)->get();
         $skuProps = SkuProp::where('product_local_id', $this->id)->with('sku_values')->get();
-
+        $sku = Skus::where('product_local_id', $this->id)->first();
         $compositions = PrComposition::where('product_local_id', $this->id)->get();
 
 
@@ -54,7 +52,7 @@ class ProductDetailDatabase extends JsonResource
             'location' => 'Uzbekistan',
             'product_url' => '',
             'sku_price_range' => [],
-            'skus' => [],
+            'skus' => $sku,
             'prop_imgs' => [],
             'props_list' => $this->transformSkuProps($skuProps) ?? [],
             'composition' => $this->transformCompositions($compositions) ?? [],
