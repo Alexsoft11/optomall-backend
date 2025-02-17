@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\Auth\UserController;
 use App\Http\Controllers\Api\Slider\SliderController;
 use App\Http\Controllers\Api\Products\OrderController;
 use App\Http\Controllers\Api\Products\ProductController;
+use App\Http\Controllers\Api\Products\ProductLocalController;
 use Illuminate\Support\Facades\Route;
 
 
@@ -53,6 +54,9 @@ Route::middleware('throttle:1200,60')->group(function () {
     Route::get('/products', [ProductController::class, 'products']);
     Route::get('/get-prices', [ProductController::class, 'getPrices']);
     Route::get('/sliders', [SliderController::class, 'index']);
+
+    Route::apiResource('local-products', ProductLocalController::class);
+    Route::post('local-products/skus', [ProductLocalController::class, 'storeSkuProps']);
 
     // Protect post requests
     Route::middleware([\App\Http\Middleware\ValidateOrigin::class])->group(function () {

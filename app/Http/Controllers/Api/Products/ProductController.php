@@ -23,6 +23,7 @@ use App\Models\HomePageProduct;
 use App\Models\LikedProduct;
 use App\Models\Product;
 use App\Models\ProductCategory;
+use App\Models\ProductLocal;
 use App\Models\TaobaoCategory;
 use App\Models\TaobaoSubcategory;
 use App\Models\TaobaoSubcategoryName;
@@ -880,7 +881,7 @@ class ProductController extends Controller
 
         // Handle local provider case (if the provider is 'local')
         if ($provider == 'local') {
-            $productDatabase = Product::where('id', $productId)->first();
+            $productDatabase = ProductLocal::where('id', $productId)->first();
 
             if (!$productDatabase) {
                 return response()->json(['error' => 'product_not_found'], 404);
@@ -898,6 +899,10 @@ class ProductController extends Controller
         }
 
         // Check for failed format
+        if (!isset($productDetail['code'])) {
+            return response()->json(['error' => 'error', 'productDetail' => $productDetail]);
+        }
+
         if ($productDetail['code'] !== 200) {
             return response()->json(['error' => 'product_not_found', 'productDetail' => $productDetail], 404);
         }
@@ -1879,22 +1884,37 @@ class ProductController extends Controller
     {
         $limit = $request->query('limit', 3);
         $lang = $request->query('lang', 'uz'); // Default lang is 'uz'
+
         $categories = Category::where('is_active', true)
-            ->with(['bannerProducts' => function ($query) use ($limit, $lang) {
-                $query->limit($limit)
-                    ->select(
-                        'id',
-                        'product_id',
-                        'category_id',
-                        'title_uz',
-                        'title_ru',
-                        'title_en',
-                        'price',
-                        'image',
-                        'provider',
-                        'discounted_price',
-                    )->inRandomOrder();
-            }])
+            ->with([
+                'bannerProducts' => function ($query) use ($limit, $lang) {
+                    $query->limit($limit)
+                        ->select(
+                            'id',
+                            'product_id',
+                            'category_id',
+                            'title_uz',
+                            'title_ru',
+                            'title_en',
+                            'price',
+                            'image',
+                            'provider',
+                            'discounted_price',
+                        )->inRandomOrder();
+                },
+                'localProducts' => function ($query) use ($limit) {
+                    $query->limit($limit)
+                        ->select(
+                            'id',
+                            'category_id',
+                            'title',
+                            'description',
+                            'price'
+                        )
+                        ->with('mainImage') // Use optimized relationship
+                        ->inRandomOrder();
+                }
+            ])
             ->get([
                 'id',
                 'name_uz',
@@ -1906,6 +1926,37 @@ class ProductController extends Controller
                 'is_active'
             ])
             ->map(function ($category) use ($lang) {
+                $products = collect($category->bannerProducts)->map(function ($product) use ($lang) {
+                    return [
+                        'id' => $product->product_id,
+                        'title' => $product->{'title_' . $lang},
+                        'price' => round($product->price),
+                        'discounted_price' => $product->discounted_price ? round($product->discounted_price) : null,
+                        'discount_percent' => $product->price > 0 ? round((($product->price - $product->discounted_price) / $product->price) * 100, 2) : 0,
+                        'image' => $product->image,
+                        'provider' => $product->provider,
+                        'is_liked' => false,
+                    ];
+                });
+
+                $localProducts = collect($category->localProducts)->map(function ($product) {
+                    $mainImage = optional($product->mainImage)->image_url;
+                    return [
+                        'id' => $product->id,
+                        'title' => $product->title,
+                        'description' => $product->description,
+                        'price' => round($product->price),
+                        'discounted_price' => 0,
+                        'discount_percent' => 0,
+                        'image' => $mainImage ? url('storage/' . $mainImage) : null,
+                        'provider' => 'local',
+                        'is_liked' => false,
+                    ];
+                });
+
+                // Merge collections
+                $allProducts = $products->merge($localProducts);
+
                 return [
                     'id' => $category->id,
                     'name' => [
@@ -1915,20 +1966,9 @@ class ProductController extends Controller
                     ],
                     'slug' => $category->slug,
                     'image' => url('storage/' . $category->image),
-                    'image_mobile' =>  url('storage/' . $category->image_mobile),
+                    'image_mobile' => url('storage/' . $category->image_mobile),
                     'is_active' => $category->is_active,
-                    'products' => $category->bannerProducts->map(function ($product) use ($lang) {
-                        return [
-                            'id' => $product->product_id,
-                            'title' => $product->{'title_' . $lang}, // Dynamic language field
-                            'price' => round($product->price),
-                            'discounted_price' => $product->discounted_price ? round($product->discounted_price) : null,
-                            'discount_percent' => $product->price > 0 ? round((($product->price - $product->discounted_price) / $product->price) * 100, 2) : 0, // Discount percent calculation
-                            'image' => $product->image,
-                            'provider' => $product->provider,
-                            'is_liked' => false,
-                        ];
-                    })
+                    'products' => $allProducts,
                 ];
             });
 
@@ -2000,22 +2040,39 @@ class ProductController extends Controller
     {
         $limit = $request->query('limit', 3);
         $lang = $request->query('lang', 'uz'); // Default lang is 'uz'
-        $categories = Category::where('is_active', true)->where('id', $request->category_id)
-            ->with(['bannerProducts' => function ($query) use ($limit, $lang) {
-                $query->limit($limit)
-                    ->select(
-                        'id',
-                        'product_id',
-                        'category_id',
-                        'title_uz',
-                        'title_ru',
-                        'title_en',
-                        'price',
-                        'image',
-                        'provider',
-                        'discounted_price',
-                    )->inRandomOrder();
-            }])
+
+        $categories = Category::where('is_active', true)
+            ->where('id', $request->category_id)
+            ->with([
+                'bannerProducts' => function ($query) use ($limit) {
+                    $query->limit($limit)
+                        ->select(
+                            'id',
+                            'product_id',
+                            'category_id',
+                            'title_uz',
+                            'title_ru',
+                            'title_en',
+                            'price',
+                            'image',
+                            'provider',
+                            'discounted_price',
+                        )->inRandomOrder();
+                },
+                'localProducts' => function ($query) use ($limit) {
+                    $query->limit($limit)
+                        ->select(
+                            'id',
+                            'category_id',
+                            'title',
+                            'description',
+                            'price'
+                        )
+                        ->with(['images' => function ($query) {
+                            $query->where('is_main', true)->select('image_url', 'product_id');
+                        }])->inRandomOrder();
+                }
+            ])
             ->get([
                 'id',
                 'name_uz',
@@ -2027,6 +2084,39 @@ class ProductController extends Controller
                 'is_active'
             ])
             ->map(function ($category) use ($lang) {
+                // Map banner products
+                $bannerProducts = $category->bannerProducts->map(function ($product) use ($lang) {
+                    return [
+                        'id' => $product->product_id,
+                        'title' => $product->{'title_' . $lang}, // Dynamic language field
+                        'price' => round($product->price),
+                        'discounted_price' => $product->discounted_price ? round($product->discounted_price) : null,
+                        'discount_percent' => $product->price > 0 ? round((($product->price - $product->discounted_price) / $product->price) * 100, 2) : 0, // Discount percent calculation
+                        'image' => $product->image,
+                        'provider' => $product->provider,
+                        'is_liked' => false,
+                    ];
+                });
+
+                // Map local products
+                $localProducts = $category->localProducts->map(function ($product) {
+                    $mainImage = optional($product->images->first())->image_url;
+                    return [
+                        'id' => $product->id,
+                        'title' => $product->title,
+                        'description' => $product->description,
+                        'price' => round($product->price),
+                        'discounted_price' => 0, // No discount for local products
+                        'discount_percent' => 0, // No discount for local products
+                        'image' => $mainImage ? url('storage/' . $mainImage) : null,
+                        'provider' => 'local',
+                        'is_liked' => false,
+                    ];
+                });
+
+                // Merge bannerProducts and localProducts
+                $allProducts = $bannerProducts->merge($localProducts);
+
                 return [
                     'id' => $category->id,
                     'name' => [
@@ -2036,20 +2126,9 @@ class ProductController extends Controller
                     ],
                     'slug' => $category->slug,
                     'image' => url('storage/' . $category->image),
-                    'image_mobile' =>  url('storage/' . $category->image_mobile),
+                    'image_mobile' => url('storage/' . $category->image_mobile),
                     'is_active' => $category->is_active,
-                    'products' => $category->bannerProducts->map(function ($product) use ($lang) {
-                        return [
-                            'id' => $product->product_id,
-                            'title' => $product->{'title_' . $lang}, // Dynamic language field
-                            'price' => round($product->price),
-                            'discounted_price' => $product->discounted_price ? round($product->discounted_price) : null,
-                            'discount_percent' => $product->price > 0 ? round((($product->price - $product->discounted_price) / $product->price) * 100, 2) : 0, // Discount percent calculation
-                            'image' => $product->image,
-                            'provider' => $product->provider,
-                            'is_liked' => false,
-                        ];
-                    })
+                    'products' => $allProducts, // Include merged products
                 ];
             });
 
@@ -2234,8 +2313,14 @@ class ProductController extends Controller
         $category = Category::where('is_active', true)->where('id', $request->category_id)->first();
         $lang = $request->query('lang', 'uz'); // Default language is 'uz'
 
+        if (!$category) {
+            return response()->json(['message' => 'Category not found'], 404);
+        }
+
         $limit = $request->query('limit', 10); // Default limit is 10
-        $products = BannerProduct::select(
+
+        // Fetch Banner Products
+        $bannerProducts = BannerProduct::select(
             'id',
             'product_id',
             'category_id',
@@ -2246,9 +2331,12 @@ class ProductController extends Controller
             'image',
             'provider',
             'discounted_price',
-        )->inRandomOrder()->where('category_id', $category->id)->paginate($limit);
+        )->where('category_id', $category->id)
+            ->inRandomOrder()
+            ->paginate($limit);
 
-        $mappedProducts = $products->getCollection()->map(function ($product) use ($lang) {
+        // Map Banner Products
+        $mappedBannerProducts = $bannerProducts->getCollection()->map(function ($product) use ($lang) {
             return [
                 'id' => $product->product_id,
                 'title' => $product->{'title_' . $lang}, // Dynamic language field
@@ -2261,13 +2349,48 @@ class ProductController extends Controller
             ];
         });
 
+        // Fetch Local Products
+        $localProducts = LocalProduct::select(
+            'id',
+            'category_id',
+            'title',
+            'description',
+            'price'
+        )->where('category_id', $category->id)
+            ->with(['images' => function ($query) {
+                $query->where('is_main', true)->select('product_id', 'image_url');
+            }])
+            ->inRandomOrder()
+            ->take($limit) // Since `paginate` doesn't apply well for both, use `take` for local products
+            ->get();
+
+        // Map Local Products
+        $mappedLocalProducts = $localProducts->map(function ($product) {
+            $mainImage = optional($product->images->first())->image_url;
+            return [
+                'id' => $product->id,
+                'title' => $product->title,
+                'description' => $product->description,
+                'price' => round($product->price),
+                'discounted_price' => 0, // No discount for local products
+                'discount_percent' => 0, // No discount for local products
+                'image' => $mainImage ? url('storage/' . $mainImage) : null,
+                'provider' => 'local',
+                'is_liked' => false,
+            ];
+        });
+
+        // Merge Banner and Local Products
+        $allProducts = $mappedBannerProducts->merge($mappedLocalProducts);
+
+        // Return Response
         return response()->json([
-            'products' => $mappedProducts,
+            'products' => $allProducts,
             'pagination' => [
-                'current_page' => $products->currentPage(),
-                'last_page' => $products->lastPage(),
-                'per_page' => $products->perPage(),
-                'total' => $products->total(),
+                'current_page' => $bannerProducts->currentPage(),
+                'last_page' => $bannerProducts->lastPage(),
+                'per_page' => $bannerProducts->perPage(),
+                'total' => $bannerProducts->total() + $localProducts->count(), // Adjusted total to account for both types
             ]
         ]);
     }
