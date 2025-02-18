@@ -106,11 +106,11 @@ class SkuRelationManager extends RelationManager
             ->get()
             ->map(function ($prop) {
                 return [
-                    'pid' => $prop->id,
+                    'pid' => $prop->pid,
                     'prop_name' => $prop->prop_name,
                     'values' => $prop->sku_values->map(function ($value) {
                         return [
-                            'vid' => $value->id,
+                            'vid' => $value->vid,
                             'value_name' => $value->name,
                         ];
                     })->toArray(),
@@ -142,7 +142,6 @@ class SkuRelationManager extends RelationManager
             // Extract properties and properties_name
             $properties = [];
             $properties_name = [];
-
             foreach ($combination as $skuProp) {
                 $properties[] = "{$skuProp['pid']}:{$skuProp['vid']}";
                 $properties_name[] = "{$skuProp['prop_name']}:{$skuProp['value_name']}";
