@@ -39,6 +39,7 @@ class ProductDetailDatabase extends JsonResource
             'id' => $this->id,
             'title' => $this->title,
             'price' => $this->price,
+            'description' => $this->description,
             'discounted_price' => 0,
             'discount_percentage' => 0,
             'quantityRanges' => [],
@@ -47,7 +48,7 @@ class ProductDetailDatabase extends JsonResource
             'seller_info' => [],
             'delivery_info' => [],
             'provider' => 'local',
-            'description' => $this->transformDescriptions($descriptions) ?? [],
+            'description_images' => $this->transformDescriptions($descriptions) ?? [],
             'pictures' => $this->transformImages($images) ?? [],
             'location' => 'Uzbekistan',
             'product_url' => 'https://optomall.uz',
@@ -83,7 +84,8 @@ class ProductDetailDatabase extends JsonResource
     {
         return $compositions->map(function ($composition) {
             return [
-                $composition->composition_name => $composition->composition,
+                'value' => $composition->composition,
+                'key' => $composition->composition_name
             ];
         })->toArray();
     }
@@ -93,11 +95,11 @@ class ProductDetailDatabase extends JsonResource
     {
         return $skuProps->map(function ($skuProp) {
             return [
-                'prop_id' => $skuProp->pid,
+                'pid' => $skuProp->pid,
                 'prop_name' => $skuProp->prop_name,
                 'values' => $skuProp->sku_values->map(function ($value) {
                     return [
-                        'id' => $value->vid,
+                        'vid' => $value->vid,
                         'name' => $value->name,
                         'imageUrl' => $value->imageUrl ? url('storage/' . $value->imageUrl) : null,
                     ];
