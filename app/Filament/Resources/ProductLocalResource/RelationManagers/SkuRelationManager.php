@@ -6,6 +6,7 @@ use App\Models\ProductLocal;
 use App\Models\SkuProp;
 use App\Models\Skus;
 use Filament\Forms;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
@@ -80,9 +81,12 @@ class SkuRelationManager extends RelationManager
                 ->numeric()
                 ->minValue(0)
                 ->label('Sales Count'),
-            Forms\Components\Textarea::make('properties_name')
+            Textarea::make('properties_name')
                 ->disabled()
                 ->label('Properties'),
+            Textarea::make('properties')
+                ->disabled()
+                ->label('Property id'),
         ]);
     }
 

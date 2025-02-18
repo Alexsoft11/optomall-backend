@@ -50,7 +50,7 @@ class ProductDetailDatabase extends JsonResource
             'description' => $this->transformDescriptions($descriptions) ?? [],
             'pictures' => $this->transformImages($images) ?? [],
             'location' => 'Uzbekistan',
-            'product_url' => '',
+            'product_url' => 'https://optomall.uz',
             'sku_price_range' => [],
             'skus' => $sku,
             'prop_imgs' => [],
