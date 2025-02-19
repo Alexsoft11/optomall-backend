@@ -4,7 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\OrderGroupResource\Pages;
 use App\Filament\Resources\OrderGroupResource\RelationManagers;
-use App\Filament\Resources\OrderGroupResource\RelationManagers\OrderGroupRelationManager;
+use App\Filament\Resources\Shop\OrderGroupResource\RelationManagers\OrderGroupRelationManager;
 use App\Models\OrderGroup;
 use App\Models\OrderStatus;
 use App\Models\User;
