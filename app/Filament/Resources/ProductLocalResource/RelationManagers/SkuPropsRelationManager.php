@@ -15,8 +15,9 @@ use Filament\Tables\Columns\TextColumn;
 
 class SkuPropsRelationManager extends RelationManager
 {
-    protected static string $relationship = 'sku_props';
 
+    protected static string $relationship = 'sku_props';
+    protected static ?string $title = 'Product Opsiyalar';
     public function form(Forms\Form $form): Forms\Form
     {
         return $form->schema([

@@ -19,6 +19,8 @@ use Illuminate\Support\Str;
 class SkuRelationManager extends RelationManager
 {
     protected static string $relationship = 'skus';
+    protected static ?string $title = 'Opsiyalar Soni';
+
 
     public function table(Tables\Table $table): Tables\Table
     {

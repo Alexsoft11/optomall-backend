@@ -16,7 +16,7 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 class ExchangesResource extends Resource
 {
 
-    protected static ?string $navigationGroup = "Buyurtmalar";
+        protected static ?string $navigationGroup = "Buyurtmalar";
 
     protected static ?string $label = "exchanges";
 
