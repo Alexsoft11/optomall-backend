@@ -109,15 +109,13 @@ class ProductController extends Controller
         ])->post($url, $data);
 
         if ($response->successful()) {
-            // Extract translated props_list from the response
             $translatedList = $response['trans'];
         } else {
-            // Handle error
-            \Log::error("Translation failed: " . $response->body());
+            Log::error("Translation failed: " . $response->body());
         }
 
         // Return the updated props_list with translated values
-        return response()->json(['translated' => $translatedList]);
+        return response()->json(['translated' => $translatedList, 'response' => $response]);
     }
 
     /**

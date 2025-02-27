@@ -4,7 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\OrderGroupResource\Pages;
 use App\Filament\Resources\OrderGroupResource\RelationManagers;
-use App\Filament\Resources\Shop\OrderResource\RelationManagers\OrderGroupRelationManager;
+use App\Filament\Resources\Shop\OrderGroupResource\RelationManagers\OrderGroupRelationManager;
 use App\Models\OrderGroup;
 use App\Models\OrderStatus;
 use App\Models\User;
@@ -43,10 +43,10 @@ class OrderGroupResource extends Resource
     {
         return $form
             ->schema([
-                TextInput::make('unique_id'),
+                TextInput::make('unique_id')->label('Order group id'),
                 Fieldset::make('Foydalanuvchi')->relationship('user')->label(trans("users"))
                     ->schema([
-                        TextInput::make('unique_id'),
+                        TextInput::make('unique_id')->label('User Id'),
                         TextInput::make('name')->label(trans("ism")),
                         TextInput::make('last_name')->label(trans("last_name")),
                         TextInput::make('phone')->label(trans("phone")),

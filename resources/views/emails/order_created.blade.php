@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -12,6 +13,7 @@
             margin: 0;
             padding: 0;
         }
+
         .container {
             max-width: 600px;
             margin: 30px auto;
@@ -20,25 +22,30 @@
             border-radius: 8px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
+
         h1 {
             font-size: 24px;
             color: #333333;
             text-align: center;
             margin-bottom: 20px;
         }
+
         p {
             font-size: 16px;
             color: #555555;
             line-height: 1.5;
             margin: 10px 0;
         }
+
         a {
             color: #007bff;
             text-decoration: none;
         }
+
         a:hover {
             text-decoration: underline;
         }
+
         .btn {
             display: inline-block;
             background-color: #ffffff;
@@ -51,9 +58,11 @@
             margin-top: 20px;
             text-align: center;
         }
+
         .btn:hover {
             background-color: #cad4de;
         }
+
         .footer {
             text-align: center;
             font-size: 12px;
@@ -62,15 +71,17 @@
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <h1>Новый заказ</h1>
         <p>На сайте принят новый заказ</p>
-        <p>Заказ: <a href="https://api.optomall.uz/admin/order-groups">{{ $orderGroupId }}</a></p>
-        <a href="https://api.optomall.uz/admin/order-groups" class="btn">Посмотреть заказ</a>
+        <p>Заказ: <a href="{{ 'https://api.optomall.uz/admin/order-groups/' . $orderGroupId . '/edit' }}">{{ $orderGroupId }}</a></p>
+        <a href="{{ 'https://api.optomall.uz/admin/order-groups/' . $orderGroupId . '/edit' }}" class="btn">Посмотреть заказ</a>
     </div>
     <div class="footer">
-        <p>&copy; 2024 Optomall.uz. Все права защищены.</p>
+        <p>&copy; 2025 Optomall.uz. Все права защищены.</p>
     </div>
 </body>
+
 </html>
