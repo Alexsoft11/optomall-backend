@@ -1619,6 +1619,13 @@ class ProductController extends Controller
         //         'details' => $responseData,  // Return error details from the API
         //     ], 500);
         // }
+        if ($response['data'] === null ) {
+            return response()->json([
+                'messages' => $response['data'] ?? null, // Ensure 'messages' exists
+                'urlOrg' => $imageFullPath,
+                'error' => true
+            ], 500);
+        }
 
         return response()->json(['url' => $response['data']['image_url'], 'urlOrg' => $imageFullPath]);
     }

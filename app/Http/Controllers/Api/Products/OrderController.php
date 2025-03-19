@@ -787,20 +787,20 @@ class OrderController extends Controller
     {
         $user = $request->user();
         $items = [];
-
+    
         $filter = $request->query('filter', 'all');
-
+    
         $verificationStatuses = OrderStatus::where('type', 'in_verification')->pluck('id');
         $activeStatuses = OrderStatus::where('type', 'active')->pluck('id');
-
-        $ordersQuery = Order::where('user_id', $user->id);
-
+    
+        $ordersQuery = Order::where('user_id', $user->id)->orderBy('created_at', 'desc');
+    
         if ($filter === 'in_verification') {
             $ordersQuery->whereIn('status', $verificationStatuses);
         } elseif ($filter === 'active') {
             $ordersQuery->whereIn('status', $activeStatuses);
         }
-
+    
         $orders = $ordersQuery->with(['getStatus', 'getSubStatus'])->get();
         return response()->json(['orders' => OrderResource::collection($orders)], 200);
     }

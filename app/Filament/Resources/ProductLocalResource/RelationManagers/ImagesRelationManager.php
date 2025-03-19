@@ -19,6 +19,7 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 class ImagesRelationManager extends RelationManager
 {
     protected static string $relationship = 'images';
+    protected static ?string $title = 'Rasmlar';
 
     public function table(Tables\Table $table): Tables\Table
     {

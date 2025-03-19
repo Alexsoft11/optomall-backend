@@ -21,6 +21,10 @@ class ProductLocalResource extends Resource
 {
     protected static ?string $model = ProductLocal::class;
 
+    protected static ?string $navigationGroup = "Mahsulotlar";
+    protected static ?string $label = "Milliy productlar";
+
+
     protected static ?string $navigationIcon = 'heroicon-o-shopping-cart';
 
     public static function form(Forms\Form $form): Forms\Form
