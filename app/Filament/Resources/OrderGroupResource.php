@@ -3,12 +3,10 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\OrderGroupResource\Pages;
-use App\Filament\Resources\OrderGroupResource\RelationManagers;
 use App\Filament\Resources\Shop\OrderGroupResource\RelationManagers\OrderGroupRelationManager;
 use App\Models\OrderGroup;
 use App\Models\OrderStatus;
 use App\Models\User;
-use Filament\Forms;
 use Filament\Forms\Components\Fieldset;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Group;
@@ -25,7 +23,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
+
 
 class OrderGroupResource extends Resource
 {
