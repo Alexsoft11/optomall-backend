@@ -138,12 +138,14 @@ class OrderController extends Controller
         DB::transaction(function () use ($groupedItems, $user, $request, &$orders, &$orderGroup) {
             $defaultStatus = OrderStatus::where('for_first', true)->first();
             $statusId = $defaultStatus ? $defaultStatus->id : '3';
+            $delivery_china = $this->calculateDeliveryChina($request->total_price);
             $orderGroup = OrderGroup::create([
                 'status' => $statusId,
                 'status_color' => '#05ff00',
-                'total_price' => $request->total_price,
+                'total_price' => $request->total_price + $delivery_china,
                 'user_id' => $user->id,
                 'is_paid' => false,
+                'delivery_china' => $delivery_china
             ]);
 
             foreach ($groupedItems as $sellerId => $items) {
@@ -237,6 +239,20 @@ class OrderController extends Controller
 
         return response()->json(['message' => 'order_created_successfully', 'order_group' => $orderGroup->id], 201);
     }
+
+    function calculateDeliveryChina(int $totalPrice): float
+    {
+        if ($totalPrice <= 150000) {
+            return $totalPrice * 0.09;
+        } elseif ($totalPrice <= 500000) {
+            return $totalPrice * 0.06;
+        } elseif ($totalPrice <= 1000000) {
+            return $totalPrice * 0.05;
+        } else {
+            return $totalPrice * 0.02;
+        }
+    }
+
 
     private function calculatePrice($price, $amount)
     {
@@ -335,7 +351,8 @@ class OrderController extends Controller
                 'total_price' => $orderGroup->total_price,
                 'kg_price' => $kgPrice->amount ?? 0,
                 'card_number' => $cardNumber->card_number ?? '9860176612846848',
-                'name' => $cardNumber->name ?? 'JR'
+                'name' => $cardNumber->name ?? 'JR',
+                'delivery_china' => $orderGroup->delivery_china ?? 0
             ],
             'detail' => OrderResource::collection($orderGroup->orders)
         ], 201);
@@ -787,20 +804,20 @@ class OrderController extends Controller
     {
         $user = $request->user();
         $items = [];
-    
+
         $filter = $request->query('filter', 'all');
-    
+
         $verificationStatuses = OrderStatus::where('type', 'in_verification')->pluck('id');
         $activeStatuses = OrderStatus::where('type', 'active')->pluck('id');
-    
+
         $ordersQuery = Order::where('user_id', $user->id)->orderBy('created_at', 'desc');
-    
+
         if ($filter === 'in_verification') {
             $ordersQuery->whereIn('status', $verificationStatuses);
         } elseif ($filter === 'active') {
             $ordersQuery->whereIn('status', $activeStatuses);
         }
-    
+
         $orders = $ordersQuery->with(['getStatus', 'getSubStatus'])->get();
         return response()->json(['orders' => OrderResource::collection($orders)], 200);
     }

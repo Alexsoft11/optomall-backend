@@ -10,7 +10,7 @@ class OrderGroup extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['status', 'status_color', 'total_price', 'user_id', 'is_paid', 'unique_id'];
+    protected $fillable = ['status', 'status_color', 'total_price', 'user_id', 'is_paid', 'unique_id', 'delivery_china'];
 
     public function user()
     {
