@@ -18,7 +18,7 @@ class ListOrderGroups extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make(),
+            // Actions\CreateAction::make(),
             Action::make('export')
                 ->label('Export Orders')
                 ->color('success')
