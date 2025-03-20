@@ -20,15 +20,15 @@ class ListOrderGroups extends ListRecords
         return [
             // Actions\CreateAction::make(),
             Action::make('export')
-                ->label('Export Orders')
+                ->label('Buyurtma Export')
                 ->color('success')
                 ->modalHeading('Export Orders')
                 ->form([
                     Select::make('status')
-                        ->label('Order Status')
+                        ->label('Buyurtma Status')
                         ->options(OrderStatus::pluck('name_uz', 'id')->toArray()),
-                    DatePicker::make('date_from')->label('From Date'),
-                    DatePicker::make('date_to')->label('To Date'),
+                    DatePicker::make('date_from')->label('Boshlanish sanasi'),
+                    DatePicker::make('date_to')->label('Tugash sanasi'),
                 ])
                 ->action(function (array $data) {
                     $query = OrderGroup::with(['orders', 'user'])->orderBy('created_at', 'asc');
