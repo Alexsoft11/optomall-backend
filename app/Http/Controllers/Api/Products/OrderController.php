@@ -242,16 +242,23 @@ class OrderController extends Controller
 
     function calculateDeliveryChina(int $totalPrice): float
     {
-        if ($totalPrice <= 150000) {
-            return $totalPrice * 0.09;
+        if ($totalPrice <= 30000) {
+            return $totalPrice * 0.19;
+        } elseif ($totalPrice <= 50000) {
+            return $totalPrice * 0.14;
+        } elseif ($totalPrice <= 100000) {
+            return $totalPrice * 0.08;
         } elseif ($totalPrice <= 500000) {
-            return $totalPrice * 0.06;
+            return $totalPrice * 0.03;
         } elseif ($totalPrice <= 1000000) {
-            return $totalPrice * 0.05;
-        } else {
             return $totalPrice * 0.02;
+        } elseif ($totalPrice <= 1500000) {
+            return $totalPrice * 0.005;
+        } else {
+            return $totalPrice * 0.003;
         }
     }
+
 
 
     private function calculatePrice($price, $amount)

@@ -18,37 +18,37 @@ class ListOrderGroups extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            // Actions\CreateAction::make(),
-            // Action::make('export')
-            //     ->label('Export Orders')
-            //     ->color('success')
-            //     ->modalHeading('Export Orders')
-            //     ->form([
-            //         Select::make('status')
-            //             ->label('Order Status')
-            //             ->options(OrderStatus::pluck('name_uz', 'id')->toArray()),
-            //         DatePicker::make('date_from')->label('From Date'),
-            //         DatePicker::make('date_to')->label('To Date'),
-            //     ])
-            //     ->action(function (array $data) {
-            //         $query = OrderGroup::with(['orders', 'user'])->orderBy('created_at', 'asc');
+            Actions\CreateAction::make(),
+            Action::make('export')
+                ->label('Export Orders')
+                ->color('success')
+                ->modalHeading('Export Orders')
+                ->form([
+                    Select::make('status')
+                        ->label('Order Status')
+                        ->options(OrderStatus::pluck('name_uz', 'id')->toArray()),
+                    DatePicker::make('date_from')->label('From Date'),
+                    DatePicker::make('date_to')->label('To Date'),
+                ])
+                ->action(function (array $data) {
+                    $query = OrderGroup::with(['orders', 'user'])->orderBy('created_at', 'asc');
 
-            //         if (!empty($data['status'])) {
-            //             $query->where('status', $data['status']);
-            //         }
+                    if (!empty($data['status'])) {
+                        $query->where('status', $data['status']);
+                    }
 
-            //         if (!empty($data['date_from'])) {
-            //             $query->whereDate('created_at', '>=', $data['date_from']);
-            //         }
+                    if (!empty($data['date_from'])) {
+                        $query->whereDate('created_at', '>=', $data['date_from']);
+                    }
 
-            //         if (!empty($data['date_to'])) {
-            //             $query->whereDate('created_at', '<=', $data['date_to']);
-            //         }
+                    if (!empty($data['date_to'])) {
+                        $query->whereDate('created_at', '<=', $data['date_to']);
+                    }
 
-            //         $orderGroups = $query->get();
+                    $orderGroups = $query->get();
 
-            //         return self::exportToWord($orderGroups, $data['status'], $data['date_from'], $data['date_to']);
-            //     }),
+                    return self::exportToWord($orderGroups, $data['status'], $data['date_from'], $data['date_to']);
+                }),
 
         ];
     }
@@ -119,6 +119,6 @@ class ListOrderGroups extends ListRecords
         $dateFrom = $dateFrom ? date('Y-m-d', strtotime($dateFrom)) : 'All';
         $dateTo = $dateTo ? date('Y-m-d', strtotime($dateTo)) : 'All';
 
-        return "Orders_{$statusName}_{$dateFrom}_{$dateTo}.docx";
+        return "Buyurtmalar_{$statusName}_{$dateFrom}_{$dateTo}.docx";
     }
 }
