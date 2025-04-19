@@ -38,12 +38,13 @@ class OrderStatusResource extends Resource
     {
         return $form
             ->schema([
-                TextInput::make('name_uz')->label(trans("title_uz")),
-                TextInput::make('name_en')->label(trans("title_en")),
-                TextInput::make('name_ru')->label(trans("title_ru")),
-                TextInput::make('message_uz')->label(trans("description_uz")),
-                TextInput::make('message_en')->label(trans("description_en")),
-                TextInput::make('message_ru')->label(trans("description_ru")),
+                TextInput::make('name_uz')->label(trans("title_uz"))->required(),
+                TextInput::make('name_en')->label(trans("title_en"))->required(),
+                TextInput::make('name_ru')->label(trans("title_ru"))->required(),
+                TextInput::make('message_uz')->label(trans("description_uz"))->required(),
+                TextInput::make('message_en')->label(trans("description_en"))->required(),
+                TextInput::make('message_ru')->label(trans("description_ru"))->required(),
+                
                 ColorPicker::make('color')->label(trans("colors")),
                 Select::make('type')->label(trans("type"))->options([
                     'active' => 'Aktiv',
