@@ -228,21 +228,17 @@ class OrderResource extends Resource
                         $locale == 'zh_CN'
                             ? Textarea::make('originalName')
                             ->label(trans("name"))
-                            ->required()
                             ->columnSpan(6)
                             : Textarea::make('name')
                             ->label(trans("name"))
-                            ->required()
                             ->columnSpan(6),
 
                         $locale == 'zh_CN'
                             ? Textarea::make('originalValue')
                             ->label(trans("value"))
-                            ->required()
                             ->columnSpan(6)
                             : Textarea::make('value')
                             ->label(trans("value"))
-                            ->required()
                             ->columnSpan(6),
                     ])
                     ->columns(12)
