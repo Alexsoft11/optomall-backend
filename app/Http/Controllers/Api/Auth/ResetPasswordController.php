@@ -65,7 +65,7 @@ class ResetPasswordController extends Controller
             $user->tokens()->delete();
             $otp2 = $this->otp->validate($request->email, $request->otp);
             if (!$otp2->status) {
-                return response()->json(['message' => 'invalid_otp', 'error' => true], 401);  // Invalid OTP
+                return response()->json(['message' => 'invalid_otp', 'error' => true], 401);  
             }
         } elseif ($request->type == 'phone') {
             $user = User::where('phone', $request->phone_number)->first();
@@ -75,11 +75,11 @@ class ResetPasswordController extends Controller
         }
 
         if (!$user) {
-            return response()->json(['message' => 'user_not_found', 'error' => true], 404);  // User not found
+            return response()->json(['message' => 'user_not_found', 'error' => true], 404);  
         }
 
 
-        return response()->json(['message' => 'password_reset_successful'], 200);  // Password reset successful
+        return response()->json(['message' => 'password_reset_successful'], 200);  
     }
 
     public function verifyOTP($otp, $phone)

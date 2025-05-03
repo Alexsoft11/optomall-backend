@@ -491,6 +491,13 @@ class AuthController extends Controller
         $username = config('sms.username');
         $password = config('sms.password');
 
+
+        $tempUsers = TempUser::where('phone_number', $formattedPhone)->get();
+
+        if (isset($tempUsers)) {
+            $tempUsers->each->delete();
+        }
+
         $response = Http::withBasicAuth($username, $password)->post(config('sms.url'), [
             "messages" => [
                 [
@@ -505,9 +512,10 @@ class AuthController extends Controller
                 ],
             ],
         ]);
+        
 
         $tempUser = TempUser::create([
-            'phone_number' => $formattedPhone, // Saqlash uchun formatlangan
+            'phone_number' => $formattedPhone, 
             'otp' => $otp,
         ]);
 
