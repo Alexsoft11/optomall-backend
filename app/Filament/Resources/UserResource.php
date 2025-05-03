@@ -11,6 +11,7 @@ use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\ToggleColumn;
 use Filament\Tables\Table;
 
@@ -70,7 +71,11 @@ class UserResource extends Resource
                 Tables\Columns\TextColumn::make('id')
                     ->numeric()
                     ->sortable(),
-                ToggleColumn::make('is_register'),
+                TextColumn::make('is_register')
+                    ->label(trans('auth_method'))
+                    ->formatStateUsing(fn(bool $state): string => $state
+                        ? '📧 ' . trans('email')
+                        : '📱 ' . trans('phone')),
                 Tables\Columns\TextColumn::make('unique_id')
                     ->numeric()
                     ->sortable()

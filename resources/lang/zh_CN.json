@@ -85,5 +85,6 @@
     "cargo_weight": "货物重量",
     "additional": "额外的",
     "provider": "服务提供商",
-    "properties": "特性"
+    "properties": "特性",
+    "auth_method": "认证方法"
 }

@@ -85,5 +85,6 @@
     "cargo_weight": "Вес груза",
     "additional": "Дополнительно",
     "provider": "Поставщик",
-    "properties": "Xарактеристики"
+    "properties": "Xарактеристики",
+    "auth_method": "Способ авторизации"
 }
