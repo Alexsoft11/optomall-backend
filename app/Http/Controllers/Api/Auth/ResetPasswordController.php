@@ -47,7 +47,7 @@ class ResetPasswordController extends Controller
         $validator = Validator::make($request->all(), [
             'type' => 'required|in:email,phone',
             'email' => 'required_if:type,email|string|email',
-            'phone_number' => 'required_if:type,phone|string',
+            'phone_number' => 'required_if:type,phone',
             'otp' => 'required|string',
             'password' => 'required|string|min:8|same:confirm_password',
             'confirm_password' => 'required|string|min:8',
