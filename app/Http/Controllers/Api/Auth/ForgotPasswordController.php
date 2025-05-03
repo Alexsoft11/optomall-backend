@@ -39,26 +39,27 @@ class ForgotPasswordController extends Controller
     public function forgotPassword(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'email' => 'required|string|max:255',
+            'type' => 'required|in:email,phone',
+            'email' => 'required_if:type,email|string|email|max:255',
+            'phone_number' => 'required_if:type,phone|string',
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['message' => 'invalid_email_format', 'error' => true], 422);
+            return response()->json(['message' => 'validation_failed', 'error' => true, 'errors' => $validator->errors()], 422);
         }
 
-        if (filter_var($request->email, FILTER_VALIDATE_EMAIL)) {
+        if ($request->type == 'email') {
             $user = User::where('email', $request->email)->first();
-
             if ($user) {
                 $user->notify(new ResetPasswordNotification());
             } else {
                 return response()->json(['message' => 'user_not_found', 'error' => true], 404);
             }
-        } else {
-            $user = User::where('phone', $request->email)->first();
+        } elseif ($request->type == 'phone') {
+            $user = User::where('phone', $request->phone_number)->first();
             if ($user) {
                 $request->replace(['phone_number' => $user->phone]);
-                return $this->sendOTP->sendOtp($request);
+                return $this->sendOTP->sendOTP($request);
             } else {
                 return response()->json(['message' => 'user_not_found', 'error' => true], 404);
             }

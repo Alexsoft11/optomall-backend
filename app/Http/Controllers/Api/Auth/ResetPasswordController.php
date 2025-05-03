@@ -45,7 +45,9 @@ class ResetPasswordController extends Controller
     public function resetPassword(ResetPasswordRequest $request)
     {
         $validator = Validator::make($request->all(), [
-            'email' => 'required|string',
+            'type' => 'required|in:email,phone',
+            'email' => 'required_if:type,email|string|email',
+            'phone_number' => 'required_if:type,phone|string',
             'otp' => 'required|string',
             'password' => 'required|string|min:8|same:confirm_password',
             'confirm_password' => 'required|string|min:8',
@@ -57,7 +59,7 @@ class ResetPasswordController extends Controller
 
         $user = null;
 
-        if (filter_var($request->email, FILTER_VALIDATE_EMAIL)) {
+        if ($request->type == 'email') {
             $user = User::where('email', $request->email)->first();
             $user->update(['password' => Hash::make($request->password)]);
             $user->tokens()->delete();
@@ -65,11 +67,11 @@ class ResetPasswordController extends Controller
             if (!$otp2->status) {
                 return response()->json(['message' => 'invalid_otp', 'error' => true], 401);  // Invalid OTP
             }
-        } else {
-            $user = User::where('phone', $request->email)->first();
+        } elseif ($request->type == 'phone') {
+            $user = User::where('phone', $request->phone_number)->first();
             $user->update(['password' => Hash::make($request->password)]);
             $user->tokens()->delete();
-            return $this->verifyOTP($request->otp, $request->email);
+            return $this->verifyOTP($request->otp, $request->phone_number);
         }
 
         if (!$user) {
@@ -84,7 +86,6 @@ class ResetPasswordController extends Controller
     {
         $tempUser = TempUser::where('phone_number', $phone)->first();
         if ($otp == $tempUser->otp) {
-            // return 'truee';
             return response()->json(['message' => 'password_reset_successful.']);
         }
 
