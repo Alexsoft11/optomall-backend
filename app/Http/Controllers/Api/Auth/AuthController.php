@@ -449,22 +449,39 @@ class AuthController extends Controller
     public function sendOTP(Request $request)
     {
         $request->validate([
-            'phone_number' => 'required|regex:/^[0-9]{9,15}$/',
+            'phone_number' => 'required|string',
         ]);
 
         $phoneNumber = $request->input('phone_number');
 
-        // Telefon raqamini saqlash uchun formatga aylantirish
-        $formattedPhone = $this->formatPhoneForStorage($phoneNumber);
 
-        $user = User::where('phone', $formattedPhone)->where('is_register', false);
+        $user = User::where('phone', $phoneNumber)->where('is_register', false);
         if ($user->exists()) {
             return response()->json(['message' => 'phone_number_exists'], 400);
         }
 
+        $phoneForSms = $this->formatPhoneForSms($phoneNumber);
+        $otp = $this->otpService($phoneForSms, $this->generateOTP(), $phoneNumber);
+
+        return $otp;
+    }
+
+    public function sendForgotOTP(Request $request)
+    {
+        $request->validate([
+            'phone_number' => 'required|string',
+        ]);
+
+        $phoneNumber = $request->input('phone_number');
+
+        $user = User::where('phone', $phoneNumber)->where('is_register', false);
+        if (!$user->exists()) {
+            return response()->json(['message' => 'phone_doesnt_exist'], 400);
+        }
+
         // Telefon raqamini SMS yuborish uchun formatga aylantirish
         $phoneForSms = $this->formatPhoneForSms($phoneNumber);
-        $otp = $this->otpService($phoneForSms, $this->generateOTP(), $formattedPhone);
+        $otp = $this->otpService($phoneForSms, $this->generateOTP(), $phoneNumber);
 
         return $otp;
     }
@@ -502,7 +519,7 @@ class AuthController extends Controller
     }
 
     // Telefon raqamini saqlash uchun formatlash
-    private function formatPhoneForStorage($phoneNumber)
+    public function formatPhoneForStorage($phoneNumber)
     {
         return preg_replace('/^(\d{3})(\d{2})(\d{3})(\d{2})(\d{2})$/', '998 $2 $3 $4 $5', $phoneNumber);
     }

@@ -53,15 +53,15 @@ class ForgotPasswordController extends Controller
             if ($user) {
                 $user->notify(new ResetPasswordNotification());
             } else {
-                return response()->json(['message' => 'user_not_found', 'error' => true], 404);
+                return response()->json(['message' => 'email_doesnt_exist',], 404);
             }
         } elseif ($request->type == 'phone') {
             $user = User::where('phone', $request->phone_number)->first();
             if ($user) {
                 $request->replace(['phone_number' => $user->phone]);
-                return $this->sendOTP->sendOTP($request);
+                return $this->sendOTP->sendForgotOTP($request);
             } else {
-                return response()->json(['message' => 'user_not_found', 'error' => true], 404);
+                return response()->json(['message' => 'phone_doesnt_exist',], 404);
             }
         }
 
