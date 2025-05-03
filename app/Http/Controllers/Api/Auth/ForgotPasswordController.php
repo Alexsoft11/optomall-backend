@@ -41,11 +41,11 @@ class ForgotPasswordController extends Controller
         $validator = Validator::make($request->all(), [
             'type' => 'required|in:email,phone',
             'email' => 'required_if:type,email|string|email|max:255',
-            'phone_number' => 'required_if:type,phone|string',
+            'phone_number' => 'required_if:type,phone',
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['message' => 'validation_failed', 'error' => true, 'errors' => $validator->errors()], 422);
+            return response()->json(['message' => 'validation_failed',  'errors' => $validator->errors()], 422);
         }
 
         if ($request->type == 'email') {
