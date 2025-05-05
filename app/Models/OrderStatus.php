@@ -22,6 +22,7 @@ class OrderStatus extends Model
         'message_ru',
         'type',
         'for_first',
+        'is_cancel'
     ];
 
     public function getSlugOptions(): SlugOptions

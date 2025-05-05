@@ -44,7 +44,7 @@ class OrderStatusResource extends Resource
                 TextInput::make('message_uz')->label(trans("description_uz"))->required(),
                 TextInput::make('message_en')->label(trans("description_en"))->required(),
                 TextInput::make('message_ru')->label(trans("description_ru"))->required(),
-                
+
                 ColorPicker::make('color')->label(trans("colors")),
                 Select::make('type')->label(trans("type"))->options([
                     'active' => 'Aktiv',
@@ -52,6 +52,9 @@ class OrderStatusResource extends Resource
                 ]),
                 Toggle::make('for_first')
                     ->label('Int')
+                    ->default(false),
+                Toggle::make('is_cancel')
+                    ->label('Bekor qilish')
                     ->default(false),
             ]);
     }

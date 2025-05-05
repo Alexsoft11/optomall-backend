@@ -2,11 +2,8 @@
 
 namespace App\Models;
 
-use App\Events\OrderStatusUpdated;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Spatie\Sluggable\HasSlug;
-use Spatie\Sluggable\SlugOptions;
 
 class Order extends Model
 {
@@ -55,15 +52,36 @@ class Order extends Model
     {
         parent::boot();
 
-        static::updated(function ($order) {
-            if ($order->isDirty('status')) {
-                event(new OrderStatusUpdated($order));
-            }
-        });
         static::creating(function ($model) {
             $model->unique_id = $model->generateUniqueId();
         });
+
+        static::updated(function ($order) {
+            if ($order->isDirty('status') && $order->orderGroup) {
+                $oldStatusId = $order->getOriginal('status');
+                $newStatus = $order->getStatus()->first();
+                $oldStatus = \App\Models\OrderStatus::find($oldStatusId);
+
+                $wasCanceled = $oldStatus?->is_cancel;
+                $isNowActive = !$newStatus?->is_cancel;
+
+                if ($wasCanceled || !$isNowActive) {
+                    $total = $order->orderGroup
+                        ->orders()
+                        ->whereHas('getStatus', function ($q) {
+                            $q->where('is_cancel', false);
+                        })
+                        ->sum('total_price');
+                    $order->orderGroup->update(['total_price' => $total]);
+                }
+
+                event(new \App\Events\OrderStatusUpdated($order));
+            }
+        });
     }
+
+
+
 
     public function generateUniqueId()
     {

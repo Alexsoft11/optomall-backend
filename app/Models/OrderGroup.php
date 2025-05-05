@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Events\OrderStatusUpdated;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Log;
 
 class OrderGroup extends Model
 {
@@ -39,10 +40,14 @@ class OrderGroup extends Model
             }
         });
 
-        static::updating(function ($model) {
-            if ($model->isDirty('status')) {
-                $model->orders()->update(['status' => $model->status]);
-            }
+        static::updating(function ($orderGroup) {
+            if (!$orderGroup->isDirty('status')) return;
+
+            $orderGroup->orders()
+                ->whereHas('getStatus', function ($q) {
+                    $q->where('is_cancel', false);
+                })
+                ->update(['status' => $orderGroup->status]);
         });
     }
 
