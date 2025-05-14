@@ -46,7 +46,6 @@ class UserResource extends Resource
                 Forms\Components\TextInput::make('email')
                     ->email()
                     ->label(trans('email'))
-                    ->required()
                     ->maxLength(255),
                 // Forms\Components\TextInput::make('region')
                 //     ->maxLength(255),
