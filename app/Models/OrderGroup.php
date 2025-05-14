@@ -26,13 +26,13 @@ class OrderGroup extends Model
             $model->unique_id = $model->generateUniqueId();
         });
 
-        static::updated(function ($order) {
-            if ($order->isDirty('status')) {
-                foreach ($order->orders as $orderr) {
-                    event(new OrderStatusUpdated($orderr));
-                }
-            }
-        });
+        // static::updated(function ($order) {
+        //     if ($order->isDirty('status')) {
+        //         foreach ($order->orders as $orderr) {
+        //             event(new OrderStatusUpdated($orderr));
+        //         }
+        //     }
+        // });
 
         static::updated(function ($order) {
             if ($order->isDirty('is_paid')) {
@@ -41,7 +41,8 @@ class OrderGroup extends Model
         });
 
         static::updating(function ($orderGroup) {
-            if (!$orderGroup->isDirty('status')) return;
+            if (!$orderGroup->isDirty('status'))
+                return;
 
             $orderGroup->orders()
                 ->whereHas('getStatus', function ($q) {
