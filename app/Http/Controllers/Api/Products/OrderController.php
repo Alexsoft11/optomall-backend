@@ -235,7 +235,7 @@ class OrderController extends Controller
             }
         });
 
-        Mail::to('optomall.uz@gmail.com')->send(new OrderCreated($orderGroup->id));
+        // Mail::to('optomall.uz@gmail.com')->send(new OrderCreated($orderGroup->id));
 
         return response()->json(['message' => 'order_created_successfully', 'order_group' => $orderGroup->id], 201);
     }
@@ -1003,9 +1003,11 @@ class OrderController extends Controller
                 ->whereHas('comments', function ($query) use ($user) {
                     $query->where('user_id', $user->id);
                 })
-                ->with(['comments' => function ($query) use ($user) {
-                    $query->where('user_id', $user->id);
-                }])
+                ->with([
+                    'comments' => function ($query) use ($user) {
+                        $query->where('user_id', $user->id);
+                    }
+                ])
                 ->get();
 
             $result = $orders->map(function ($order) {
