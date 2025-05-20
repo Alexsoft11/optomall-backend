@@ -7,7 +7,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class VerifyEmailNotification extends Notification implements ShouldQueue
+class VerifyEmailNotification extends Notification
 {
     use Queueable;
 
@@ -31,7 +31,7 @@ class VerifyEmailNotification extends Notification implements ShouldQueue
             ->subject('Optomall.uz Email Verification')
             ->view('emails.register', ['token' => $this->token]);
     }
-    
+
 
     public function toArray($notifiable)
     {
