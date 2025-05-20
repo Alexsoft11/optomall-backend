@@ -27,6 +27,8 @@ class VerifyEmailNotification extends Notification
 
     public function toMail($notifiable)
     {
+        set_time_limit(300);
+
         return (new MailMessage)
             ->subject('Optomall.uz Email Verification')
             ->view('emails.register', ['token' => $this->token]);
