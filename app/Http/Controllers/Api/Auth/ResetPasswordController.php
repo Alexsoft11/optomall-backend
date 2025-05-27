@@ -42,16 +42,17 @@ class ResetPasswordController extends Controller
         $this->otp = new Otp();
     }
 
-    public function resetPassword(ResetPasswordRequest $request)
+    public function resetPassword(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'type' => 'required|in:email,phone',
-            'email' => 'required_if:type,email|string|email',
-            'phone_number' => 'required_if:type,phone',
-            'otp' => 'required|string',
-            'password' => 'required|string|min:8|same:confirm_password',
-            'confirm_password' => 'required|string|min:8',
+            'email' => ['required_if:type,email', 'email', 'string'],
+            'phone_number' => ['required_if:type,phone', 'string'],
+            'otp' => ['required', 'string'],
+            'password' => ['required', 'string', 'min:8', 'same:confirm_password'],
+            'confirm_password' => ['required', 'string', 'min:8'],
         ]);
+
 
         if ($validator->fails()) {
             return response()->json(['message' => 'validation_failed', 'error' => true, 'errors' => $validator->errors()], 422);
@@ -65,7 +66,7 @@ class ResetPasswordController extends Controller
             $user->tokens()->delete();
             $otp2 = $this->otp->validate($request->email, $request->otp);
             if (!$otp2->status) {
-                return response()->json(['message' => 'invalid_otp', 'error' => true], 401);  
+                return response()->json(['message' => 'invalid_otp', 'error' => true], 401);
             }
         } elseif ($request->type == 'phone') {
             $user = User::where('phone', $request->phone_number)->first();
@@ -75,11 +76,11 @@ class ResetPasswordController extends Controller
         }
 
         if (!$user) {
-            return response()->json(['message' => 'user_not_found', 'error' => true], 404);  
+            return response()->json(['message' => 'user_not_found', 'error' => true], 404);
         }
 
 
-        return response()->json(['message' => 'password_reset_successful'], 200);  
+        return response()->json(['message' => 'password_reset_successful'], 200);
     }
 
     public function verifyOTP($otp, $phone)

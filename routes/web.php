@@ -5,6 +5,8 @@ use GuzzleHttp\Psr7\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
 
 Route::get('/', function () {
     return view('welcome');
@@ -24,4 +26,17 @@ Route::get('/questions', function() {
 
 Route::get('/answers', function() {
     return view('answers');
+});
+
+Route::get('/test-email', function () {
+    try {
+        Mail::raw('Test email body', function ($message) {
+            $message->to('kingdev5809@gmail.com')->subject('Test Email');
+        });
+        Log::info('Email sent successfully.');
+        return 'Email sent successfully. Check logs for details.';
+    } catch (\Exception $e) {
+        Log::error('Email sending failed: ' . $e->getMessage());
+        return 'Email sending failed: ' . $e->getMessage();
+    }
 });
