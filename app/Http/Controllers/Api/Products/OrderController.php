@@ -683,7 +683,7 @@ class OrderController extends Controller
             $finalPrice = $basePrice;
 
             // Determine the final price based on the highest matching quantity range
-            if (isset($item['quantityRanges']) && count($item['quantityRanges']) > 0) {
+            if (isset($item['quantityRanges']) && count($item['quantityRanges']) > 1) {
                 $applicableRange = null;
 
                 foreach ($item['quantityRanges'] as $range) {
