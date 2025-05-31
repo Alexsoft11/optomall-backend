@@ -34,8 +34,11 @@ class OrderGroupsExport implements FromArray, WithHeadings, ShouldAutoSize, With
                     $order->created_at ? $order->created_at->format('Y-m-d H:i:s') : '-',
                     $order->kg ?? '-',
                     $group->user->phone ?? '-',
+                    $order->getStatus?->name_uz ?? '-',
                 ];
             }
+
+            $data[] = ['', '', '', '', '', '', '', '', ''];
         }
 
         return $data;
@@ -52,6 +55,7 @@ class OrderGroupsExport implements FromArray, WithHeadings, ShouldAutoSize, With
             'SANA',
             'KG',
             'MOBILE',
+            'STATUS',
         ];
     }
 
@@ -71,8 +75,8 @@ class OrderGroupsExport implements FromArray, WithHeadings, ShouldAutoSize, With
     public function columnFormats(): array
     {
         return [
-            'E' => NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1, // SUMMA column
-            'F' => NumberFormat::FORMAT_DATE_DATETIME, // SANA column
+            'E' => NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1,
+            'F' => NumberFormat::FORMAT_DATE_DATETIME,
         ];
     }
 }

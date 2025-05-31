@@ -28,7 +28,8 @@ class ListOrderGroups extends ListRecords
                 ->form([
                     Select::make('status')
                         ->label('Buyurtma Status')
-                        ->options(OrderStatus::pluck('name_uz', 'id')->toArray()),
+                        ->options(OrderStatus::pluck('name_uz', 'id')->toArray())
+                        ->multiple(),
                     DatePicker::make('date_from')->label('Boshlanish sanasi'),
                     DatePicker::make('date_to')->label('Tugash sanasi'),
                 ])
@@ -36,7 +37,7 @@ class ListOrderGroups extends ListRecords
                     $query = OrderGroup::with(['orders', 'user'])->orderBy('created_at', 'asc');
 
                     if (!empty($data['status'])) {
-                        $query->where('status', $data['status']);
+                        $query->whereIn('status', $data['status']);
                     }
 
                     if (!empty($data['date_from'])) {
@@ -60,6 +61,7 @@ class ListOrderGroups extends ListRecords
                 ->form([
                     Select::make('status')
                         ->label('Buyurtma Status')
+                        ->multiple()
                         ->options(OrderStatus::pluck('name_uz', 'id')->toArray()),
                     DatePicker::make('date_from')->label('Boshlanish sanasi'),
                     DatePicker::make('date_to')->label('Tugash sanasi'),
@@ -68,7 +70,7 @@ class ListOrderGroups extends ListRecords
                     $query = OrderGroup::with(['orders', 'user'])->orderBy('created_at', 'asc');
 
                     if (!empty($data['status'])) {
-                        $query->where('status', $data['status']);
+                        $query->whereIn('status', $data['status']);
                     }
 
                     if (!empty($data['date_from'])) {
@@ -153,7 +155,15 @@ class ListOrderGroups extends ListRecords
 
     protected static function generateFileName($status, $dateFrom, $dateTo)
     {
-        $statusName = OrderStatus::find($status)?->name_uz ?? 'All';
+        if (is_array($status)) {
+            $statusNames = OrderStatus::whereIn('id', $status)->pluck('name_uz')->implode('_');
+        } elseif ($status) {
+            $statusNames = OrderStatus::find($status)?->name_uz ?? 'All';
+        } else {
+            $statusNames = 'All';
+        }
+
+        $statusName = $statusNames ? $statusNames : 'All';
         $dateFrom = $dateFrom ? date('Y-m-d', strtotime($dateFrom)) : 'All';
         $dateTo = $dateTo ? date('Y-m-d', strtotime($dateTo)) : 'All';
 
@@ -162,10 +172,18 @@ class ListOrderGroups extends ListRecords
 
     protected static function generateExcelFileName($status, $dateFrom, $dateTo)
     {
-        $statusName = OrderStatus::find($status)?->name_uz ?? 'All';
+        if (is_array($status)) {
+            $statusNames = OrderStatus::whereIn('id', $status)->pluck('name_uz')->implode('_');
+        } elseif ($status) {
+            $statusNames = OrderStatus::find($status)?->name_uz ?? 'All';
+        } else {
+            $statusNames = 'All';
+        }
+
         $dateFrom = $dateFrom ? date('Y-m-d', strtotime($dateFrom)) : 'All';
         $dateTo = $dateTo ? date('Y-m-d', strtotime($dateTo)) : 'All';
 
-        return "Buyurtmalar_{$statusName}_{$dateFrom}_{$dateTo}.xlsx";
+        return "Buyurtmalar_{$statusNames}_{$dateFrom}_{$dateTo}.xlsx";
     }
+
 }
