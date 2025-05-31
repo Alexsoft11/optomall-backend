@@ -65,7 +65,7 @@ class AuthController extends Controller
         Cache::put($token, $tempUser->id, now()->addMinutes(60));
 
         try {
-            $tempUser->notify(new VerifyEmailNotification($token, $tempUser->id));
+            $tempUser->notify((new VerifyEmailNotification($token, $tempUser->id))->delay(now()->addSeconds(5)));
         } catch (TransportExceptionInterface $e) {
             return response()->json([
                 'message' => 'email_sending_failed',
@@ -512,10 +512,10 @@ class AuthController extends Controller
                 ],
             ],
         ]);
-        
+
 
         $tempUser = TempUser::create([
-            'phone_number' => $formattedPhone, 
+            'phone_number' => $formattedPhone,
             'otp' => $otp,
         ]);
 
