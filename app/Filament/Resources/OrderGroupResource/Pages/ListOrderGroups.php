@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\OrderGroupResource\Pages;
 
+use App\Exports\OrderGroupsExport;
 use App\Filament\Resources\OrderGroupResource;
 use App\Models\OrderGroup;
 use App\Models\OrderStatus;
@@ -10,6 +11,7 @@ use Filament\Actions\Action;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Resources\Pages\ListRecords;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ListOrderGroups extends ListRecords
 {
@@ -26,7 +28,8 @@ class ListOrderGroups extends ListRecords
                 ->form([
                     Select::make('status')
                         ->label('Buyurtma Status')
-                        ->options(OrderStatus::pluck('name_uz', 'id')->toArray()),
+                        ->options(OrderStatus::pluck('name_uz', 'id')->toArray())
+                        ->multiple(),
                     DatePicker::make('date_from')->label('Boshlanish sanasi'),
                     DatePicker::make('date_to')->label('Tugash sanasi'),
                 ])
@@ -34,7 +37,7 @@ class ListOrderGroups extends ListRecords
                     $query = OrderGroup::with(['orders', 'user'])->orderBy('created_at', 'asc');
 
                     if (!empty($data['status'])) {
-                        $query->where('status', $data['status']);
+                        $query->whereIn('status', $data['status']);
                     }
 
                     if (!empty($data['date_from'])) {
@@ -50,9 +53,40 @@ class ListOrderGroups extends ListRecords
                     return self::exportToWord($orderGroups, $data['status'], $data['date_from'], $data['date_to']);
                 }),
 
+            Action::make('exportExcel')
+                ->label('Excel Export')
+                ->color('primary')
+                ->icon('heroicon-o-document-arrow-down')
+                ->modalHeading('Export Orders to Excel')
+                ->form([
+                    Select::make('status')
+                        ->label('Buyurtma Status')
+                        ->multiple()
+                        ->options(OrderStatus::pluck('name_uz', 'id')->toArray()),
+                    DatePicker::make('date_from')->label('Boshlanish sanasi'),
+                    DatePicker::make('date_to')->label('Tugash sanasi'),
+                ])
+                ->action(function (array $data) {
+                    $query = OrderGroup::with(['orders', 'user'])->orderBy('created_at', 'asc');
+
+                    if (!empty($data['status'])) {
+                        $query->whereIn('status', $data['status']);
+                    }
+
+                    if (!empty($data['date_from'])) {
+                        $query->whereDate('created_at', '>=', $data['date_from']);
+                    }
+
+                    if (!empty($data['date_to'])) {
+                        $query->whereDate('created_at', '<=', $data['date_to']);
+                    }
+
+                    $orderGroups = $query->get();
+
+                    return self::exportToExcel($orderGroups, $data['status'], $data['date_from'], $data['date_to']);
+                }),
         ];
     }
-
 
     protected static function exportToWord($orderGroups, $status, $dateFrom, $dateTo)
     {
@@ -60,18 +94,18 @@ class ListOrderGroups extends ListRecords
             $phpWord = new \PhpOffice\PhpWord\PhpWord();
             $section = $phpWord->addSection([
                 'orientation' => 'landscape',
-                'marginLeft'  => 600,
+                'marginLeft' => 600,
                 'marginRight' => 600,
-                'marginTop'   => 600,
+                'marginTop' => 600,
                 'marginBottom' => 600,
             ]);
 
             $tableStyle = [
-                'borderSize'  => 6,
+                'borderSize' => 6,
                 'borderColor' => '000000',
-                'cellMargin'  => 50,
-                'alignment'   => \PhpOffice\PhpWord\SimpleType\JcTable::CENTER,
-                'width'       => 100 * 50,
+                'cellMargin' => 50,
+                'alignment' => \PhpOffice\PhpWord\SimpleType\JcTable::CENTER,
+                'width' => 100 * 50,
             ];
 
             $cellStyle = ['valign' => 'center'];
@@ -113,12 +147,43 @@ class ListOrderGroups extends ListRecords
         }, self::generateFileName($status, $dateFrom, $dateTo));
     }
 
+    protected static function exportToExcel($orderGroups, $status, $dateFrom, $dateTo)
+    {
+        $fileName = self::generateExcelFileName($status, $dateFrom, $dateTo);
+        return Excel::download(new OrderGroupsExport($orderGroups), $fileName);
+    }
+
     protected static function generateFileName($status, $dateFrom, $dateTo)
     {
-        $statusName = OrderStatus::find($status)?->name_uz ?? 'All';
+        if (is_array($status)) {
+            $statusNames = OrderStatus::whereIn('id', $status)->pluck('name_uz')->implode('_');
+        } elseif ($status) {
+            $statusNames = OrderStatus::find($status)?->name_uz ?? 'All';
+        } else {
+            $statusNames = 'All';
+        }
+
+        $statusName = $statusNames ? $statusNames : 'All';
         $dateFrom = $dateFrom ? date('Y-m-d', strtotime($dateFrom)) : 'All';
         $dateTo = $dateTo ? date('Y-m-d', strtotime($dateTo)) : 'All';
 
         return "Buyurtmalar_{$statusName}_{$dateFrom}_{$dateTo}.docx";
     }
+
+    protected static function generateExcelFileName($status, $dateFrom, $dateTo)
+    {
+        if (is_array($status)) {
+            $statusNames = OrderStatus::whereIn('id', $status)->pluck('name_uz')->implode('_');
+        } elseif ($status) {
+            $statusNames = OrderStatus::find($status)?->name_uz ?? 'All';
+        } else {
+            $statusNames = 'All';
+        }
+
+        $dateFrom = $dateFrom ? date('Y-m-d', strtotime($dateFrom)) : 'All';
+        $dateTo = $dateTo ? date('Y-m-d', strtotime($dateTo)) : 'All';
+
+        return "Buyurtmalar_{$statusNames}_{$dateFrom}_{$dateTo}.xlsx";
+    }
+
 }
