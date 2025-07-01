@@ -2483,18 +2483,13 @@ class ProductController extends Controller
         $dataComponents = $json['item']['data'] ?? [];
 
         $freightInfo = null;
-        $locationCode = null;
 
         foreach ($dataComponents as $component) {
-            if (!$freightInfo && isset($component['data']['freightInfo'])) {
+            if (!$freightInfo && isset($component['data']['freightInfo']) && isset($component['data']['freightInfo']['locationCode'])) {
                 $freightInfo = $component['data']['freightInfo'];
             }
 
-            if (!$locationCode && isset($component['data']['locationCode'])) {
-                $locationCode = $component['data']['locationCode'];
-            }
-
-            if ($freightInfo && $locationCode)
+            if ($freightInfo)
                 break;
         }
 
@@ -2502,10 +2497,11 @@ class ProductController extends Controller
 
         return response()->json([
             'freightInfo' => $freightInfo,
-            'subTemplateId' => $freightInfo['subTemplateId'] ?? null,
+            'temp_id' => $freightInfo['subTemplateId'] ?? null,
             'unitWeight' => $freightInfo['unitWeight'] ?? null,
-            'locationCode' => $locationCode,
-            'sellerLoginId' => $sellerLoginId,
+            'location' => $freightInfo['locationCode'],
+            'nick' => $sellerLoginId,
+            'skuWeight' => $freightInfo['skuWeight'] ?? null,
         ]);
     }
 

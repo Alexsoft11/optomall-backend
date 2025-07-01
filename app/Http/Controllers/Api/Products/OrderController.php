@@ -118,8 +118,9 @@ class OrderController extends Controller
             'items.*.properties.*.id' => 'required|string',
             'items.*.properties.*.name' => 'required|string',
             'items.*.properties.*.value' => 'required|string',
-            'items.*.properties.*.originalName' => 'nullable|string', // New validation rule
-            'items.*.properties.*.originalValue' => 'nullable|string', // New validation rule
+            'items.*.properties.*.originalName' => 'nullable|string',
+            'items.*.properties.*.originalValue' => 'nullable|string',
+            'items.*.product_info' => 'nullable|array',
             'total_price' => 'nullable|numeric|min:0',
         ]);
 
@@ -668,8 +669,9 @@ class OrderController extends Controller
             '*.properties.*.id' => 'required|string',
             '*.properties.*.name' => 'required|string',
             '*.properties.*.value' => 'required|string',
-            '*.properties.*.originalName' => 'nullable|string', // Add validation for originalName
-            '*.properties.*.originalValue' => 'nullable|string', // Add validation for originalValue
+            '*.properties.*.originalName' => 'nullable|string',
+            '*.properties.*.originalValue' => 'nullable|string',
+            '*.product_info' => 'nullable|array',
         ]);
 
         if ($validator->fails()) {
@@ -682,7 +684,6 @@ class OrderController extends Controller
             $basePrice = $item['price'];
             $finalPrice = $basePrice;
 
-            // Determine the final price based on the highest matching quantity range
             if (isset($item['quantityRanges']) && count($item['quantityRanges']) > 0) {
                 $applicableRange = null;
 
@@ -1003,9 +1004,11 @@ class OrderController extends Controller
                 ->whereHas('comments', function ($query) use ($user) {
                     $query->where('user_id', $user->id);
                 })
-                ->with(['comments' => function ($query) use ($user) {
-                    $query->where('user_id', $user->id);
-                }])
+                ->with([
+                    'comments' => function ($query) use ($user) {
+                        $query->where('user_id', $user->id);
+                    }
+                ])
                 ->get();
 
             $result = $orders->map(function ($order) {
@@ -1157,5 +1160,49 @@ class OrderController extends Controller
 
         // Return the updated user's basket
         return response()->json(['message' => 'basket_items_removed_successfully', 'original' => BasketResource::collection($newBaskets)], 200);
+    }
+
+    public function deliveryFees(Request $request, Order $order)
+    {
+        $order->load('orderItems');
+
+        $fees = $order->orderItems->map(function ($item) {
+            $info = $item->product_info;
+
+            $query = [
+                'key' => config('services.onebound.key'),
+                'num_iid' => $info['freightInfo']['num_iid'] ?? null,
+                'area_id' => $info['location']['area_id'] ?? null,
+                'temp_id' => $info['temp_id'] ?? null,
+                'nick' => $info['nick'] ?? null,
+                'location' => $info['location']['name'] ?? null,
+                'unitweight' => $info['unitWeight'] ?? null,
+                'sku_list' => "{$item->quantity},{$item->skuId},{$info['skuWeight']}",
+                'cache' => 'no',
+                'lang' => 'zh-CN',
+                'secret' => config('services.onebound.secret'),
+            ];
+
+            $response = Http::retry(1, 100)
+                ->withOptions(['verify' => false])
+                ->get('https://api-gw.onebound.cn/1688/item_fee/', $query);
+
+            $price = $response->successful()
+                ? data_get($response->json(), 'item.price', 0)
+                : 0;
+
+            $item->update(['delivery_price' => $price]);
+
+            return ['order_item_id' => $item->id, 'delivery_price' => $price];
+        });
+
+        $total = $fees->sum('delivery_price');
+        $order->update(['delivery_china' => $total]);
+
+        return response()->json([
+            'order_id' => $order->id,
+            'delivery_china' => $total,
+            'fees' => $fees,
+        ]);
     }
 }

@@ -38,6 +38,7 @@ class Order extends Model
         'provider',
         'order_group_id',
         'is_paid',
+        'delivery_china',
     ];
 
 
