@@ -59,6 +59,8 @@ Route::middleware('throttle:1200,60')->group(function () {
     Route::get('product-info/{productId}', [ProductController::class, 'getChinaProductInfo']);
     Route::get('product-fee', [ProductController::class, 'getItemFee']);
 
+    Route::get('/products', [ProductController::class, 'products']);
+    Route::get('/get-prices', [ProductController::class, 'getPrices']);
     // Additional Products
     Route::get('additional-categories', [ProductController::class, 'categories']);
     Route::get('get-one-additional-category', [ProductController::class, 'getOneCategory']);
