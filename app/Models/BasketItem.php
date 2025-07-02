@@ -21,8 +21,12 @@ class BasketItem extends Model
         'skuId',
         'basket_id',
         'user_id',
+        'product_info'
     ];
 
+    protected $casts = [
+        'product_info' => 'json',
+    ];
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
