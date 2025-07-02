@@ -20,7 +20,12 @@ class OrderItem extends Model
         'price',
         'skuId',
         'provider',
-        'delivery_price'
+        'delivery_price',
+        'product_info'
+    ];
+
+    protected $casts = [
+        'product_info' => 'json',
     ];
 
     public function order()
