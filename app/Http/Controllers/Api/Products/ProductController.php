@@ -869,10 +869,8 @@ class ProductController extends Controller
         // Fetch product details from cache or make an API call if not cached
         $productDetail = Cache::remember($cacheKey, 60 * 5, function () use ($url) {
             try {
-                // Make the API call with a 50 second timeout
-                return Http::timeout(50)->withoutVerifying()->get($url)->json();
+                return Http::timeout(50)->retry(1, 2)->withoutVerifying()->get($url)->json();
             } catch (\Illuminate\Http\Client\ConnectionException $e) {
-                // Return null on timeout or error
                 return null;
             }
         });
@@ -2466,20 +2464,22 @@ class ProductController extends Controller
     {
         $url = "https://api-gw.onebound.cn/1688/item_get_app/";
 
-        $response = Http::withOptions([
-            'verify' => false,
-        ])->get($url, [
-                    'key' => 't3832825558',
-                    'num_iid' => $productId,
-                    'lang' => 'zh-CN',
-                    'secret' => '20240731',
-                ]);
+        $response = Http::timeout(15)->retry(1, 2)->get($url, [
+            'key' => 't3832825558',
+            'num_iid' => $productId,
+            'lang' => 'zh-CN',
+            'secret' => '20240731',
+            'cache' => 'no',
+        ]);
 
         if ($response->failed()) {
             return response()->json(['error' => 'API error'], 500);
         }
 
         $json = $response->json();
+        if (!isset($json['item']) || !isset($json['item']['data'])) {
+            return response()->json(['error' => 'Invalid response structure', 'response' => $json], 500);
+        }
         $dataComponents = $json['item']['data'] ?? [];
 
         $freightInfo = null;
@@ -2525,9 +2525,7 @@ class ProductController extends Controller
             'lang' => 'zh-CN',
             'secret' => '20240731',
         ];
-        $response = Http::withOptions([
-            'verify' => false
-        ])->get('https://api-gw.onebound.cn/1688/item_fee/', $query);
+        $response = Http::timeout(15)->retry(1, 2)->get('https://api-gw.onebound.cn/1688/item_fee/', $query);
         if ($response->failed()) {
             return response()->json(['error' => 'Fee API failed'], 500);
         }

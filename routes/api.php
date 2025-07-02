@@ -56,8 +56,7 @@ Route::middleware('throttle:1200,60')->group(function () {
     Route::get('product-detail-onbound', [ProductController::class, 'productDetailOnbound']);
     Route::get('product-detail-tmapi', [ProductController::class, 'productDetailTmapi']);
     Route::get('product-detail-desc', [ProductController::class, 'productDetailDesc']);
-    Route::get('product-info/{productId}', [ProductController::class, 'getChinaProductInfo']);
-    Route::get('product-fee', [ProductController::class, 'getItemFee']);
+
 
     Route::get('/products', [ProductController::class, 'products']);
     Route::get('/get-prices', [ProductController::class, 'getPrices']);
@@ -74,7 +73,8 @@ Route::middleware('throttle:1200,60')->group(function () {
     // Authenticated Routes
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('refresh-token', [AuthController::class, 'refreshToken']);
-
+        Route::get('product-info/{productId}', [ProductController::class, 'getChinaProductInfo']);
+        Route::get('product-fee', [ProductController::class, 'getItemFee']);
         // Orders
         Route::post('orders', [OrderController::class, 'create']);
         Route::post('user-basket', [OrderController::class, 'userBasket']);

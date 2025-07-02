@@ -43,6 +43,7 @@ class BasketResource extends JsonResource
                 'region' => $this['user']['region'],
                 'district' => $this['user']['district'],
             ],
+            'product_info' => $this['product_info'] ?? null,
         ];
     }
 }

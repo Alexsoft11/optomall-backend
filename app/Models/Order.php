@@ -40,6 +40,9 @@ class Order extends Model
         'is_paid',
         'delivery_china',
     ];
+    protected $casts = [
+        'delivery_price' => 'float',
+    ];
 
 
     // public function getSlugOptions(): SlugOptions

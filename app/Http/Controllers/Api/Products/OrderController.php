@@ -122,6 +122,7 @@ class OrderController extends Controller
             'items.*.properties.*.originalValue' => 'nullable|string',
             'items.*.product_info' => 'nullable|array',
             'total_price' => 'nullable|numeric|min:0',
+            'delivery_china' => 'nullable|numeric|min:0',
         ]);
 
         $user = auth()->user();
@@ -139,14 +140,13 @@ class OrderController extends Controller
         DB::transaction(function () use ($groupedItems, $user, $request, &$orders, &$orderGroup) {
             $defaultStatus = OrderStatus::where('for_first', true)->first();
             $statusId = $defaultStatus ? $defaultStatus->id : '3';
-            $delivery_china = $this->calculateDeliveryChina($request->total_price);
             $orderGroup = OrderGroup::create([
                 'status' => $statusId,
                 'status_color' => '#05ff00',
-                'total_price' => $request->total_price + $delivery_china,
+                'total_price' => $request->total_price,
                 'user_id' => $user->id,
                 'is_paid' => false,
-                'delivery_china' => $delivery_china
+                'delivery_china' => $request->delivery_china ?? 0,
             ]);
 
             foreach ($groupedItems as $sellerId => $items) {
@@ -165,6 +165,7 @@ class OrderController extends Controller
                     'status_color' => '#05ff00',
                     'is_checking' => false,
                     'order_group_id' => $orderGroup->id,
+
                 ]);
 
                 $groupedItems = collect($items)->groupBy('product_id');
@@ -209,11 +210,12 @@ class OrderController extends Controller
                             'title' => $item['title'],
                             'provider' => $item['provider'],
                             'image_url' => $item['image_url'],
-                            'quantity' => $item['quantity'], // individual item's quantity
-                            'price' => $finalPrice, // final price based on total quantity
+                            'quantity' => $item['quantity'],
+                            'price' => $finalPrice,
                             'product_url' => $item['product_url'],
                             'skuId' => $item['sku_id'],
-                            'delivery_price' => 0, // $this->calculatePrice($delivery_price, $amount),
+                            'delivery_price' => 0,
+                            'product_info' => $item['product_info'] ?? null,
                         ]);
 
                         foreach ($item['properties'] as $property) {
@@ -241,24 +243,6 @@ class OrderController extends Controller
         return response()->json(['message' => 'order_created_successfully', 'order_group' => $orderGroup->id], 201);
     }
 
-    function calculateDeliveryChina(int $totalPrice): float
-    {
-        if ($totalPrice <= 30000) {
-            return $totalPrice * 0.19;
-        } elseif ($totalPrice <= 50000) {
-            return $totalPrice * 0.14;
-        } elseif ($totalPrice <= 100000) {
-            return $totalPrice * 0.08;
-        } elseif ($totalPrice <= 500000) {
-            return $totalPrice * 0.03;
-        } elseif ($totalPrice <= 1000000) {
-            return $totalPrice * 0.02;
-        } elseif ($totalPrice <= 1500000) {
-            return $totalPrice * 0.005;
-        } else {
-            return $totalPrice * 0.003;
-        }
-    }
 
 
 
@@ -726,9 +710,9 @@ class OrderController extends Controller
                     'seller_id' => $item['seller_id'],
                     'provider' => $item['provider'],
                     'skuId' => $item['sku_id'],
+                    'product_info' => $item['product_info'] ?? null,
                 ]);
 
-                // Save the properties if any
                 if (isset($item['properties']) && is_array($item['properties'])) {
                     foreach ($item['properties'] as $property) {
                         Properties::create([
@@ -1162,46 +1146,95 @@ class OrderController extends Controller
         return response()->json(['message' => 'basket_items_removed_successfully', 'original' => BasketResource::collection($newBaskets)], 200);
     }
 
+    private function calculateDeliveryChina(int $totalPrice): float
+    {
+        if ($totalPrice <= 30000) {
+            return $totalPrice * 0.19;
+        } elseif ($totalPrice <= 50000) {
+            return $totalPrice * 0.14;
+        } elseif ($totalPrice <= 100000) {
+            return $totalPrice * 0.08;
+        } elseif ($totalPrice <= 500000) {
+            return $totalPrice * 0.03;
+        } elseif ($totalPrice <= 1000000) {
+            return $totalPrice * 0.02;
+        } elseif ($totalPrice <= 1500000) {
+            return $totalPrice * 0.005;
+        } else {
+            return $totalPrice * 0.003;
+        }
+    }
+
     public function deliveryFees(Request $request, Order $order)
     {
         $order->load('items');
-        $fees = $order->items->map(function ($item) {
+
+        $currency = Exchanges::where('currency', 'yuan')->first()->amount ?? 1800;
+
+        $fees = $order->items->map(function ($item) use ($currency) {
             $info = $item->product_info;
 
+            if (!$info || !isset($info['freightInfo'])) {
+                $price = $this->calculateDeliveryChina($item->price);
+                $item->update(['delivery_price' => $price]);
+                return ['order_item_id' => $item->id, 'delivery_price' => $price];
+            }
             $query = [
                 'key' => config('services.onebound.key'),
-                'num_iid' => $info['freightInfo']['num_iid'] ?? null,
-                'area_id' => $info['location']['area_id'] ?? null,
+                'num_iid' => $item->product_id,
+                'area_id' => '440111',
                 'temp_id' => $info['temp_id'] ?? null,
                 'nick' => $info['nick'] ?? null,
-                'location' => $info['location']['name'] ?? null,
+                'location' => $info['location'] ?? null,
                 'unitweight' => $info['unitWeight'] ?? null,
-                'sku_list' => "{$item->quantity},{$item->skuId},{$info['skuWeight']}",
+                'sku_list' => "{$item->quantity},{$item->skuId},{$item->price}",
                 'cache' => 'no',
                 'lang' => 'zh-CN',
                 'secret' => config('services.onebound.secret'),
             ];
 
-            $response = Http::retry(1, 100)
-                ->withOptions(['verify' => false])
-                ->get('https://api-gw.onebound.cn/1688/item_fee/', $query);
+            try {
+                $response = Http::retry(1, 3)
+                    ->timeout(15)
+                    ->get('https://api-gw.onebound.cn/1688/item_fee/', $query);
+                $data = $response->json();
 
-            $price = $response->successful()
-                ? data_get($response->json(), 'item.price', 0)
-                : 0;
+                if ($response->successful() && isset($data['item']['price'])) {
+                    if (is_numeric($data['item']['price'])) {
+                        $price = round((float) $data['item']['price'] * $currency);
+                    } else {
+                        $price = 0;
+                    }
+                } else {
+                    $price = $this->calculateDeliveryChina($item->price);
+                }
+            } catch (\Illuminate\Http\Client\ConnectionException $e) {
+                $price = $this->calculateDeliveryChina($item->price);
+            }
 
+            $price = round($price);
             $item->update(['delivery_price' => $price]);
 
             return ['order_item_id' => $item->id, 'delivery_price' => $price];
         });
 
+
         $total = $fees->sum('delivery_price');
         $order->update(['delivery_china' => $total]);
+        $groupTotal = 0;
+        if ($order->order_group_id) {
+            $groupTotal = Order::where('order_group_id', $order->order_group_id)
+                ->sum('delivery_china');
+
+            OrderGroup::where('id', $order->order_group_id)
+                ->update(['delivery_china' => $groupTotal]);
+        }
 
         return response()->json([
             'order_id' => $order->id,
             'delivery_china' => $total,
             'fees' => $fees,
+            '$groupTotal' => $groupTotal,
         ]);
     }
 }
