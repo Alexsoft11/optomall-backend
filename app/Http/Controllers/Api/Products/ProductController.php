@@ -1247,8 +1247,8 @@ class ProductController extends Controller
             $subcategory = TaobaoSubcategory::where('unique_id', $request->catId)
                 ->pluck('unique')
                 ->first() ?? TaobaoSubcategoryName::where('unique_id', $request->catId)
-                ->pluck('unique')
-                ->first();
+                    ->pluck('unique')
+                    ->first();
 
             // Check if we need to translate the value before the API call
             $translatedValue = $subcategory ? $subcategory : $this->translateText($value); // Translate to Chinese for search
@@ -1375,8 +1375,8 @@ class ProductController extends Controller
             $subcategory = TaobaoSubcategory::where('unique_id', $request->catId)
                 ->pluck('unique')
                 ->first() ?? TaobaoSubcategoryName::where('unique_id', $request->catId)
-                ->pluck('unique')
-                ->first();
+                    ->pluck('unique')
+                    ->first();
 
             // Check if we need to translate the value before the API call
             $translatedValue = $subcategory ? $subcategory : $this->translateText($value); // Translate to Chinese for search
@@ -1619,7 +1619,7 @@ class ProductController extends Controller
         //         'details' => $responseData,  // Return error details from the API
         //     ], 500);
         // }
-        if ($response['data'] === null ) {
+        if ($response['data'] === null) {
             return response()->json([
                 'messages' => $response['data'] ?? null, // Ensure 'messages' exists
                 'urlOrg' => $imageFullPath,
@@ -1705,7 +1705,7 @@ class ProductController extends Controller
         $productsCount = $request->input('productsCount') ?? 60; // Default to 40 products per page
 
         // Ensure productsCount is an integer and not less than 1
-        $productsCount = max(1, (int)$productsCount);
+        $productsCount = max(1, (int) $productsCount);
 
         // Retrieve the products based on the query type
         $productsQuery = HomePageProduct::where('type', $query)->inRandomOrder();
@@ -2073,9 +2073,11 @@ class ProductController extends Controller
                             'description',
                             'price'
                         )
-                        ->with(['images' => function ($query) {
-                            $query->where('is_main', true)->select('image_url', 'product_id');
-                        }])->inRandomOrder();
+                        ->with([
+                            'images' => function ($query) {
+                                $query->where('is_main', true)->select('image_url', 'product_id');
+                            }
+                        ])->inRandomOrder();
                 }
             ])
             ->get([
@@ -2194,18 +2196,20 @@ class ProductController extends Controller
     {
         $limit = $request->query('limit', 3);
         $categories = Category::where('is_active', true)
-            ->with(['products' => function ($query) use ($limit) {
-                $query->limit($limit)
-                    ->select(
-                        'id',
-                        'category_id',
-                        'title_uz',
-                        'title_ru',
-                        'title_en',
-                        'price',
-                        'image'
-                    );
-            }])
+            ->with([
+                'products' => function ($query) use ($limit) {
+                    $query->limit($limit)
+                        ->select(
+                            'id',
+                            'category_id',
+                            'title_uz',
+                            'title_ru',
+                            'title_en',
+                            'price',
+                            'image'
+                        );
+                }
+            ])
             ->get([
                 'id',
                 'name_uz',
@@ -2226,7 +2230,7 @@ class ProductController extends Controller
                     ],
                     'slug' => $category->slug,
                     'image' => url('storage/' . $category->image),
-                    'image_mobile' =>  url('storage/' . $category->image_mobile),
+                    'image_mobile' => url('storage/' . $category->image_mobile),
                     'is_active' => $category->is_active,
                     'products' => $category->products->map(function ($product) {
                         $isLiked = auth()->check() && auth()->user()->likedProducts()->where('product_id', $product->id)->exists();
@@ -2362,9 +2366,11 @@ class ProductController extends Controller
             'description',
             'price'
         )->where('category_id', $category->id)
-            ->with(['images' => function ($query) {
-                $query->where('is_main', true)->select('product_id', 'image_url');
-            }])
+            ->with([
+                'images' => function ($query) {
+                    $query->where('is_main', true)->select('product_id', 'image_url');
+                }
+            ])
             ->inRandomOrder()
             ->take($limit) // Since `paginate` doesn't apply well for both, use `take` for local products
             ->get();
@@ -2454,5 +2460,81 @@ class ProductController extends Controller
             });
 
         return response()->json($products);
+    }
+
+    public function getChinaProductInfo($productId)
+    {
+        $url = "https://api-gw.onebound.cn/1688/item_get_app/";
+
+        $response = Http::withOptions([
+            'verify' => false,
+        ])->get($url, [
+                    'key' => 't3832825558',
+                    'num_iid' => $productId,
+                    'lang' => 'zh-CN',
+                    'secret' => '20240731',
+                ]);
+
+        if ($response->failed()) {
+            return response()->json(['error' => 'API error'], 500);
+        }
+
+        $json = $response->json();
+        $dataComponents = $json['item']['data'] ?? [];
+
+        $freightInfo = null;
+        $locationCode = null;
+
+        foreach ($dataComponents as $component) {
+            if (!$freightInfo && isset($component['data']['freightInfo'])) {
+                $freightInfo = $component['data']['freightInfo'];
+            }
+
+            if (!$locationCode && isset($component['data']['locationCode'])) {
+                $locationCode = $component['data']['locationCode'];
+            }
+
+            if ($freightInfo && $locationCode)
+                break;
+        }
+
+        $sellerLoginId = $json['item']['globalData']['offerBaseInfo']['sellerLoginId'] ?? null;
+
+        return response()->json([
+            'freightInfo' => $freightInfo,
+            'subTemplateId' => $freightInfo['subTemplateId'] ?? null,
+            'unitWeight' => $freightInfo['unitWeight'] ?? null,
+            'locationCode' => $locationCode,
+            'sellerLoginId' => $sellerLoginId,
+        ]);
+    }
+
+    public function getItemFee(Request $request)
+    {
+        $quantity = $request->input('quantity');
+        $skuId = $request->input('skuId');
+        $price = $request->input('price');
+
+        $skuList = "{$quantity},{$skuId},{$price}";
+        $query = [
+            'key' => 't3832825558',
+            'num_iid' => $request->input('num_iid'),
+            'area_id' => "440111",
+            'temp_id' => $request->input('temp_id'),
+            'nick' => $request->input('nick'),
+            'location' => $request->input('location'),
+            'unitweight' => $request->input('unitweight'),
+            'sku_list' => $skuList,
+            'cache' => 'no',
+            'lang' => 'zh-CN',
+            'secret' => '20240731',
+        ];
+        $response = Http::withOptions([
+            'verify' => false
+        ])->get('https://api-gw.onebound.cn/1688/item_fee/', $query);
+        if ($response->failed()) {
+            return response()->json(['error' => 'Fee API failed'], 500);
+        }
+        return $response->json();
     }
 }
