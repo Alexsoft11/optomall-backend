@@ -67,6 +67,7 @@ Route::middleware('throttle:1200,60')->group(function () {
     // Local Products
     Route::apiResource('local-products', ProductLocalController::class);
     Route::post('local-products/skus', [ProductLocalController::class, 'storeSkuProps']);
+    Route::get('orders/{order}/delivery‑fees', [OrderController::class, 'deliveryFees']);
 
     // Authenticated Routes
     Route::middleware('auth:sanctum')->group(function () {
@@ -89,7 +90,6 @@ Route::middleware('throttle:1200,60')->group(function () {
         Route::get('success-orders', [OrderController::class, 'getSuccessOrders']);
         Route::get('user-products', [OrderController::class, 'getUserProducts']);
         Route::patch('update-order', [OrderController::class, 'updateOrder']);
-
         // User & Profile
         Route::get('user-get-data', [UserController::class, 'user']);
         Route::post('location-form', [ProfileController::class, 'locationForm']);

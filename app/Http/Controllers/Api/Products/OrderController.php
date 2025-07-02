@@ -1164,9 +1164,8 @@ class OrderController extends Controller
 
     public function deliveryFees(Request $request, Order $order)
     {
-        $order->load('orderItems');
-
-        $fees = $order->orderItems->map(function ($item) {
+        $order->load('items');
+        $fees = $order->items->map(function ($item) {
             $info = $item->product_info;
 
             $query = [
