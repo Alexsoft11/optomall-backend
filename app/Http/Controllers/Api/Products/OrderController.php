@@ -1234,7 +1234,7 @@ class OrderController extends Controller
             'order_id' => $order->id,
             'delivery_china' => $total,
             'fees' => $fees,
-            '$groupTotal' => $groupTotal,
+            'groupTotal' => $groupTotal,
         ]);
     }
 }

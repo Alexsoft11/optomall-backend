@@ -2464,7 +2464,7 @@ class ProductController extends Controller
     {
         $url = "https://api-gw.onebound.cn/1688/item_get_app/";
 
-        $response = Http::timeout(15)->retry(1, 2)->get($url, [
+        $response = Http::timeout(20)->retry(1, 2)->get($url, [
             'key' => 't3832825558',
             'num_iid' => $productId,
             'lang' => 'zh-CN',
