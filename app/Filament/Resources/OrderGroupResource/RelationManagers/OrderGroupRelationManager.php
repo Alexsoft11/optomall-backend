@@ -53,6 +53,7 @@ class OrderGroupRelationManager extends RelationManager
                         Fieldset::make('Buyurtma')->schema([
                             TextInput::make('unique_id')->label('Buyurtma IDsi')->disabled(),
                             TextInput::make('total_price')->label('Jami narxi')->disabled(),
+                            TextInput::make('delivery_price')->label('Xitoy ichki yo\'lkiro')->disabled(),
                             TextInput::make('created_at')->label('Created At')->disabled(),
                             TextInput::make('updated_at')->label('Updated At')->disabled(),
                             Select::make('status')
@@ -79,7 +80,7 @@ class OrderGroupRelationManager extends RelationManager
                 TextColumn::make('user.unique_id')->label('User ID')->sortable(),
                 TextColumn::make('user.name')->label('Ismi')->sortable(),
                 TextColumn::make('total_price')->label('Jami narx')->sortable(),
-                TextColumn::make('delivery_price')->label('Jami narx')->sortable(),
+                TextColumn::make('delivery_price')->label('Xitoy ichki yo\'lkiro')->sortable(),
                 TextColumn::make('getStatus.name_uz')
                     ->label('Status')
                     ->sortable()
