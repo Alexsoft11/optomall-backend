@@ -41,7 +41,7 @@ class Order extends Model
         'delivery_china',
     ];
     protected $casts = [
-        'delivery_price' => 'float',
+        'delivery_china' => 'float',
     ];
 
 
