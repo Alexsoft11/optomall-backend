@@ -17,7 +17,7 @@ class OrderResource extends JsonResource
     public function toArray($request)
     {
         $kgPrice = Exchanges::where('currency', 'kg')->first();
-        
+
         $items = $this->items->map(function ($item) {
             $properties = $item->properties->map(function ($property) {
                 return [
@@ -45,6 +45,7 @@ class OrderResource extends JsonResource
         return [
             'unique_id' => $this->unique_id,
             'id' => $this->orderGroup->id,
+            'order_id' => $this->id,
             'status' => [
                 'uz' => $this->getStatus->name_uz ?? null,
                 'ru' => $this->getStatus->name_ru ?? null,
