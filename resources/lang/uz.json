@@ -89,5 +89,6 @@
     "additional": "Qo'shimcha",
     "provider": "Xizmat ko'rsatuvchi",
     "properties": "Xususiyatlar",
-    "auth_method": "Autentifikatsiya usuli"
+    "auth_method": "Autentifikatsiya usuli",
+    "delivery_china": "Xitoy ichida yetkazib berish"
 }
