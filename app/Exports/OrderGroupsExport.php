@@ -32,6 +32,7 @@ class OrderGroupsExport implements FromArray, WithHeadings, ShouldAutoSize, With
                     $order->unique_id,
                     $order->total_price,
                     $order->delivery_price,
+                    $order->delivery_type,
                     $order->created_at ? $order->created_at->format('Y-m-d H:i:s') : '-',
                     $order->kg ?? '-',
                     $group->user->phone ?? '-',
@@ -39,7 +40,7 @@ class OrderGroupsExport implements FromArray, WithHeadings, ShouldAutoSize, With
                 ];
             }
 
-            $data[] = ['', '', '', '', '', '', '', '', ''];
+            $data[] = ['', '', '', '', '', '', '', '', '', ''];
         }
 
         return $data;
@@ -54,6 +55,7 @@ class OrderGroupsExport implements FromArray, WithHeadings, ShouldAutoSize, With
             'ORDER ID',
             'SUMMA',
             "Xitoy ichki yo'lkiro",
+            "Hisoblash turi",
             'SANA',
             'KG',
             'MOBILE',

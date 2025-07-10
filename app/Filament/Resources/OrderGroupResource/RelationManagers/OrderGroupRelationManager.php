@@ -54,6 +54,7 @@ class OrderGroupRelationManager extends RelationManager
                             TextInput::make('unique_id')->label('Buyurtma IDsi')->disabled(),
                             TextInput::make('total_price')->label('Jami narxi')->disabled(),
                             TextInput::make('delivery_price')->label('Xitoy ichki yo\'lkiro')->disabled(),
+                            TextInput::make('delivery_type')->label('Hisoblash turi')->disabled(),
                             TextInput::make('created_at')->label('Created At')->disabled(),
                             TextInput::make('updated_at')->label('Updated At')->disabled(),
                             Select::make('status')

@@ -1176,9 +1176,13 @@ class OrderController extends Controller
 
             if (!$info || !isset($info['freightInfo'])) {
                 $price = $this->calculateDeliveryChina($item->price);
-                $item->update(['delivery_price' => $price]);
+                $item->update([
+                    'delivery_price' => $price,
+                    'delivery_type' => 'local'
+                ]);
                 return ['order_item_id' => $item->id, 'delivery_price' => $price];
             }
+
             $query = [
                 'key' => config('services.onebound.key'),
                 'num_iid' => $item->product_id,
@@ -1197,23 +1201,27 @@ class OrderController extends Controller
                 $response = Http::retry(1, 3)
                     ->timeout(15)
                     ->get('https://api-gw.onebound.cn/1688/item_fee/', $query);
+
                 $data = $response->json();
 
-                if ($response->successful() && isset($data['item']['price'])) {
-                    if (is_numeric($data['item']['price'])) {
-                        $price = round((float) $data['item']['price'] * $currency);
-                    } else {
-                        $price = 0;
-                    }
+                if ($response->successful() && isset($data['item']['price']) && is_numeric($data['item']['price'])) {
+                    $price = round((float) $data['item']['price'] * $currency);
+                    $deliveryType = 'api';
                 } else {
                     $price = $this->calculateDeliveryChina($item->price);
+                    $deliveryType = 'local';
                 }
             } catch (\Illuminate\Http\Client\ConnectionException $e) {
                 $price = $this->calculateDeliveryChina($item->price);
+                $deliveryType = 'local';
             }
 
             $price = round($price);
-            $item->update(['delivery_price' => $price]);
+
+            $item->update([
+                'delivery_price' => $price,
+                'delivery_type' => $deliveryType
+            ]);
 
             return ['order_item_id' => $item->id, 'delivery_price' => $price];
         });
