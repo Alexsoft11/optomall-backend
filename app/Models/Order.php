@@ -39,6 +39,7 @@ class Order extends Model
         'order_group_id',
         'is_paid',
         'delivery_china',
+        'delivery_type'
     ];
     protected $casts = [
         'delivery_china' => 'float',

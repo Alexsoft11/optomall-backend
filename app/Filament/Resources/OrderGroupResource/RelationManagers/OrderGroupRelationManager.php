@@ -51,7 +51,6 @@ class OrderGroupRelationManager extends RelationManager
                                 TextInput::make('name')->label('Ism'),
                             ])->disabled(),
                         TextInput::make('delivery_china')->label('Xitoy ichki yo\'lkiro')->disabled(),
-                        TextInput::make('delivery_type')->label('Hisoblash turi')->disabled(),
                         Fieldset::make('Buyurtma')->schema([
                             TextInput::make('unique_id')->label('Buyurtma IDsi')->disabled(),
                             TextInput::make('total_price')->label('Jami narxi')->disabled(),
@@ -81,7 +80,7 @@ class OrderGroupRelationManager extends RelationManager
                 TextColumn::make('user.unique_id')->label('User ID')->sortable(),
                 TextColumn::make('user.name')->label('Ismi')->sortable(),
                 TextColumn::make('total_price')->label('Jami narx')->sortable(),
-                TextColumn::make('delivery_china')->label('Xitoy ichki yo\'lkiro')->sortable(),
+                TextColumn::make('delivery_china')->label('Xitoy ichki yo\'lkiro'),
                 TextColumn::make('getStatus.name_uz')
                     ->label('Status')
                     ->sortable()
