@@ -36,6 +36,7 @@ class OrderGroupsExport implements FromArray, WithHeadings, ShouldAutoSize, With
                     $group->user->phone ?? '-',
                     $order->getStatus?->name_uz ?? '-',
                     $order->delivery_china ?? '-',
+                    $order->delivery_type ?? "-",
                 ];
             }
 
@@ -58,6 +59,7 @@ class OrderGroupsExport implements FromArray, WithHeadings, ShouldAutoSize, With
             'MOBILE',
             'STATUS',
             "Xitoy ichki yo'lkiro",
+            "Hisoblash turi",
         ];
     }
 

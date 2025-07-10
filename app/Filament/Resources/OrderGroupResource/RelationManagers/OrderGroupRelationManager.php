@@ -51,6 +51,7 @@ class OrderGroupRelationManager extends RelationManager
                                 TextInput::make('name')->label('Ism'),
                             ])->disabled(),
                         TextInput::make('delivery_china')->label('Xitoy ichki yo\'lkiro')->disabled(),
+                        TextInput::make('delivery_type')->label('Hisoblash turi')->disabled(),
                         Fieldset::make('Buyurtma')->schema([
                             TextInput::make('unique_id')->label('Buyurtma IDsi')->disabled(),
                             TextInput::make('total_price')->label('Jami narxi')->disabled(),
