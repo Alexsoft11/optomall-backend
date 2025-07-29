@@ -20,6 +20,7 @@ use App\Mail\GoogleLoginSuccess;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Session;
+use Resend;
 use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 
 session_start();
@@ -65,11 +66,19 @@ class AuthController extends Controller
         Cache::put($token, $tempUser->id, now()->addMinutes(60));
 
         try {
-            $tempUser->notify((new VerifyEmailNotification($token, $tempUser->id))->delay(now()->addSeconds(5)));
-        } catch (TransportExceptionInterface $e) {
+            $resend = Resend::client(env('RESEND_API_KEY'));
+
+            $resend->emails->send([
+                'from' => 'Optomall <noreply@optomall.uz>',
+                'to' => [$tempUser->email],
+                'subject' => 'Verify your email address',
+                'html' => '<p>Quyidagi havolani bosish orqali elektron pochtangizni tasdiqlang:</p>'
+                    . '<p><a href="' . url('/api/verify-email/' . $token) . '">Tasdiqlash</a></p>',
+            ]);
+        } catch (\Throwable $e) {
             return response()->json([
                 'message' => 'email_sending_failed',
-                'error' => 'not_found',
+                'error' => $e->getMessage(),
             ], 400);
         }
 
@@ -543,14 +552,30 @@ class AuthController extends Controller
     public function generateOTP($length = 6)
     {
         do {
-            $otp = str_pad(random_int(0, pow(10, $length) - 1), $length, '0', STR_PAD_LEFT);
-        } while (isset($_SESSION['generated_otps']) && in_array($otp, $_SESSION['generated_otps']));
+            $firstDigit = random_int(1, 9);
+            $remainingDigits = '';
+            for ($i = 1; $i < $length; $i++) {
+                $remainingDigits .= random_int(0, 9);
+            }
 
-        $_SESSION['generated_otps'][] = $otp;
+            $otp = $firstDigit . $remainingDigits;
 
-        $_SESSION['generated_otps'] = array_filter($_SESSION['generated_otps'], function ($otp) {
-            return isset($otp['timestamp']) && (time() - $otp['timestamp']) < 300;
-        });
+            // Remove expired OTPs first
+            if (isset($_SESSION['generated_otps'])) {
+                $_SESSION['generated_otps'] = array_filter($_SESSION['generated_otps'], function ($entry) {
+                    return isset($entry['timestamp']) && (time() - $entry['timestamp']) < 300;
+                });
+            }
+
+            // Check uniqueness
+            $existingOtps = array_column($_SESSION['generated_otps'] ?? [], 'otp');
+
+        } while (in_array($otp, $existingOtps));
+
+        $_SESSION['generated_otps'][] = [
+            'otp' => $otp,
+            'timestamp' => time()
+        ];
 
         return $otp;
     }

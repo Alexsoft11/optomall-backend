@@ -15,7 +15,8 @@ class ValidateOrigin
         'https://optomall.uz',
         'https://taobao-optom-uz.vercel.app',
         'https://optomol.uz',
-        'http://localhost:3001'
+        'http://localhost:3001',
+        'https://www.optomall.uz'
     ];
 
     /**
