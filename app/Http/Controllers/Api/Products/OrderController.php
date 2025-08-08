@@ -1149,19 +1149,19 @@ class OrderController extends Controller
     private function calculateDeliveryChina(int $totalPrice): float
     {
         if ($totalPrice <= 30000) {
-            return $totalPrice * 0.19;
+            return $totalPrice * 0.35;
         } elseif ($totalPrice <= 50000) {
-            return $totalPrice * 0.14;
+            return $totalPrice * 0.25;
         } elseif ($totalPrice <= 100000) {
-            return $totalPrice * 0.08;
+            return $totalPrice * 0.10;
         } elseif ($totalPrice <= 500000) {
-            return $totalPrice * 0.03;
+            return $totalPrice * 0.06;
         } elseif ($totalPrice <= 1000000) {
-            return $totalPrice * 0.02;
+            return $totalPrice * 0.08;
         } elseif ($totalPrice <= 1500000) {
-            return $totalPrice * 0.005;
+            return $totalPrice * 0.04;
         } else {
-            return $totalPrice * 0.003;
+            return $totalPrice * 0.010;
         }
     }
 
@@ -1245,4 +1245,87 @@ class OrderController extends Controller
             'groupTotal' => $groupTotal,
         ]);
     }
+
+
+    public function deliveryFeesTmapi(Request $request, Order $order)
+    {
+        $order->load('items');
+
+        $currency = Exchanges::where('currency', 'yuan')->first()->amount ?? 1800;
+
+        $grouped = $order->items->groupBy('product_id');
+        $fees = collect();
+
+        foreach ($grouped as $productId => $items) {
+            $totalQuantity = $items->sum('quantity');
+
+            try {
+                $response = Http::retry(1, 3)
+                    ->timeout(15)
+                    ->get('http://api.tmapi.top/1688/item/shipping', [
+                        'item_id' => $productId,
+                        'province' => 'Beijing',
+                        'total_quantity' => $totalQuantity,
+                        'apiToken' => config('services.tmapi.token'),
+                    ]);
+
+                $data = $response->json();
+
+                if ($response->successful() && array_key_exists('total_fee', $data['data'] ?? [])) {
+                    if (is_null($data['data']['total_fee'])) {
+                        $totalFee = 0;
+                    } elseif (is_numeric($data['data']['total_fee'])) {
+                        $totalFee = round((float) $data['data']['total_fee'] * $currency);
+                    } else {
+                        $totalFee = null;
+                    }
+
+                    if ($totalFee !== null) {
+                        $unitFee = $totalQuantity > 0 ? $totalFee / $totalQuantity : 0;
+                        $deliveryType = 'api';
+                    } else {
+                        $unitFee = $this->calculateDeliveryChina($items->first()->price);
+                        $deliveryType = 'local';
+                    }
+                } else {
+                    $unitFee = $this->calculateDeliveryChina($items->first()->price);
+                    $deliveryType = 'local';
+                }
+            } catch (\Illuminate\Http\Client\ConnectionException $e) {
+                $unitFee = $this->calculateDeliveryChina($items->first()->price);
+                $deliveryType = 'local';
+            }
+
+            foreach ($items as $item) {
+                $price = round($unitFee * $item->quantity);
+                $item->update([
+                    'delivery_price' => $price,
+                    'delivery_type' => $deliveryType
+                ]);
+                $fees->push(['order_item_id' => $item->id, 'delivery_price' => $price]);
+            }
+        }
+
+        $total = $fees->sum('delivery_price');
+        $order->update(['delivery_china' => $total]);
+
+        $groupTotal = 0;
+        if ($order->order_group_id) {
+            $groupTotal = Order::where('order_group_id', $order->order_group_id)
+                ->sum('delivery_china');
+
+            OrderGroup::where('id', $order->order_group_id)
+                ->update(['delivery_china' => $groupTotal]);
+        }
+
+        return response()->json([
+            'order_id' => $order->id,
+            'delivery_china' => $total,
+            'fees' => $fees,
+            'groupTotal' => $groupTotal,
+        ]);
+    }
+
+
+
 }

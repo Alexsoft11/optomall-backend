@@ -40,6 +40,9 @@ return [
         'key' => env('ONEBOUND_KEY'),
         'secret' => env('ONEBOUND_SECRET'),
     ],
+    'tmapi' => [
+        'token' => env('TMAPI_TOKEN'),
+    ],
 
 
 ];
