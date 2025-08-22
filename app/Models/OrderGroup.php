@@ -81,4 +81,18 @@ class OrderGroup extends Model
             $orderGroup->orders()->delete();
         });
     }
+
+    public function recalculateTotals()
+    {
+        $activeOrders = $this->orders()
+            ->whereHas('getStatus', function ($q) {
+                $q->where('is_cancel', false);
+            })
+            ->get();
+
+        $this->update([
+            'total_price' => $activeOrders->sum('total_price'),
+            'delivery_china' => $activeOrders->sum('delivery_china'),
+        ]);
+    }
 }

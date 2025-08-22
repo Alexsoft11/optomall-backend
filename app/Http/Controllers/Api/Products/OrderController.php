@@ -1278,7 +1278,7 @@ class OrderController extends Controller
 
                 if ($response->successful() && array_key_exists('total_fee', $data['data'] ?? [])) {
                     if (is_null($data['data']['total_fee'])) {
-                        $totalFee = 0;
+                        $totalFee = null; // 0
                     } elseif (is_numeric($data['data']['total_fee'])) {
                         $totalFee = round((float) $data['data']['total_fee'] * $currency);
                     } else {
