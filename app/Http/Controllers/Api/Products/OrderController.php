@@ -1258,7 +1258,11 @@ class OrderController extends Controller
 
         foreach ($grouped as $productId => $items) {
             $totalQuantity = $items->sum('quantity');
-
+            $totalWeight = $items->sum(function ($item) {
+                $info = is_array($item->product_info) ? $item->product_info : json_decode($item->product_info, true);
+                $weight = $info['weight'] ?? 0;
+                return $weight * $item->quantity;
+            });
             try {
                 $response = Http::retry(1, 3)
                     ->timeout(15)
@@ -1267,6 +1271,7 @@ class OrderController extends Controller
                         'province' => 'Beijing',
                         'total_quantity' => $totalQuantity,
                         'apiToken' => config('services.tmapi.token'),
+                        'total_weight' => $totalWeight,
                     ]);
 
                 $data = $response->json();

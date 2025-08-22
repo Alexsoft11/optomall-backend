@@ -65,6 +65,9 @@ class HomePageProductResource extends Resource
     {
         return $table
             ->columns([
+                TextColumn::make('product_id')
+                    ->sortable()
+                    ->searchable(),
                 TextColumn::make('title_uz')
                     ->sortable()
                     ->searchable(),
@@ -78,6 +81,7 @@ class HomePageProductResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
