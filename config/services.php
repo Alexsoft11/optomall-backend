@@ -41,5 +41,10 @@ return [
         'secret' => env('ONEBOUND_SECRET'),
     ],
 
-
+    'proxy' => [
+        'url' => env('PROXY_URL'),
+    ],
+    'tmapi' => [
+        'token' => env('TM_API_TOKEN'),
+    ],
 ];

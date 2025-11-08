@@ -742,9 +742,9 @@ class ProductController extends Controller
 
         // Construct the cache key for product details
         $cacheKey = "product-detail?productId={$productId}&lang={$lang}&provider={$provider}";
-
+        $onboundSecret = env('ONEBOUND_SECRET');
         // Build the URL to fetch product details
-        $url = "https://api-gw.onebound.cn/$provider/item_get/?key=t3832825558&&num_iid=$productId&&cache=no&&secret=20240731&lang=$lang";
+        $url = "https://api-gw.onebound.cn/$provider/item_get/?key=t3832825558&&num_iid=$productId&&cache=no&&secret=$onboundSecret&lang=$lang";
 
         // Fetch product details from cache or make an API call if not cached
         $productDetail = Cache::remember($cacheKey, 60 * 5, function () use ($url) {
@@ -861,19 +861,29 @@ class ProductController extends Controller
         // Construct the cache key for product details
         $cacheKey = "product-detail-tmapi?productId={$productId}&lang={$lang}&provider={$provider}";
 
-        // Build the URL to fetch product details
-        $url = $provider == 'taobao' ?
-            "http://api.tmapi.top/taobao/item_detail?item_id=$productId&apiToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VybmFtZSI6Im9wdG9tYWxsIiwiQ29taWQiOm51bGwsIlJvbGVpZCI6bnVsbCwiaXNzIjoidG1hcGkiLCJzdWIiOiJvcHRvbWFsbCIsImF1ZCI6WyIiXSwiaWF0IjoxNzI3ODQzODA3fQ.MjSYALtr8x19ybMi8aJvRJk2Pl_hNwMpuNpWyAwx9AQ" :
-            "http://api.tmapi.top/1688/v2/item_detail?item_id=$productId&apiToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VybmFtZSI6Im9wdG9tYWxsIiwiQ29taWQiOm51bGwsIlJvbGVpZCI6bnVsbCwiaXNzIjoidG1hcGkiLCJzdWIiOiJvcHRvbWFsbCIsImF1ZCI6WyIiXSwiaWF0IjoxNzI3ODQzODA3fQ.MjSYALtr8x19ybMi8aJvRJk2Pl_hNwMpuNpWyAwx9AQ";
+        $tmapiToken = env('TMAPI_TOKEN');
 
-        // Fetch product details from cache or make an API call if not cached
-        $productDetail = Cache::remember($cacheKey, 60 * 5, function () use ($url) {
+        // Build the target URL (actual API endpoint)
+        $targetUrl = $provider === 'taobao'
+            ? "http://api.tmapi.top/taobao/item_detail?item_id={$productId}&apiToken={$tmapiToken}"
+            : "http://api.tmapi.top/1688/v2/item_detail?item_id={$productId}&apiToken={$tmapiToken}";
+
+        // Wrap it with your proxy
+        $proxyUrl = "https://china-proxy.optomall.uz?url=" . urlencode($targetUrl);
+
+        // Cache key and request through proxy
+        $productDetail = Cache::remember($cacheKey, 60 * 5, function () use ($proxyUrl) {
             try {
-                return Http::timeout(50)->retry(1, 2)->withoutVerifying()->get($url)->json();
+                return Http::timeout(50)
+                    ->retry(1, 2)
+                    ->withoutVerifying()
+                    ->get($proxyUrl)
+                    ->json();
             } catch (\Illuminate\Http\Client\ConnectionException $e) {
                 return null;
             }
         });
+
 
         // Handle local provider case (if the provider is 'local')
         if ($provider == 'local') {
@@ -958,9 +968,9 @@ class ProductController extends Controller
         }
 
         $lang = 'zh-CN'; // Default language
-
+        $tmapiToken = env('TMAPI_TOKEN');
         // Build the URL to fetch product details
-        $url = "http://api.tmapi.top/$provider/item_desc?item_id=$productId&apiToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VybmFtZSI6Im9wdG9tYWxsIiwiQ29taWQiOm51bGwsIlJvbGVpZCI6bnVsbCwiaXNzIjoidG1hcGkiLCJzdWIiOiJvcHRvbWFsbCIsImF1ZCI6WyIiXSwiaWF0IjoxNzI3ODQzODA3fQ.MjSYALtr8x19ybMi8aJvRJk2Pl_hNwMpuNpWyAwx9AQ";
+        $url = "http://api.tmapi.top/$provider/item_desc?item_id=$productId&apiToken=$tmapiToken";
 
         // Fetch product details from cache or make an API call if not cached
         $response = Http::timeout(50)->withoutVerifying()->get($url)->json();
@@ -1250,11 +1260,11 @@ class ProductController extends Controller
 
             // Check if we need to translate the value before the API call
             $translatedValue = $subcategory ? $subcategory : $this->translateText($value); // Translate to Chinese for search
-
+            $onboundSecret = env('ONEBOUND_SECRET');
             // Base API URL construction
             $baseApiUrl = $imageUrl
-                ? "https://api-gw.onebound.cn/$provider/item_search_img/?key=t3832825558&imgid=$imageUrl&seller_info=no&lang=$lang&page=$page&sort=$sort&page_size=$productsCount&secret=20240731"
-                : "https://api-gw.onebound.cn/$provider/item_search/?key=t3832825558&q=" . $translatedValue . "&page=$page&sort=$sort&page_size=$productsCount&seller_info=no&lang=$lang&secret=20240731";
+                ? "https://api-gw.onebound.cn/$provider/item_search_img/?key=t3832825558&imgid=$imageUrl&seller_info=no&lang=$lang&page=$page&sort=$sort&page_size=$productsCount&secret=$onboundSecret"
+                : "https://api-gw.onebound.cn/$provider/item_search/?key=t3832825558&q=" . $translatedValue . "&page=$page&sort=$sort&page_size=$productsCount&seller_info=no&lang=$lang&secret=$onboundSecret";
 
             // Making the external API request
             $response = Http::timeout(50)->withoutVerifying()->get($baseApiUrl);
@@ -1378,24 +1388,28 @@ class ProductController extends Controller
 
             // Check if we need to translate the value before the API call
             $translatedValue = $subcategory ? $subcategory : $this->translateText($value); // Translate to Chinese for search
-
+            $tmapiToken = env('TMAPI_TOKEN');
+            $onboundSecret = env('ONEBOUND_SECRET');
             // Base API URL construction
             if ($provider == '1688') {
                 $baseApiUrl = $imageUrl
-                    ? "http://api.tmapi.top/1688/search/image?img_url=$imageUrl&page=$page&page_size=$productsCount&sort=$sort&apiToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VybmFtZSI6Im9wdG9tYWxsIiwiQ29taWQiOm51bGwsIlJvbGVpZCI6bnVsbCwiaXNzIjoidG1hcGkiLCJzdWIiOiJvcHRvbWFsbCIsImF1ZCI6WyIiXSwiaWF0IjoxNzI3ODQzODA3fQ.MjSYALtr8x19ybMi8aJvRJk2Pl_hNwMpuNpWyAwx9AQ"
-                    : "http://api.tmapi.top/1688/en/search/items?keyword=$translatedValue&page=$page&page_size=$productsCount&sort=$sort&apiToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VybmFtZSI6Im9wdG9tYWxsIiwiQ29taWQiOm51bGwsIlJvbGVpZCI6bnVsbCwiaXNzIjoidG1hcGkiLCJzdWIiOiJvcHRvbWFsbCIsImF1ZCI6WyIiXSwiaWF0IjoxNzI3ODQzODA3fQ.MjSYALtr8x19ybMi8aJvRJk2Pl_hNwMpuNpWyAwx9AQ";
-                // return $baseApiUrl;
+                    ? "http://api.tmapi.top/1688/search/image?img_url=$imageUrl&page=$page&page_size=$productsCount&sort=$sort&apiToken=$tmapiToken"
+                    : "http://api.tmapi.top/1688/en/search/items?keyword=$translatedValue&page=$page&page_size=$productsCount&sort=$sort&apiToken=$tmapiToken";
             } else { // Taobao as default
                 $baseApiUrl = $imageUrl
-                    ? "https://api-gw.onebound.cn/taobao/item_search_img/?key=t3832825558&imgid=$imageUrl&seller_info=no&lang=$lang&page=$page&sort=$sort&page_size=$productsCount&secret=20240731"
-                    : "https://api-gw.onebound.cn/taobao/item_search/?key=t3832825558&q=" . $translatedValue . "&page=$page&sort=$sort&page_size=$productsCount&seller_info=no&lang=$lang&secret=20240731";
+                    ? "https://api-gw.onebound.cn/taobao/item_search_img/?key=t3832825558&imgid=$imageUrl&seller_info=no&lang=$lang&page=$page&sort=$sort&page_size=$productsCount&secret=$onboundSecret"
+                    : "https://api-gw.onebound.cn/taobao/item_search/?key=t3832825558&q=" . $translatedValue . "&page=$page&sort=$sort&page_size=$productsCount&seller_info=no&lang=$lang&secret=$onboundSecret";
             }
-            // Making the external API request
-            $response = Http::timeout(100)->withoutVerifying()->get($baseApiUrl);
-            $products = $response->json();
-            // return $products;
 
-            // Check if products are found
+            // Proxy through china-proxy.optomall.uz
+            $proxyUrl = "https://china-proxy.optomall.uz?url=" . urlencode($baseApiUrl);
+
+            $response = Http::timeout(100)
+                ->withoutVerifying()
+                ->get($proxyUrl);
+
+            $products = $response->json();
+
             if ($provider == '1688' ? empty($products['data']['items']) : empty($products['items']['item'])) {
                 return response()->json([
                     'error' => 'product_not_found',
@@ -1403,12 +1417,12 @@ class ProductController extends Controller
                 ], 404);
             }
 
-            // Cache the successful response
             Cache::put($cacheKey, $this->respondWithSuccess([
                 'products' => collect($provider == '1688' ? $products['data']['items'] : $products['items']['item'])->map(function ($product) use ($provider, $lang) {
                     return (new ProductResource($product, $provider, $lang))->resolve();
                 }),
-            ]), 259200); // Store in cache for 3 days
+            ]), 259200);
+            ; // Store in cache for 3 days
 
             return $this->respondWithSuccess([
                 'products' => collect($provider == '1688' ? $products['data']['items'] : $products['items']['item'])->map(function ($product) use ($provider, $lang) {
@@ -1589,8 +1603,9 @@ class ProductController extends Controller
         // Store the uploaded image
         $imagePath = $request->file('image')->store('images', 'public');
         $imageFullPath = url('storage/' . $imagePath);
+        $tmapiToken = env('TMAPI_TOKEN');
 
-        $apiUrl = 'http://api.tmapi.top/1688/tools/image/convert_url?apiToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VybmFtZSI6Im9wdG9tYWxsIiwiQ29taWQiOm51bGwsIlJvbGVpZCI6bnVsbCwiaXNzIjoidG1hcGkiLCJzdWIiOiJvcHRvbWFsbCIsImF1ZCI6WyIiXSwiaWF0IjoxNzI3ODQzODA3fQ.MjSYALtr8x19ybMi8aJvRJk2Pl_hNwMpuNpWyAwx9AQ';
+        $apiUrl = "http://api.tmapi.top/1688/tools/image/convert_url?apiToken=$tmapiToken";
         $response = Http::post($apiUrl, [
             'url' => $imageFullPath,
         ]);
@@ -2463,12 +2478,12 @@ class ProductController extends Controller
     public function getChinaProductInfo($productId)
     {
         $url = "https://api-gw.onebound.cn/1688/item_get_app/";
-
+        $onboundSecret = env('ONEBOUND_SECRET');
         $response = Http::timeout(15)->retry(1, 2)->get($url, [
             'key' => 't3832825558',
             'num_iid' => $productId,
             'lang' => 'zh-CN',
-            'secret' => '20240731',
+            'secret' => $onboundSecret,
             'cache' => 'no',
         ]);
 
@@ -2510,7 +2525,7 @@ class ProductController extends Controller
         $quantity = $request->input('quantity');
         $skuId = $request->input('skuId');
         $price = $request->input('price');
-
+        $onboundSecret = env('ONEBOUND_SECRET');
         $skuList = "{$quantity},{$skuId},{$price}";
         $query = [
             'key' => 't3832825558',
@@ -2523,7 +2538,7 @@ class ProductController extends Controller
             'sku_list' => $skuList,
             'cache' => 'no',
             'lang' => 'zh-CN',
-            'secret' => '20240731',
+            'secret' => $onboundSecret,
         ];
         $response = Http::timeout(15)->retry(1, 2)->get('https://api-gw.onebound.cn/1688/item_fee/', $query);
         if ($response->failed()) {

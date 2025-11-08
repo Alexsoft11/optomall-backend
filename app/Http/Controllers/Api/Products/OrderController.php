@@ -196,7 +196,7 @@ class OrderController extends Controller
                     foreach ($grouped as $item) {
                         $amount = Exchanges::where('currency', 'yuan')->first()->amount ?? 1800;
                         // Make the delivery price request (you may want to handle it outside the loop if the delivery URL is the same)
-                        // $deliveryUrl = "https://api-gw.onebound.cn/1688/item_fee/?key=t3832825558&&num_iid={$item['product_id']}&area_id=130200&temp_id=20066088&nick=%E6%AD%A6%E4%B9%89%E9%9F%A9%E6%81%BA%E6%99%BA%E8%83%BD%E7%A7%91%E6%8A%80%E6%9C%89%E9%99%90%E5%85%AC%E5%8F%B8&location=34620202&unitweight=0&sku_id=&qyt=&price=&cache=no&&lang=zh-CN&secret=20240731";
+                        // $deliveryUrl = "https://api-gw.onebound.cn/1688/item_fee/?key=t3832825558&&num_iid={$item['product_id']}&area_id=130200&temp_id=20066088&nick=%E6%AD%A6%E4%B9%89%E9%9F%A9%E6%81%BA%E6%99%BA%E8%83%BD%E7%A7%91%E6%8A%80%E6%9C%89%E9%99%90%E5%85%AC%E5%8F%B8&location=34620202&unitweight=0&sku_id=&qyt=&price=&cache=no&&lang=zh-CN&secret";
                         // $response = Http::get($deliveryUrl);
                         // $deliveryData = $response->json();
 
@@ -1194,7 +1194,7 @@ class OrderController extends Controller
                 'sku_list' => "{$item->quantity},{$item->skuId},{$item->price}",
                 'cache' => 'no',
                 'lang' => 'zh-CN',
-                'secret' => config('services.onebound.secret'),
+                'secret' => env('ONEBOUND_SECRET'),
             ];
 
             try {

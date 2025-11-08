@@ -49,14 +49,16 @@ Route::middleware('throttle:1200,60')->group(function () {
     Route::get('categories-from-taobao', [ProductController::class, 'categoriesFromTaoBao']);
     Route::get('sub-categories-from-taobao', [ProductController::class, 'subCategoriesFromTaoBao']);
     Route::get('search-products-from-taobao', [ProductController::class, 'searchProductsFromTaobao']);
-    Route::get('search-products-from-tmapi', [ProductController::class, 'searchProductsTmapi']);
     Route::get('product-detail-from-taobao', [ProductController::class, 'productDetailFromTaoBao']);
     Route::get('product-detail', [ProductController::class, 'productDetail']);
     Route::get('product-detail-otapi', [ProductController::class, 'productDetailOtapi']);
     Route::get('product-detail-onbound', [ProductController::class, 'productDetailOnbound']);
-    Route::get('product-detail-tmapi', [ProductController::class, 'productDetailTmapi']);
     Route::get('product-detail-desc', [ProductController::class, 'productDetailDesc']);
-
+    
+    //Tmapi 
+    Route::get('product-detail-tmapi', [ProductController::class, 'productDetailTmapi']);
+    Route::get('search-products-from-tmapi', [ProductController::class, 'searchProductsTmapi']);
+    
 
     Route::get('/products', [ProductController::class, 'products']);
     Route::get('/get-prices', [ProductController::class, 'getPrices']);
