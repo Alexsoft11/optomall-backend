@@ -872,7 +872,7 @@ class ProductController extends Controller
         $proxyUrl = "https://china-proxy.optomall.uz?url=" . urlencode($targetUrl);
 
         // Cache key and request through proxy
-        $productDetail = Cache::remember($cacheKey, 60 * 5, function () use ($proxyUrl) {
+        $productDetail = Cache::remember($cacheKey, 60 * 10, function () use ($proxyUrl) {
             try {
                 return Http::timeout(50)
                     ->retry(1, 2)
