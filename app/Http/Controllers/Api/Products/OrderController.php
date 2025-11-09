@@ -165,7 +165,6 @@ class OrderController extends Controller
                     'status_color' => '#05ff00',
                     'is_checking' => false,
                     'order_group_id' => $orderGroup->id,
-
                 ]);
 
                 $groupedItems = collect($items)->groupBy('product_id');
@@ -1332,5 +1331,75 @@ class OrderController extends Controller
     }
 
 
+
+    public function deliveryFeesForBasket(Request $request, Basket $basket)
+    {
+        $basket->load('basketItems');
+
+        $currency = Exchanges::where('currency', 'yuan')->first()->amount ?? 1800;
+
+        $grouped = $basket->basketItems->groupBy('product_id');
+        $fees = collect();
+
+        foreach ($grouped as $productId => $items) {
+            $totalQuantity = $items->sum('quantity');
+            $totalWeight = $items->sum(function ($item) {
+                $info = is_array($item->product_info) ? $item->product_info : json_decode($item->product_info, true);
+                $weight = $info['weight'] ?? 0;
+                return $weight * $item->quantity;
+            });
+
+            try {
+                $targetUrl = "http://api.tmapi.top/1688/item/shipping"
+                    . "?item_id={$productId}"
+                    . "&province=Beijing"
+                    . "&total_quantity={$totalQuantity}"
+                    . "&apiToken=" . config('services.tmapi.token')
+                    . "&total_weight={$totalWeight}";
+
+                $proxyUrl = "https://china-proxy.optomall.uz?url=" . urlencode($targetUrl);
+
+                $response = Http::retry(1, 3)
+                    ->timeout(15)
+                    ->get($proxyUrl);
+
+                $data = $response->json();
+
+
+                if ($response->successful() && array_key_exists('total_fee', $data['data'] ?? [])) {
+                    $totalFee = $data['data']['total_fee'];
+
+                    if (is_null($totalFee) || !is_numeric($totalFee)) {
+                        $unitFee = $this->calculateFallbackFee($items->first()->price);
+                    } else {
+                        $unitFee = $totalQuantity > 0
+                            ? round(((float) $totalFee * $currency) / $totalQuantity)
+                            : 0;
+                    }
+                } else {
+                    $unitFee = $this->calculateFallbackFee($items->first()->price);
+                }
+            } catch (\Illuminate\Http\Client\ConnectionException $e) {
+                $unitFee = $this->calculateFallbackFee($items->first()->price);
+            }
+
+            foreach ($items as $item) {
+                $price = round($unitFee * $item->quantity);
+                $fees->push([
+                    'basket_item_id' => $item->id,
+                    'product_id' => $item->product_id,
+                    'delivery_price' => $price,
+                ]);
+            }
+        }
+
+        $total = $fees->sum('delivery_price');
+
+        return response()->json([
+            'basket_id' => $basket->id,
+            'delivery_china' => $total,
+            'fees' => $fees->values(),
+        ]);
+    }
 
 }

@@ -874,7 +874,10 @@ class ProductController extends Controller
         // Cache key and request through proxy
         $productDetail = Cache::remember($cacheKey, 60 * 10, function () use ($proxyUrl) {
             try {
-                return Http::timeout(50)
+                return Http::withOptions([
+                    'verify' => false,
+                ])
+                    ->timeout(50)
                     ->retry(1, 2)
                     ->withoutVerifying()
                     ->get($proxyUrl)
