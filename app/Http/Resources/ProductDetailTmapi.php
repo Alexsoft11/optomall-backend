@@ -128,6 +128,7 @@ class ProductDetailTmapi extends JsonResource
                 'properties_name' => $sku['props_names'],
                 'quantity' => $sku['stock'],
                 'sku_id' => $sku['skuid'],
+                'package_info' => $sku['package_info'] ?? '',
             ];
         }, $skus);
     }

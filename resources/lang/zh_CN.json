@@ -86,5 +86,6 @@
     "additional": "额外的",
     "provider": "服务提供商",
     "properties": "特性",
-    "auth_method": "认证方法"
+    "auth_method": "认证方法",
+    "delivery_china": "中国境内配送"
 }

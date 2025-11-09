@@ -71,6 +71,7 @@ class OrderGroupResource extends Resource
                         })
                     ),
                 TextInput::make('total_price')->label(trans("total_amount"))->disabled(),
+                TextInput::make('delivery_china')->label(trans("delivery_china"))->disabled(),
                 Toggle::make('is_paid'),
             ]);
     }

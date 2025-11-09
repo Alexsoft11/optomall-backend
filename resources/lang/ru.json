@@ -86,5 +86,6 @@
     "additional": "Дополнительно",
     "provider": "Поставщик",
     "properties": "Xарактеристики",
-    "auth_method": "Способ авторизации"
+    "auth_method": "Способ авторизации",
+    "delivery_china": "Доставка в Китая"
 }

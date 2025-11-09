@@ -1417,12 +1417,12 @@ class ProductController extends Controller
                 ], 404);
             }
 
+            // Cache the successful response
             Cache::put($cacheKey, $this->respondWithSuccess([
                 'products' => collect($provider == '1688' ? $products['data']['items'] : $products['items']['item'])->map(function ($product) use ($provider, $lang) {
                     return (new ProductResource($product, $provider, $lang))->resolve();
                 }),
-            ]), 259200);
-            ; // Store in cache for 3 days
+            ]), 259200); // Store in cache for 3 days
 
             return $this->respondWithSuccess([
                 'products' => collect($provider == '1688' ? $products['data']['items'] : $products['items']['item'])->map(function ($product) use ($provider, $lang) {

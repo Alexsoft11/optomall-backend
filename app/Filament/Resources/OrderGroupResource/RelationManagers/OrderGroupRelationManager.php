@@ -81,7 +81,7 @@ class OrderGroupRelationManager extends RelationManager
                 TextColumn::make('user.unique_id')->label('User ID')->sortable(),
                 TextColumn::make('user.name')->label('Ismi')->sortable(),
                 TextColumn::make('total_price')->label('Jami narx')->sortable(),
-                TextColumn::make('delivery_price')->label('Xitoy ichki yo\'lkiro')->sortable(),
+                TextColumn::make('delivery_china')->label('Xitoy ichki yo\'lkiro')->sortable(),
                 TextColumn::make('getStatus.name_uz')
                     ->label('Status')
                     ->sortable()

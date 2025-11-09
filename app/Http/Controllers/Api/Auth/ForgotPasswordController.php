@@ -6,9 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\auth\ForgotPasswordRequest;
 use App\Models\User;
 use App\Notifications\ResetPasswordNotification;
+use Ichtrojan\Otp\Otp;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use OpenApi\Annotations as OA;
+use Resend;
 
 class ForgotPasswordController extends Controller
 {
@@ -45,24 +47,42 @@ class ForgotPasswordController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['message' => 'validation_failed',  'errors' => $validator->errors()], 422);
+            return response()->json(['message' => 'validation_failed', 'errors' => $validator->errors()], 422);
         }
 
-        if ($request->type == 'email') {
+        if ($request->type === 'email') {
             $user = User::where('email', $request->email)->first();
-            if ($user) {
-                $user->notify(new ResetPasswordNotification());
-            } else {
-                return response()->json(['message' => 'email_doesnt_exist',], 404);
+            if (!$user) {
+                return response()->json(['message' => 'email_doesnt_exist'], 404);
             }
-        } elseif ($request->type == 'phone') {
+
+            $otp = (new Otp())->generate($user->email, 'numeric', 6, 15);
+
+            try {
+                $resend = Resend::client(env('RESEND_API_KEY'));
+
+                $resend->emails->send([
+                    'from' => 'Optomall <noreply@optomall.uz>',
+                    'to' => [$user->email],
+                    'subject' => 'Parolni tiklash kodi',
+                    'html' => '<p>Parolingizni tiklash uchun quyidagi koddan foydalaning:</p>'
+                        . '<h2 style="color: #333;">' . $otp->token . '</h2>'
+                        . '<p>Kod 15 daqiqa davomida amal qiladi.</p>',
+                ]);
+            } catch (\Throwable $e) {
+                return response()->json([
+                    'message' => 'email_sending_failed',
+                    'error' => $e->getMessage(),
+                ], 400);
+            }
+        } elseif ($request->type === 'phone') {
             $user = User::where('phone', $request->phone_number)->first();
-            if ($user) {
-                $request->replace(['phone_number' => $user->phone]);
-                return $this->sendOTP->sendForgotOTP($request);
-            } else {
-                return response()->json(['message' => 'phone_doesnt_exist',], 404);
+            if (!$user) {
+                return response()->json(['message' => 'phone_doesnt_exist'], 404);
             }
+
+            $request->replace(['phone_number' => $user->phone]);
+            return $this->sendOTP->sendForgotOTP($request);
         }
 
         return response()->json(['message' => 'success'], 200);

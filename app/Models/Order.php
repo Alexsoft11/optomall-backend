@@ -39,9 +39,10 @@ class Order extends Model
         'order_group_id',
         'is_paid',
         'delivery_china',
+        'delivery_type'
     ];
     protected $casts = [
-        'delivery_price' => 'float',
+        'delivery_china' => 'float',
     ];
 
 
@@ -70,19 +71,19 @@ class Order extends Model
                 $isNowActive = !$newStatus?->is_cancel;
 
                 if ($wasCanceled || !$isNowActive) {
-                    $total = $order->orderGroup
-                        ->orders()
-                        ->whereHas('getStatus', function ($q) {
-                            $q->where('is_cancel', false);
-                        })
-                        ->sum('total_price');
-                    $order->orderGroup->update(['total_price' => $total]);
+                    $order->orderGroup->recalculateTotals();
                 }
 
-                event(new \App\Events\OrderStatusUpdated($order));
+                // event(new \App\Events\OrderStatusUpdated($order));
+            }
+        });
+        static::deleted(function ($order) {
+            if ($order->orderGroup) {
+                $order->orderGroup->recalculateTotals();
             }
         });
     }
+
 
 
 

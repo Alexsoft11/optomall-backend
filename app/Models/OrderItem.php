@@ -21,7 +21,8 @@ class OrderItem extends Model
         'skuId',
         'provider',
         'delivery_price',
-        'product_info'
+        'product_info',
+        "delivery_type"
     ];
 
     protected $casts = [

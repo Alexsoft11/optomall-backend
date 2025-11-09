@@ -204,6 +204,10 @@ class OrderResource extends Resource
                             ->placeholder('Enter price')
                             ->disabled()
                             ->columnSpan(6),
+                        TextInput::make('delivery_type')
+                            ->label('Hisoblash turi')
+                            ->disabled()
+                            ->columnSpan(6),
 
                         TextInput::make('quantity')
                             ->label(trans("Quantity"))
@@ -226,18 +230,18 @@ class OrderResource extends Resource
                     ->label(trans("properties"))
                     ->schema([
                         $locale == 'zh_CN'
-                            ? Textarea::make('originalName')
+                        ? Textarea::make('originalName')
                             ->label(trans("name"))
                             ->columnSpan(6)
-                            : Textarea::make('name')
+                        : Textarea::make('name')
                             ->label(trans("name"))
                             ->columnSpan(6),
 
                         $locale == 'zh_CN'
-                            ? Textarea::make('originalValue')
+                        ? Textarea::make('originalValue')
                             ->label(trans("value"))
                             ->columnSpan(6)
-                            : Textarea::make('value')
+                        : Textarea::make('value')
                             ->label(trans("value"))
                             ->columnSpan(6),
                     ])
