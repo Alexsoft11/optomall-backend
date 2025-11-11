@@ -560,10 +560,14 @@ class OrderController extends Controller
                     throw new \Exception('No active card number found');
                 }
 
+                if (!$request->hasFile('image')) {
+                    return response()->json(['error' => 'No image uploaded'], 400);
+                }
+
                 // Create order check
                 $orderCheck = OrderCheck::create([
                     'order_group_id' => $request->order_group_id,
-                    'image' => $request->image->store('order_checks', 'public'), // Store the image and save the path
+                    'image' => $request->image->store('order_checks-v2', 'public'), // Store the image and save the path
                     'card_number_id' => $cardNumber->id,
                 ]);
                 $defaultStatus = OrderStatus::where('name_uz', 'Tekshirilmoqda')->first();
