@@ -145,14 +145,14 @@ class ProductDetailTmapi extends JsonResource
 
         // Make the translation API call
         $translateUrl = "https://aibit-translator.p.rapidapi.com/api/v1/translator/json";
-        \Log::info('Product creation translation request:', $data);
+        // \Log::info('Product creation translation request:', $data);
         $response = Http::withHeaders([
             'Content-Type' => 'application/json',
             'x-rapidapi-host' => 'aibit-translator.p.rapidapi.com',
             'x-rapidapi-key' => '74e939e778mshea2f00b1b0170dap1cc6eajsnf05e5c9be03a',
         ])->post($translateUrl, $data);
 
-        \Log::info('Product creation translation response:', $response->json());
+        // \Log::info('Product creation translation response:', $response->json());
 
         // Update product details with the translated text
         if ($response->successful() && isset($response['trans'])) {

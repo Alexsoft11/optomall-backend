@@ -20,3 +20,4 @@ yarn-error.log
 /.idea
 /.vscode
 /laravel.log
+/storage_backup_public

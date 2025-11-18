@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Log;
 
 class Order extends Model
 {
@@ -66,7 +67,7 @@ class Order extends Model
                 $oldStatusId = $order->getOriginal('status');
                 $newStatus = $order->getStatus()->first();
                 $oldStatus = \App\Models\OrderStatus::find($oldStatusId);
-
+                Log::info('Order status changed from ' . ($oldStatus?->name ?? 'unknown') . ' to ' . ($newStatus?->name ?? 'unknown'));
                 $wasCanceled = $oldStatus?->is_cancel;
                 $isNowActive = !$newStatus?->is_cancel;
 

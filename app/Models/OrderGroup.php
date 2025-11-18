@@ -90,6 +90,11 @@ class OrderGroup extends Model
             })
             ->get();
 
+        Log::info('Active orders for recalculation:', [
+            'total_price' => $activeOrders->sum('total_price'),
+            'delivery_china' => $activeOrders->sum('delivery_china'),
+            'order_group_id' => $this->id,
+        ], );
         $this->update([
             'total_price' => $activeOrders->sum('total_price'),
             'delivery_china' => $activeOrders->sum('delivery_china'),
