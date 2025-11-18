@@ -965,21 +965,26 @@ class ProductController extends Controller
         $productId = $request->productId;
         $provider = $request->provider;
 
-        // Remove 'abb-' if present in the product ID
         if (strpos($productId, 'abb-') !== false) {
             $productId = str_replace('abb-', '', $productId);
         }
 
-        $lang = 'zh-CN'; // Default language
+        $lang = 'zh-CN';
         $tmapiToken = env('TMAPI_TOKEN');
-        // Build the URL to fetch product details
-        $url = "http://api.tmapi.top/$provider/item_desc?item_id=$productId&apiToken=$tmapiToken";
 
-        // Fetch product details from cache or make an API call if not cached
-        $response = Http::timeout(50)->withoutVerifying()->get($url)->json();
+        $targetUrl = "http://api.tmapi.top/{$provider}/item_desc"
+            . "?item_id={$productId}"
+            . "&apiToken={$tmapiToken}";
+
+        $proxyUrl = "https://china-proxy.optomall.uz?url=" . urlencode($targetUrl);
+
+        $response = Http::timeout(50)
+            ->withoutVerifying()
+            ->get($proxyUrl)
+            ->json();
 
         return $this->respondWithSuccess([
-            'desc' => $response['data'],
+            'desc' => $response['data'] ?? null,
         ]);
     }
 

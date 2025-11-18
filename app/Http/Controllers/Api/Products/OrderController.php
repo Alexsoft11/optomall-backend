@@ -1266,14 +1266,17 @@ class OrderController extends Controller
                 $weight = $info['weight'] ?? 0;
                 return $weight * $item->quantity;
             });
+
             try {
+                $tmapiToken = env('TMAPI_TOKEN');
+
                 $response = Http::retry(1, 3)
                     ->timeout(15)
                     ->get('http://api.tmapi.top/1688/item/shipping', [
                         'item_id' => $productId,
                         'province' => 'Beijing',
                         'total_quantity' => $totalQuantity,
-                        'apiToken' => config('services.tmapi.token'),
+                        'apiToken' => $tmapiToken,
                         'total_weight' => $totalWeight,
                     ]);
 
@@ -1281,7 +1284,7 @@ class OrderController extends Controller
 
                 if ($response->successful() && array_key_exists('total_fee', $data['data'] ?? [])) {
                     if (is_null($data['data']['total_fee'])) {
-                        $totalFee = null; // 0
+                        $totalFee = null;
                     } elseif (is_numeric($data['data']['total_fee'])) {
                         $totalFee = round((float) $data['data']['total_fee'] * $currency);
                     } else {
@@ -1292,14 +1295,38 @@ class OrderController extends Controller
                         $unitFee = $totalQuantity > 0 ? $totalFee / $totalQuantity : 0;
                         $deliveryType = 'api';
                     } else {
+                        // LOG: Invalid or null total_fee
+                        Log::channel('delivery_fee_error')->error('TMAPI total_fee invalid or null', [
+                            'order_id' => $order->id,
+                            'product_id' => $productId,
+                            'response' => $data,
+                        ]);
+
                         $unitFee = $this->calculateDeliveryChina($items->first()->price);
                         $deliveryType = 'local';
                     }
                 } else {
+
+                    // LOG: API response not successful
+                    Log::channel('delivery_fee_error')->error('TMAPI request failed', [
+                        'order_id' => $order->id,
+                        'product_id' => $productId,
+                        'status' => $response->status(),
+                        'response' => $response->body(),
+                    ]);
+
                     $unitFee = $this->calculateDeliveryChina($items->first()->price);
                     $deliveryType = 'local';
                 }
             } catch (\Illuminate\Http\Client\ConnectionException $e) {
+
+                // LOG: Connection error
+                Log::channel('delivery_fee_error')->error('TMAPI connection error', [
+                    'order_id' => $order->id,
+                    'product_id' => $productId,
+                    'error_message' => $e->getMessage(),
+                ]);
+
                 $unitFee = $this->calculateDeliveryChina($items->first()->price);
                 $deliveryType = 'local';
             }
@@ -1318,12 +1345,11 @@ class OrderController extends Controller
         $order->update(['delivery_china' => $total]);
 
         $groupTotal = 0;
-        if ($order->order_group_id) {
-            $groupTotal = Order::where('order_group_id', $order->order_group_id)
-                ->sum('delivery_china');
 
-            OrderGroup::where('id', $order->order_group_id)
-                ->update(['delivery_china' => $groupTotal]);
+        if ($order->order_group_id) {
+            $groupTotal = Order::where('order_group_id', $order->order_group_id)->sum('delivery_china');
+
+            OrderGroup::where('id', $order->order_group_id)->update(['delivery_china' => $groupTotal]);
         }
 
         return response()->json([
@@ -1349,41 +1375,64 @@ class OrderController extends Controller
             $totalQuantity = $items->sum('quantity');
             $totalWeight = $items->sum(function ($item) {
                 $info = is_array($item->product_info) ? $item->product_info : json_decode($item->product_info, true);
-                $weight = $info['weight'] ?? 0;
-                return $weight * $item->quantity;
+                return ($info['weight'] ?? 0) * $item->quantity;
             });
 
+            $tmapiToken = env('TMAPI_TOKEN');
+
+            $targetUrl = "http://api.tmapi.top/1688/item/shipping"
+                . "?item_id={$productId}"
+                . "&province=Beijing"
+                . "&total_quantity={$totalQuantity}"
+                . "&apiToken=" . $tmapiToken
+                . "&total_weight={$totalWeight}";
+
+            $proxyUrl = "https://china-proxy.optomall.uz?url=" . urlencode($targetUrl);
+
+            $unitFee = null;
+
             try {
-                $targetUrl = "http://api.tmapi.top/1688/item/shipping"
-                    . "?item_id={$productId}"
-                    . "&province=Beijing"
-                    . "&total_quantity={$totalQuantity}"
-                    . "&apiToken=" . config('services.tmapi.token')
-                    . "&total_weight={$totalWeight}";
+                $response = Http::retry(1, 3)->timeout(15)->get($proxyUrl);
 
-                $proxyUrl = "https://china-proxy.optomall.uz?url=" . urlencode($targetUrl);
+                if (!$response->successful()) {
+                    Log::channel('delivery_fee_error')->error('Delivery fee API failed', [
+                        'basket_id' => $basket->id,
+                        'product_id' => $productId,
+                        'reason' => 'HTTP request not successful',
+                        'status' => $response->status(),
+                        'url' => $proxyUrl,
+                        'response_body' => $response->body(),
+                    ]);
 
-                $response = Http::retry(1, 3)
-                    ->timeout(15)
-                    ->get($proxyUrl);
+                    $unitFee = $this->calculateFallbackFee($items->first()->price);
+                } else {
+                    $data = $response->json();
 
-                $data = $response->json();
+                    if (!isset($data['data']['total_fee']) || !is_numeric($data['data']['total_fee'])) {
+                        Log::channel('delivery_fee_error')->error('Missing or invalid total_fee in API response', [
+                            'basket_id' => $basket->id,
+                            'product_id' => $productId,
+                            'url' => $proxyUrl,
+                            'response_body' => $data,
+                        ]);
 
-
-                if ($response->successful() && array_key_exists('total_fee', $data['data'] ?? [])) {
-                    $totalFee = $data['data']['total_fee'];
-
-                    if (is_null($totalFee) || !is_numeric($totalFee)) {
                         $unitFee = $this->calculateFallbackFee($items->first()->price);
                     } else {
+                        $totalFee = (float) $data['data']['total_fee'];
                         $unitFee = $totalQuantity > 0
-                            ? round(((float) $totalFee * $currency) / $totalQuantity)
+                            ? round(($totalFee * $currency) / $totalQuantity)
                             : 0;
                     }
-                } else {
-                    $unitFee = $this->calculateFallbackFee($items->first()->price);
                 }
-            } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            } catch (\Throwable $e) {
+                Log::channel('delivery_fee_error')->error('Delivery fee API connection error', [
+                    'basket_id' => $basket->id,
+                    'product_id' => $productId,
+                    'url' => $proxyUrl,
+                    'error_message' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString(),
+                ]);
+
                 $unitFee = $this->calculateFallbackFee($items->first()->price);
             }
 
@@ -1397,11 +1446,9 @@ class OrderController extends Controller
             }
         }
 
-        $total = $fees->sum('delivery_price');
-
         return response()->json([
             'basket_id' => $basket->id,
-            'delivery_china' => $total,
+            'delivery_china' => $fees->sum('delivery_price'),
             'fees' => $fees->values(),
         ]);
     }

@@ -382,7 +382,6 @@ class AuthController extends Controller
         ]);
 
         $token = $request->input('token');
-        Log::info('Google Access Token: ' . $token);
 
         try {
             $googleUser = Socialite::driver('google')->userFromToken($token);
