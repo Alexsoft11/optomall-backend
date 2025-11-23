@@ -1460,10 +1460,10 @@ class OrderController extends Controller
 
             $response = $responses[$productId] ?? null;
             $unitFee = null;
-
+            $delivery_type = null;
             try {
                 $isValid = $response instanceof Response;
-                
+
                 Log::channel('delivery_fee_error')->error('Test response', [
                     'response' => $response,
                 ]);
@@ -1479,7 +1479,7 @@ class OrderController extends Controller
 
                     $first = $itemsForProduct->first();
                     $unitFee = $this->calculateDeliveryChina((float) $first->price);
-
+                    $delivery_type = 'local';
                 } else {
                     $data = $response->json();
 
@@ -1495,6 +1495,8 @@ class OrderController extends Controller
 
                         $first = $itemsForProduct->first();
                         $unitFee = $this->calculateDeliveryChina((float) $first->price);
+                        $delivery_type = 'local';
+
 
                     } else {
                         $totalFee = (float) $data['data']['total_fee'];
@@ -1502,6 +1504,7 @@ class OrderController extends Controller
                         $unitFee = $totalQuantity > 0
                             ? round(($totalFee * $currency) / $totalQuantity)
                             : 0;
+                        $delivery_type = 'api';
                     }
                 }
 
@@ -1515,6 +1518,7 @@ class OrderController extends Controller
 
                 $first = $itemsForProduct->first();
                 $unitFee = $this->calculateDeliveryChina((float) $first->price);
+                $delivery_type = 'local';
             }
 
             // Assign fee to each BasketItem
@@ -1523,15 +1527,22 @@ class OrderController extends Controller
                     'basket_item_id' => $item->id,
                     'product_id' => $productId,
                     'delivery_price' => round($unitFee * (int) $item->quantity),
+                    'delivery_type' => $delivery_type
                 ]);
             }
         }
+        $price = $items->sum(function ($item) {
+            return $item->price * $item->quantity;
+        });
+        $delivery_china = $fees->sum('delivery_price');
 
         return response()->json([
-            'delivery_china' => $fees->sum('delivery_price'),
+            'delivery_china' => $delivery_china,
             'fees' => $fees->values(),
+            'total_quantity' => $items->sum('quantity'),
+            'price' => $price,
+            'total_price' => $delivery_china + $price,
+            'items' => $items
         ]);
     }
-
-
 }
