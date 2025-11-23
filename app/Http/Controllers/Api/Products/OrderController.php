@@ -1300,6 +1300,8 @@ class OrderController extends Controller
                             'order_id' => $order->id,
                             'product_id' => $productId,
                             'response' => $data,
+                            'weight' => $totalWeight,
+                            'quantity' => $totalQuantity,
                         ]);
 
                         $unitFee = $this->calculateDeliveryChina($items->first()->price);
@@ -1313,6 +1315,8 @@ class OrderController extends Controller
                         'product_id' => $productId,
                         'status' => $response->status(),
                         'response' => $response->body(),
+                        'weight' => $totalWeight,
+                        'quantity' => $totalQuantity,
                     ]);
 
                     $unitFee = $this->calculateDeliveryChina($items->first()->price);
