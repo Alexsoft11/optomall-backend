@@ -105,6 +105,7 @@ class OrderController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'items' => 'required|array',
+            'items.*.id' => 'required|integer',
             'items.*.product_id' => 'required|string',
             'items.*.title' => 'required|string',
             'items.*.image_url' => 'required|url',
@@ -126,23 +127,37 @@ class OrderController extends Controller
             'items.*.product_info' => 'nullable|array',
             'total_price' => 'nullable|numeric|min:0',
             'delivery_china' => 'nullable|numeric|min:0',
+
+            'delivery_fees' => 'nullable|array',
+            'delivery_fees.*.basket_item_id' => 'required|integer',
+            'delivery_fees.*.product_id' => 'required',
+            'delivery_fees.*.delivery_price' => 'required|numeric|min:0',
         ]);
 
-        $user = auth()->user();
-
         if ($validator->fails()) {
-            return response()->json(['message' => 'invalid_data', 'errors' => $validator->errors(), 'error' => true], 400);
+            return response()->json([
+                'message' => 'invalid_data',
+                'errors' => $validator->errors(),
+                'error' => true
+            ], 400);
         }
+
+        $user = auth()->user();
 
         $items = collect($request->items);
         $groupedItems = $items->groupBy('seller_id');
 
+        $incomingFees = collect($request->input('delivery_fees', []));
+        $feesByBasketItemId = $incomingFees->keyBy('basket_item_id');
+        $feesByProductId = $incomingFees->groupBy('product_id')->map->first();
+
         $orders = [];
         $orderGroup = null;
 
-        DB::transaction(function () use ($groupedItems, $user, $request, &$orders, &$orderGroup) {
+        DB::transaction(function () use ($groupedItems, $user, $request, &$orders, &$orderGroup, $feesByBasketItemId, $feesByProductId, $incomingFees) {
             $defaultStatus = OrderStatus::where('for_first', true)->first();
             $statusId = $defaultStatus ? $defaultStatus->id : '3';
+
             $orderGroup = OrderGroup::create([
                 'status' => $statusId,
                 'status_color' => '#05ff00',
@@ -152,12 +167,12 @@ class OrderController extends Controller
                 'delivery_china' => $request->delivery_china ?? 0,
             ]);
 
+            $accumulatedDeliveryChina = 0;
+
             foreach ($groupedItems as $sellerId => $items) {
                 $order = Order::create([
                     'user_id' => $user->id,
-                    'total_price' => $items->reduce(function ($carry, $item) {
-                        return $carry + ($item['price'] * $item['quantity']);
-                    }, 0),
+                    'total_price' => $items->sum(fn($i) => $i['price'] * $i['quantity']),
                     'seller_id' => $sellerId,
                     'user_name' => '.',
                     'user_phone' => '.',
@@ -168,55 +183,48 @@ class OrderController extends Controller
                     'status_color' => '#05ff00',
                     'is_checking' => false,
                     'order_group_id' => $orderGroup->id,
+                    'delivery_china' => 0,
                 ]);
 
-                $groupedItems = collect($items)->groupBy('product_id');
-                foreach ($groupedItems as $productId => $grouped) {
-                    $totalQuantity = 0;
+                $groupedByProduct = $items->groupBy('product_id');
+                $orderDeliverySum = 0;
+
+                foreach ($groupedByProduct as $productId => $grouped) {
+                    $totalQuantity = $grouped->sum('quantity');
                     $basePrice = $grouped->first()['price'];
                     $finalPrice = $basePrice;
 
-                    // Sum up the total quantity of items with the same product_id
-                    foreach ($grouped as $item) {
-                        $totalQuantity += $item['quantity'];
-                    }
-
-                    // Determine the final price based on the total quantity and quantity ranges
-                    if (isset($grouped->first()['quantityRanges']) && count($grouped->first()['quantityRanges']) > 0) {
-                        $applicableRange = null;
-
-                        foreach ($grouped->first()['quantityRanges'] as $range) {
+                    $ranges = $grouped->first()['quantityRanges'] ?? [];
+                    if (!empty($ranges)) {
+                        foreach ($ranges as $range) {
                             if ($totalQuantity >= $range['minQuantity']) {
-                                $applicableRange = $range;
+                                $finalPrice = $range['price'];
                             }
                         }
-
-                        if ($applicableRange) {
-                            $finalPrice = $applicableRange['price'];
-                        }
                     }
-                    foreach ($grouped as $item) {
-                        $amount = Exchanges::where('currency', 'yuan')->first()->amount ?? 1800;
-                        // Make the delivery price request (you may want to handle it outside the loop if the delivery URL is the same)
-                        // $deliveryUrl = "https://api-gw.onebound.cn/1688/item_fee/?key=t3832825558&&num_iid={$item['product_id']}&area_id=130200&temp_id=20066088&nick=%E6%AD%A6%E4%B9%89%E9%9F%A9%E6%81%BA%E6%99%BA%E8%83%BD%E7%A7%91%E6%8A%80%E6%9C%89%E9%99%90%E5%85%AC%E5%8F%B8&location=34620202&unitweight=0&sku_id=&qyt=&price=&cache=no&&lang=zh-CN&secret";
-                        // $response = Http::get($deliveryUrl);
-                        // $deliveryData = $response->json();
 
-                        // $delivery_price = isset($deliveryData['item']['price']) && is_numeric($deliveryData['item']['price'])
-                        //     ? $deliveryData['item']['price']
-                        //     : 0;
-                        // Create order items for each item in the group
+                    foreach ($grouped as $item) {
+                        $matchedFee = null;
+
+                        if ($feesByBasketItemId->has($item['id'])) {
+                            $matchedFee = $feesByBasketItemId[$item['id']];
+                        } elseif ($feesByProductId->has($productId)) {
+                            $matchedFee = $feesByProductId[$productId];
+                        }
+
+                        $deliveryPriceForThisItem = $matchedFee ? (float) $matchedFee['delivery_price'] : 0;
+
                         $orderItem = OrderItem::create([
                             'order_id' => $order->id,
                             'product_id' => $productId,
                             'title' => $item['title'],
-                            'provider' => $item['provider'],
+                            'provider' => $item['provider'] ?? null,
                             'image_url' => $item['image_url'],
                             'quantity' => $item['quantity'],
                             'price' => $finalPrice,
-                            'product_url' => $item['product_url'],
+                            'product_url' => $item['product_url'] ?? null,
                             'skuId' => $item['sku_id'],
-                            'delivery_price' => 0,
+                            'delivery_price' => $deliveryPriceForThisItem,
                             'product_info' => $item['product_info'] ?? null,
                         ]);
 
@@ -231,48 +239,36 @@ class OrderController extends Controller
                             ]);
                         }
 
-                        // Remove item from basket
                         $this->removeBasket($user->id, $item['sku_id']);
+
+                        $orderDeliverySum += $deliveryPriceForThisItem;
+                        $accumulatedDeliveryChina += $deliveryPriceForThisItem;
                     }
                 }
 
+                $order->delivery_china = $orderDeliverySum;
+                $order->save();
+
                 $orders[] = $order;
+            }
+
+            if ($incomingFees->isNotEmpty()) {
+                $orderGroup->delivery_china = $accumulatedDeliveryChina;
+                $orderGroup->save();
             }
         });
 
-        // Mail::to('optomall.uz@gmail.com')->send(new OrderCreated($orderGroup->id));
-
-        return response()->json(['message' => 'order_created_successfully', 'order_group' => $orderGroup->id], 201);
+        return response()->json([
+            'message' => 'order_created_successfully',
+            'order_group' => $orderGroup->id
+        ], 201);
     }
 
 
 
 
-    private function calculatePrice($price, $amount)
-    {
-        return $price * $amount;
-    }
 
-    // private function saveOrderItemImage($client, $url)
-    // {
-    //     try {
-    //         // Generate a random name for the image file
-    //         $randomName = Str::random(40) . '.' . pathinfo($url, PATHINFO_EXTENSION);
-    //         // Define the path where the image will be stored
-    //         $imagePath = 'order_images/' . $randomName;
-
-    //         // Use Guzzle to make an HTTP GET request to the image URL
-    //         $response = $client->get($url);
-
-    //         // Store the image in the public disk (storage/app/public/order_images/)
-    //         Storage::disk('public')->put($imagePath, $response->getBody());
-
-    //         return $imagePath; // Return the path where the image was stored
-    //     } catch (\Exception $e) {
-    //         // Handle the exception, e.g., log the error and return null
-    //         return null;
-    //     }
-    // }
+ 
 
     private function removeBasket($userId, $skuId)
     {
