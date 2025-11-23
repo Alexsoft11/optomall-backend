@@ -132,6 +132,7 @@ class OrderController extends Controller
             'delivery_fees.*.basket_item_id' => 'required|integer',
             'delivery_fees.*.product_id' => 'required',
             'delivery_fees.*.delivery_price' => 'required|numeric|min:0',
+            'delivery_fees.*.delivery_type' => 'required',
         ]);
 
         if ($validator->fails()) {
@@ -225,6 +226,7 @@ class OrderController extends Controller
                             'product_url' => $item['product_url'] ?? null,
                             'skuId' => $item['sku_id'],
                             'delivery_price' => $deliveryPriceForThisItem,
+                            'delivery_type' => $matchedFee ? $matchedFee['delivery_type'] : null,
                             'product_info' => $item['product_info'] ?? null,
                         ]);
 
