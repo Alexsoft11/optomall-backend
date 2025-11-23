@@ -1263,7 +1263,7 @@ class OrderController extends Controller
             $totalQuantity = $items->sum('quantity');
             $totalWeight = $items->sum(function ($item) {
                 $info = is_array($item->product_info) ? $item->product_info : json_decode($item->product_info, true);
-                $weight = $info['weight'] ?? 0;
+                $weight = $info['unit_weight'] ?? 0;
                 return $weight * $item->quantity;
             });
 
@@ -1302,6 +1302,7 @@ class OrderController extends Controller
                             'response' => $data,
                             'weight' => $totalWeight,
                             'quantity' => $totalQuantity,
+                            'items' => $items,
                         ]);
 
                         $unitFee = $this->calculateDeliveryChina($items->first()->price);
@@ -1317,6 +1318,7 @@ class OrderController extends Controller
                         'response' => $response->body(),
                         'weight' => $totalWeight,
                         'quantity' => $totalQuantity,
+                        'items' => $items,
                     ]);
 
                     $unitFee = $this->calculateDeliveryChina($items->first()->price);
