@@ -26,8 +26,6 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\OrderCreated;
-use Illuminate\Http\Client\Pool;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
@@ -104,6 +102,7 @@ class OrderController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'items' => 'required|array',
+            'items.*.id' => 'required|integer',
             'items.*.product_id' => 'required|string',
             'items.*.title' => 'required|string',
             'items.*.image_url' => 'required|url',
@@ -125,23 +124,38 @@ class OrderController extends Controller
             'items.*.product_info' => 'nullable|array',
             'total_price' => 'nullable|numeric|min:0',
             'delivery_china' => 'nullable|numeric|min:0',
+
+            'delivery_fees' => 'nullable|array',
+            'delivery_fees.*.basket_item_id' => 'required|integer',
+            'delivery_fees.*.product_id' => 'required',
+            'delivery_fees.*.delivery_price' => 'required|numeric|min:0',
+            'delivery_fees.*.delivery_type' => 'required',
         ]);
 
-        $user = auth()->user();
-
         if ($validator->fails()) {
-            return response()->json(['message' => 'invalid_data', 'errors' => $validator->errors(), 'error' => true], 400);
+            return response()->json([
+                'message' => 'invalid_data',
+                'errors' => $validator->errors(),
+                'error' => true
+            ], 400);
         }
+
+        $user = auth()->user();
 
         $items = collect($request->items);
         $groupedItems = $items->groupBy('seller_id');
 
+        $incomingFees = collect($request->input('delivery_fees', []));
+        $feesByBasketItemId = $incomingFees->keyBy('basket_item_id');
+        $feesByProductId = $incomingFees->groupBy('product_id')->map->first();
+
         $orders = [];
         $orderGroup = null;
 
-        DB::transaction(function () use ($groupedItems, $user, $request, &$orders, &$orderGroup) {
+        DB::transaction(function () use ($groupedItems, $user, $request, &$orders, &$orderGroup, $feesByBasketItemId, $feesByProductId, $incomingFees) {
             $defaultStatus = OrderStatus::where('for_first', true)->first();
             $statusId = $defaultStatus ? $defaultStatus->id : '3';
+
             $orderGroup = OrderGroup::create([
                 'status' => $statusId,
                 'status_color' => '#05ff00',
@@ -151,12 +165,12 @@ class OrderController extends Controller
                 'delivery_china' => $request->delivery_china ?? 0,
             ]);
 
+            $accumulatedDeliveryChina = 0;
+
             foreach ($groupedItems as $sellerId => $items) {
                 $order = Order::create([
                     'user_id' => $user->id,
-                    'total_price' => $items->reduce(function ($carry, $item) {
-                        return $carry + ($item['price'] * $item['quantity']);
-                    }, 0),
+                    'total_price' => $items->sum(fn($i) => $i['price'] * $i['quantity']),
                     'seller_id' => $sellerId,
                     'user_name' => '.',
                     'user_phone' => '.',
@@ -167,55 +181,49 @@ class OrderController extends Controller
                     'status_color' => '#05ff00',
                     'is_checking' => false,
                     'order_group_id' => $orderGroup->id,
+                    'delivery_china' => 0,
                 ]);
 
-                $groupedItems = collect($items)->groupBy('product_id');
-                foreach ($groupedItems as $productId => $grouped) {
-                    $totalQuantity = 0;
+                $groupedByProduct = $items->groupBy('product_id');
+                $orderDeliverySum = 0;
+
+                foreach ($groupedByProduct as $productId => $grouped) {
+                    $totalQuantity = $grouped->sum('quantity');
                     $basePrice = $grouped->first()['price'];
                     $finalPrice = $basePrice;
 
-                    // Sum up the total quantity of items with the same product_id
-                    foreach ($grouped as $item) {
-                        $totalQuantity += $item['quantity'];
-                    }
-
-                    // Determine the final price based on the total quantity and quantity ranges
-                    if (isset($grouped->first()['quantityRanges']) && count($grouped->first()['quantityRanges']) > 0) {
-                        $applicableRange = null;
-
-                        foreach ($grouped->first()['quantityRanges'] as $range) {
+                    $ranges = $grouped->first()['quantityRanges'] ?? [];
+                    if (!empty($ranges)) {
+                        foreach ($ranges as $range) {
                             if ($totalQuantity >= $range['minQuantity']) {
-                                $applicableRange = $range;
+                                $finalPrice = $range['price'];
                             }
                         }
-
-                        if ($applicableRange) {
-                            $finalPrice = $applicableRange['price'];
-                        }
                     }
-                    foreach ($grouped as $item) {
-                        $amount = Exchanges::where('currency', 'yuan')->first()->amount ?? 1800;
-                        // Make the delivery price request (you may want to handle it outside the loop if the delivery URL is the same)
-                        // $deliveryUrl = "https://api-gw.onebound.cn/1688/item_fee/?key=t3832825558&&num_iid={$item['product_id']}&area_id=130200&temp_id=20066088&nick=%E6%AD%A6%E4%B9%89%E9%9F%A9%E6%81%BA%E6%99%BA%E8%83%BD%E7%A7%91%E6%8A%80%E6%9C%89%E9%99%90%E5%85%AC%E5%8F%B8&location=34620202&unitweight=0&sku_id=&qyt=&price=&cache=no&&lang=zh-CN&secret";
-                        // $response = Http::get($deliveryUrl);
-                        // $deliveryData = $response->json();
 
-                        // $delivery_price = isset($deliveryData['item']['price']) && is_numeric($deliveryData['item']['price'])
-                        //     ? $deliveryData['item']['price']
-                        //     : 0;
-                        // Create order items for each item in the group
+                    foreach ($grouped as $item) {
+                        $matchedFee = null;
+
+                        if ($feesByBasketItemId->has($item['id'])) {
+                            $matchedFee = $feesByBasketItemId[$item['id']];
+                        } elseif ($feesByProductId->has($productId)) {
+                            $matchedFee = $feesByProductId[$productId];
+                        }
+
+                        $deliveryPriceForThisItem = $matchedFee ? (float) $matchedFee['delivery_price'] : 0;
+
                         $orderItem = OrderItem::create([
                             'order_id' => $order->id,
                             'product_id' => $productId,
                             'title' => $item['title'],
-                            'provider' => $item['provider'],
+                            'provider' => $item['provider'] ?? null,
                             'image_url' => $item['image_url'],
                             'quantity' => $item['quantity'],
                             'price' => $finalPrice,
-                            'product_url' => $item['product_url'],
+                            'product_url' => $item['product_url'] ?? null,
                             'skuId' => $item['sku_id'],
-                            'delivery_price' => 0,
+                            'delivery_price' => $deliveryPriceForThisItem,
+                            'delivery_type' => $matchedFee ? $matchedFee['delivery_type'] : null,
                             'product_info' => $item['product_info'] ?? null,
                         ]);
 
@@ -230,48 +238,36 @@ class OrderController extends Controller
                             ]);
                         }
 
-                        // Remove item from basket
                         $this->removeBasket($user->id, $item['sku_id']);
+
+                        $orderDeliverySum += $deliveryPriceForThisItem;
+                        $accumulatedDeliveryChina += $deliveryPriceForThisItem;
                     }
                 }
 
+                $order->delivery_china = $orderDeliverySum;
+                $order->save();
+
                 $orders[] = $order;
+            }
+
+            if ($incomingFees->isNotEmpty()) {
+                $orderGroup->delivery_china = $accumulatedDeliveryChina;
+                $orderGroup->save();
             }
         });
 
-        // Mail::to('optomall.uz@gmail.com')->send(new OrderCreated($orderGroup->id));
-
-        return response()->json(['message' => 'order_created_successfully', 'order_group' => $orderGroup->id], 201);
+        return response()->json([
+            'message' => 'order_created_successfully',
+            'order_group' => $orderGroup->id
+        ], 201);
     }
 
 
 
 
-    private function calculatePrice($price, $amount)
-    {
-        return $price * $amount;
-    }
 
-    // private function saveOrderItemImage($client, $url)
-    // {
-    //     try {
-    //         // Generate a random name for the image file
-    //         $randomName = Str::random(40) . '.' . pathinfo($url, PATHINFO_EXTENSION);
-    //         // Define the path where the image will be stored
-    //         $imagePath = 'order_images/' . $randomName;
 
-    //         // Use Guzzle to make an HTTP GET request to the image URL
-    //         $response = $client->get($url);
-
-    //         // Store the image in the public disk (storage/app/public/order_images/)
-    //         Storage::disk('public')->put($imagePath, $response->getBody());
-
-    //         return $imagePath; // Return the path where the image was stored
-    //     } catch (\Exception $e) {
-    //         // Handle the exception, e.g., log the error and return null
-    //         return null;
-    //     }
-    // }
 
     private function removeBasket($userId, $skuId)
     {
@@ -1218,7 +1214,7 @@ class OrderController extends Controller
                     $price = $this->calculateDeliveryChina($item->price);
                     $deliveryType = 'local';
                 }
-            } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            } catch (ConnectionException $e) {
                 $price = $this->calculateDeliveryChina($item->price);
                 $deliveryType = 'local';
             }
@@ -1267,7 +1263,7 @@ class OrderController extends Controller
             $totalQuantity = $items->sum('quantity');
             $totalWeight = $items->sum(function ($item) {
                 $info = is_array($item->product_info) ? $item->product_info : json_decode($item->product_info, true);
-                $weight = $info['weight'] ?? 0;
+                $weight = $info['unit_weight'] ?? 0;
                 return $weight * $item->quantity;
             });
 
@@ -1304,6 +1300,9 @@ class OrderController extends Controller
                             'order_id' => $order->id,
                             'product_id' => $productId,
                             'response' => $data,
+                            'weight' => $totalWeight,
+                            'quantity' => $totalQuantity,
+                            'items' => $items,
                         ]);
 
                         $unitFee = $this->calculateDeliveryChina($items->first()->price);
@@ -1317,6 +1316,9 @@ class OrderController extends Controller
                         'product_id' => $productId,
                         'status' => $response->status(),
                         'response' => $response->body(),
+                        'weight' => $totalWeight,
+                        'quantity' => $totalQuantity,
+                        'items' => $items,
                     ]);
 
                     $unitFee = $this->calculateDeliveryChina($items->first()->price);
@@ -1366,145 +1368,119 @@ class OrderController extends Controller
 
 
 
-    public function deliveryFeesForBasket(Request $request)
+    public function deliveryFeesForBasketItems(Request $request)
     {
-        $basketItemIds = $request->input('basket_ids', []);
+        // Accept format: [{ id: 1, quantity: 3 }]
+        $basketItemsInput = $request->input('data', []);
 
-        if (empty($basketItemIds)) {
+        if (empty($basketItemsInput)) {
             return response()->json([
-                'message' => 'basket_ids must be a non-empty array or comma-separated string',
+                'message' => 'basket_item_ids must be a non-empty array',
             ], 422);
         }
 
-        $baskets = Basket::with([
-            'basketItems' => function ($q) use ($basketItemIds) {
-                $q->whereIn('id', $basketItemIds);
-            }
-        ])
-            ->whereHas('basketItems', function ($q) use ($basketItemIds) {
-                $q->whereIn('id', $basketItemIds);
-            })
-            ->get();
-        return $baskets;
+        // Extract IDs
+        $basketItemIds = collect($basketItemsInput)->pluck('id')->toArray();
 
-        if ($baskets->isEmpty()) {
+        // Map id → request.quantity
+        $quantitiesFromRequest = collect($basketItemsInput)
+            ->mapWithKeys(fn($row) => [$row['id'] => (int) ($row['quantity'] ?? 0)]);
+
+        // Load items from DB
+        $items = BasketItem::whereIn('id', $basketItemIds)->get();
+
+        if ($items->isEmpty()) {
             return response()->json([
-                'message' => 'No baskets found for given IDs',
-                'basket_ids' => $basketIds,
-                'baskets' => $baskets,
+                'message' => 'No basket items found for given IDs',
+                'basket_item_ids' => $basketItemIds,
             ], 404);
         }
+
+        // Override quantity with request value
+        $items->transform(function ($item) use ($quantitiesFromRequest) {
+            if (isset($quantitiesFromRequest[$item->id])) {
+                $item->quantity = (int) $quantitiesFromRequest[$item->id];
+            }
+            return $item;
+        });
+
+        // Group by product_id
+        $grouped = $items->groupBy('product_id');
 
         $currency = Exchanges::where('currency', 'yuan')->value('amount') ?? 1800;
         $tmapiToken = env('TMAPI_TOKEN');
 
         $tasks = [];
+        foreach ($grouped as $productId => $itemsForProduct) {
+            $totalQuantity = $itemsForProduct->sum('quantity');
 
-        foreach ($baskets as $basket) {
-            if ($basket->basketItems->isEmpty()) {
-                continue;
-            }
+            $totalWeight = $itemsForProduct->sum(function ($item) {
+                $raw = $item->product_info;
 
-            $grouped = $basket->basketItems->groupBy('product_id');
+                if (is_array($raw)) {
+                    $info = $raw;
+                } elseif (is_string($raw) && $raw !== '') {
+                    $decoded = json_decode($raw, true);
+                    $info = is_array($decoded) ? $decoded : [];
+                } else {
+                    $info = [];
+                }
 
-            foreach ($grouped as $productId => $items) {
-                $totalQuantity = $items->sum('quantity');
+                $weight = isset($info['unit_weight']) && is_numeric($info['unit_weight'])
+                    ? (float) $info['unit_weight']
+                    : 0.0;
 
-                $totalWeight = $items->sum(function ($item) {
-                    $rawInfo = $item->product_info;
+                return $weight * (int) $item->quantity;
+            });
 
-                    if (is_array($rawInfo)) {
-                        $info = $rawInfo;
-                    } elseif (is_string($rawInfo) && $rawInfo !== '') {
-                        $decoded = json_decode($rawInfo, true);
-                        $info = is_array($decoded) ? $decoded : [];
-                    } else {
-                        $info = [];
-                    }
+            $targetUrl = "http://api.tmapi.top/1688/item/shipping"
+                . "?item_id={$productId}"
+                . "&province=Beijing"
+                . "&total_quantity={$totalQuantity}"
+                . "&apiToken={$tmapiToken}"
+                . "&total_weight={$totalWeight}";
 
-                    $weightPerUnit = isset($info['weight']) && is_numeric($info['weight'])
-                        ? (float) $info['weight']
-                        : 0.0;
+            $proxyUrl = "https://china-proxy.optomall.uz?url=" . urlencode($targetUrl);
 
-                    return $weightPerUnit * (int) $item->quantity;
-                });
-
-                $targetUrl = "http://api.tmapi.top/1688/item/shipping"
-                    . "?item_id={$productId}"
-                    . "&province=Beijing"
-                    . "&total_quantity={$totalQuantity}"
-                    . "&apiToken={$tmapiToken}"
-                    . "&total_weight={$totalWeight}";
-
-                $proxyUrl = "https://china-proxy.optomall.uz?url=" . urlencode($targetUrl);
-
-                $key = $basket->id . '|' . $productId;
-
-                $tasks[$key] = [
-                    'basket' => $basket,
-                    'product_id' => $productId,
-                    'items' => $items,
-                    'proxy_url' => $proxyUrl,
-                    'total_quantity' => $totalQuantity,
-                ];
-            }
+            $tasks[$productId] = [
+                'product_id' => $productId,
+                'items' => $itemsForProduct,
+                'proxy_url' => $proxyUrl,
+                'total_quantity' => $totalQuantity,
+            ];
         }
 
-        if (empty($tasks)) {
-            $emptyResult = [];
-
-            foreach ($baskets as $basket) {
-                $emptyResult[] = [
-                    'basket_id' => $basket->id,
-                    'delivery_china' => 0,
-                    'fees' => [],
-                ];
-            }
-
-            return response()->json([
-                'total_delivery_china' => 0,
-                'baskets' => $emptyResult,
-            ]);
-        }
-
+        // Execute all requests in parallel
         $responses = Http::pool(function (Pool $pool) use ($tasks) {
-            $requests = [];
-
+            $req = [];
             foreach ($tasks as $key => $task) {
-                $requests[$key] = $pool->as($key)
+                $req[$key] = $pool->as($key)
                     ->retry(1, 3)
                     ->timeout(15)
                     ->get($task['proxy_url']);
             }
-
-            return $requests;
+            return $req;
         });
 
         $fees = collect();
 
-        foreach ($tasks as $key => $task) {
-            $basket = $task['basket'];
-            $productId = $task['product_id'];
-            $items = $task['items'];
+        // Process each product's response
+        foreach ($tasks as $productId => $task) {
+            $itemsForProduct = $task['items'];
             $proxyUrl = $task['proxy_url'];
             $totalQuantity = $task['total_quantity'];
 
-            $response = $responses[$key] ?? null;
+            $response = $responses[$productId] ?? null;
             $unitFee = null;
+            $delivery_type = null;
 
             try {
-                if (!$response || !$response->successful()) {
-                    Log::channel('delivery_fee_error')->error('Delivery fee API failed', [
-                        'basket_id' => $basket->id,
-                        'product_id' => $productId,
-                        'reason' => 'HTTP request not successful',
-                        'status' => $response?->status(),
-                        'url' => $proxyUrl,
-                        'response_body' => $response?->body(),
-                    ]);
+                $isValid = $response instanceof Response;
 
-                    $firstItem = $items->first();
-                    $unitFee = $this->calculateFallbackFee((float) $firstItem->price);
+                if (!$response->successful()) {
+                    $first = $itemsForProduct->first();
+                    $unitFee = $this->calculateDeliveryChina((float) $first->price);
+                    $delivery_type = 'local';
                 } else {
                     $data = $response->json();
 
@@ -1512,75 +1488,45 @@ class OrderController extends Controller
                         !isset($data['data']['total_fee']) ||
                         !is_numeric($data['data']['total_fee'])
                     ) {
-                        Log::channel('delivery_fee_error')->error('Missing or invalid total_fee in API response', [
-                            'basket_id' => $basket->id,
-                            'product_id' => $productId,
-                            'url' => $proxyUrl,
-                            'response_body' => $data,
-                        ]);
-
-                        $firstItem = $items->first();
-                        $unitFee = $this->calculateFallbackFee((float) $firstItem->price);
+                        $first = $itemsForProduct->first();
+                        $unitFee = $this->calculateDeliveryChina((float) $first->price);
+                        $delivery_type = 'local';
                     } else {
                         $totalFee = (float) $data['data']['total_fee'];
 
                         $unitFee = $totalQuantity > 0
                             ? round(($totalFee * $currency) / $totalQuantity)
                             : 0;
+
+                        $delivery_type = 'api';
                     }
                 }
             } catch (\Throwable $e) {
-                Log::channel('delivery_fee_error')->error('Delivery fee API connection error', [
-                    'basket_id' => $basket->id,
-                    'product_id' => $productId,
-                    'url' => $proxyUrl,
-                    'error_message' => $e->getMessage(),
-                    'trace' => $e->getTraceAsString(),
-                ]);
-
-                $firstItem = $items->first();
-                $unitFee = $this->calculateFallbackFee((float) $firstItem->price);
+                $first = $itemsForProduct->first();
+                $unitFee = $this->calculateDeliveryChina((float) $first->price);
+                $delivery_type = 'local';
             }
 
-            foreach ($items as $item) {
-                $price = round($unitFee * (int) $item->quantity);
-
+            foreach ($itemsForProduct as $item) {
                 $fees->push([
-                    'basket_id' => $basket->id,
                     'basket_item_id' => $item->id,
-                    'product_id' => $item->product_id,
-                    'delivery_price' => $price,
+                    'product_id' => $productId,
+                    'delivery_price' => round($unitFee * (int) $item->quantity),
+                    'delivery_type' => $delivery_type
                 ]);
             }
         }
 
-        $groupedByBasket = $fees->groupBy('basket_id');
-
-        $resultBaskets = [];
-        $totalDeliveryChina = 0;
-
-        foreach ($baskets as $basket) {
-            $basketFees = $groupedByBasket->get($basket->id, collect());
-
-            $deliveryChina = $basketFees->sum('delivery_price');
-            $totalDeliveryChina += $deliveryChina;
-
-            $resultBaskets[] = [
-                'basket_id' => $basket->id,
-                'delivery_china' => $deliveryChina,
-                'fees' => $basketFees->map(function ($fee) {
-                    return [
-                        'basket_item_id' => $fee['basket_item_id'],
-                        'product_id' => $fee['product_id'],
-                        'delivery_price' => $fee['delivery_price'],
-                    ];
-                })->values()->all(),
-            ];
-        }
+        $price = $items->sum(fn($item) => $item->price * $item->quantity);
+        $delivery_china = $fees->sum('delivery_price');
 
         return response()->json([
-            'total_delivery_china' => $totalDeliveryChina,
-            'baskets' => $resultBaskets,
+            'delivery_china' => $delivery_china,
+            'fees' => $fees->values(),
+            'total_quantity' => $items->sum('quantity'),
+            'price' => $price,
+            'total_price' => $delivery_china + $price,
+            'items' => $items
         ]);
     }
 }
