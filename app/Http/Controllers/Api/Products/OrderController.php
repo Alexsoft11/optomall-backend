@@ -26,6 +26,8 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\OrderCreated;
+use Illuminate\Http\Client\Pool;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
@@ -659,6 +661,7 @@ class OrderController extends Controller
             '*.properties.*.originalName' => 'nullable|string',
             '*.properties.*.originalValue' => 'nullable|string',
             '*.product_info' => 'nullable|array',
+            '*.quantity_ranges' => 'nullable|array',
         ]);
 
         if ($validator->fails()) {
@@ -714,6 +717,7 @@ class OrderController extends Controller
                     'provider' => $item['provider'],
                     'skuId' => $item['sku_id'],
                     'product_info' => $item['product_info'] ?? null,
+                    'quantity_ranges' => $item['quantity_ranges'] ?? null,
                 ]);
 
                 if (isset($item['properties']) && is_array($item['properties'])) {
@@ -1362,53 +1366,152 @@ class OrderController extends Controller
 
 
 
-    public function deliveryFeesForBasket(Request $request, Basket $basket)
+    public function deliveryFeesForBasket(Request $request)
     {
-        $basket->load('basketItems');
+        $basketItemIds = $request->input('basket_ids', []);
 
-        $currency = Exchanges::where('currency', 'yuan')->first()->amount ?? 1800;
+        if (empty($basketItemIds)) {
+            return response()->json([
+                'message' => 'basket_ids must be a non-empty array or comma-separated string',
+            ], 422);
+        }
 
-        $grouped = $basket->basketItems->groupBy('product_id');
+        $baskets = Basket::with([
+            'basketItems' => function ($q) use ($basketItemIds) {
+                $q->whereIn('id', $basketItemIds);
+            }
+        ])
+            ->whereHas('basketItems', function ($q) use ($basketItemIds) {
+                $q->whereIn('id', $basketItemIds);
+            })
+            ->get();
+        return $baskets;
+
+        if ($baskets->isEmpty()) {
+            return response()->json([
+                'message' => 'No baskets found for given IDs',
+                'basket_ids' => $basketIds,
+                'baskets' => $baskets,
+            ], 404);
+        }
+
+        $currency = Exchanges::where('currency', 'yuan')->value('amount') ?? 1800;
+        $tmapiToken = env('TMAPI_TOKEN');
+
+        $tasks = [];
+
+        foreach ($baskets as $basket) {
+            if ($basket->basketItems->isEmpty()) {
+                continue;
+            }
+
+            $grouped = $basket->basketItems->groupBy('product_id');
+
+            foreach ($grouped as $productId => $items) {
+                $totalQuantity = $items->sum('quantity');
+
+                $totalWeight = $items->sum(function ($item) {
+                    $rawInfo = $item->product_info;
+
+                    if (is_array($rawInfo)) {
+                        $info = $rawInfo;
+                    } elseif (is_string($rawInfo) && $rawInfo !== '') {
+                        $decoded = json_decode($rawInfo, true);
+                        $info = is_array($decoded) ? $decoded : [];
+                    } else {
+                        $info = [];
+                    }
+
+                    $weightPerUnit = isset($info['weight']) && is_numeric($info['weight'])
+                        ? (float) $info['weight']
+                        : 0.0;
+
+                    return $weightPerUnit * (int) $item->quantity;
+                });
+
+                $targetUrl = "http://api.tmapi.top/1688/item/shipping"
+                    . "?item_id={$productId}"
+                    . "&province=Beijing"
+                    . "&total_quantity={$totalQuantity}"
+                    . "&apiToken={$tmapiToken}"
+                    . "&total_weight={$totalWeight}";
+
+                $proxyUrl = "https://china-proxy.optomall.uz?url=" . urlencode($targetUrl);
+
+                $key = $basket->id . '|' . $productId;
+
+                $tasks[$key] = [
+                    'basket' => $basket,
+                    'product_id' => $productId,
+                    'items' => $items,
+                    'proxy_url' => $proxyUrl,
+                    'total_quantity' => $totalQuantity,
+                ];
+            }
+        }
+
+        if (empty($tasks)) {
+            $emptyResult = [];
+
+            foreach ($baskets as $basket) {
+                $emptyResult[] = [
+                    'basket_id' => $basket->id,
+                    'delivery_china' => 0,
+                    'fees' => [],
+                ];
+            }
+
+            return response()->json([
+                'total_delivery_china' => 0,
+                'baskets' => $emptyResult,
+            ]);
+        }
+
+        $responses = Http::pool(function (Pool $pool) use ($tasks) {
+            $requests = [];
+
+            foreach ($tasks as $key => $task) {
+                $requests[$key] = $pool->as($key)
+                    ->retry(1, 3)
+                    ->timeout(15)
+                    ->get($task['proxy_url']);
+            }
+
+            return $requests;
+        });
+
         $fees = collect();
 
-        foreach ($grouped as $productId => $items) {
-            $totalQuantity = $items->sum('quantity');
-            $totalWeight = $items->sum(function ($item) {
-                $info = is_array($item->product_info) ? $item->product_info : json_decode($item->product_info, true);
-                return ($info['weight'] ?? 0) * $item->quantity;
-            });
+        foreach ($tasks as $key => $task) {
+            $basket = $task['basket'];
+            $productId = $task['product_id'];
+            $items = $task['items'];
+            $proxyUrl = $task['proxy_url'];
+            $totalQuantity = $task['total_quantity'];
 
-            $tmapiToken = env('TMAPI_TOKEN');
-
-            $targetUrl = "http://api.tmapi.top/1688/item/shipping"
-                . "?item_id={$productId}"
-                . "&province=Beijing"
-                . "&total_quantity={$totalQuantity}"
-                . "&apiToken=" . $tmapiToken
-                . "&total_weight={$totalWeight}";
-
-            $proxyUrl = "https://china-proxy.optomall.uz?url=" . urlencode($targetUrl);
-
+            $response = $responses[$key] ?? null;
             $unitFee = null;
 
             try {
-                $response = Http::retry(1, 3)->timeout(15)->get($proxyUrl);
-
-                if (!$response->successful()) {
+                if (!$response || !$response->successful()) {
                     Log::channel('delivery_fee_error')->error('Delivery fee API failed', [
                         'basket_id' => $basket->id,
                         'product_id' => $productId,
                         'reason' => 'HTTP request not successful',
-                        'status' => $response->status(),
+                        'status' => $response?->status(),
                         'url' => $proxyUrl,
-                        'response_body' => $response->body(),
+                        'response_body' => $response?->body(),
                     ]);
 
-                    $unitFee = $this->calculateFallbackFee($items->first()->price);
+                    $firstItem = $items->first();
+                    $unitFee = $this->calculateFallbackFee((float) $firstItem->price);
                 } else {
                     $data = $response->json();
 
-                    if (!isset($data['data']['total_fee']) || !is_numeric($data['data']['total_fee'])) {
+                    if (
+                        !isset($data['data']['total_fee']) ||
+                        !is_numeric($data['data']['total_fee'])
+                    ) {
                         Log::channel('delivery_fee_error')->error('Missing or invalid total_fee in API response', [
                             'basket_id' => $basket->id,
                             'product_id' => $productId,
@@ -1416,9 +1519,11 @@ class OrderController extends Controller
                             'response_body' => $data,
                         ]);
 
-                        $unitFee = $this->calculateFallbackFee($items->first()->price);
+                        $firstItem = $items->first();
+                        $unitFee = $this->calculateFallbackFee((float) $firstItem->price);
                     } else {
                         $totalFee = (float) $data['data']['total_fee'];
+
                         $unitFee = $totalQuantity > 0
                             ? round(($totalFee * $currency) / $totalQuantity)
                             : 0;
@@ -1433,12 +1538,15 @@ class OrderController extends Controller
                     'trace' => $e->getTraceAsString(),
                 ]);
 
-                $unitFee = $this->calculateFallbackFee($items->first()->price);
+                $firstItem = $items->first();
+                $unitFee = $this->calculateFallbackFee((float) $firstItem->price);
             }
 
             foreach ($items as $item) {
-                $price = round($unitFee * $item->quantity);
+                $price = round($unitFee * (int) $item->quantity);
+
                 $fees->push([
+                    'basket_id' => $basket->id,
                     'basket_item_id' => $item->id,
                     'product_id' => $item->product_id,
                     'delivery_price' => $price,
@@ -1446,11 +1554,33 @@ class OrderController extends Controller
             }
         }
 
+        $groupedByBasket = $fees->groupBy('basket_id');
+
+        $resultBaskets = [];
+        $totalDeliveryChina = 0;
+
+        foreach ($baskets as $basket) {
+            $basketFees = $groupedByBasket->get($basket->id, collect());
+
+            $deliveryChina = $basketFees->sum('delivery_price');
+            $totalDeliveryChina += $deliveryChina;
+
+            $resultBaskets[] = [
+                'basket_id' => $basket->id,
+                'delivery_china' => $deliveryChina,
+                'fees' => $basketFees->map(function ($fee) {
+                    return [
+                        'basket_item_id' => $fee['basket_item_id'],
+                        'product_id' => $fee['product_id'],
+                        'delivery_price' => $fee['delivery_price'],
+                    ];
+                })->values()->all(),
+            ];
+        }
+
         return response()->json([
-            'basket_id' => $basket->id,
-            'delivery_china' => $fees->sum('delivery_price'),
-            'fees' => $fees->values(),
+            'total_delivery_china' => $totalDeliveryChina,
+            'baskets' => $resultBaskets,
         ]);
     }
-
 }

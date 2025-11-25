@@ -72,7 +72,7 @@ Route::middleware('throttle:1200,60')->group(function () {
     Route::post('local-products/skus', [ProductLocalController::class, 'storeSkuProps']);
     Route::get('orders/{order}/delivery‑fees', [OrderController::class, 'deliveryFees']);
     Route::get('orders/{order}/delivery‑fees/tmapi', [OrderController::class, 'deliveryFeesTmapi']);
-    Route::get('basket/{order}/delivery‑fees/tmapi', [OrderController::class, 'deliveryFeesTmapi']);
+    Route::get('basket/delivery‑fees/tmapi', [OrderController::class, 'deliveryFeesForBasket']);
 
     // Authenticated Routes
     Route::middleware('auth:sanctum')->group(function () {

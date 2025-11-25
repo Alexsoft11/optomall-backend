@@ -21,11 +21,13 @@ class BasketItem extends Model
         'skuId',
         'basket_id',
         'user_id',
-        'product_info'
+        'product_info',
+        'quantity_ranges'
     ];
 
     protected $casts = [
         'product_info' => 'json',
+        'quantity_ranges' => 'json',
     ];
     public function user(): BelongsTo
     {
