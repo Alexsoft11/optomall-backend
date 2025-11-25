@@ -657,7 +657,6 @@ class OrderController extends Controller
             '*.properties.*.originalName' => 'nullable|string',
             '*.properties.*.originalValue' => 'nullable|string',
             '*.product_info' => 'nullable|array',
-            '*.quantity_ranges' => 'nullable|array',
         ]);
 
         if ($validator->fails()) {
