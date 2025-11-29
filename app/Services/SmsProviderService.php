@@ -48,7 +48,8 @@ class SmsProviderService
             throw new \RuntimeException('Eskiz token missing in response: ' . json_encode($data));
         }
 
-        $expiresAt = Carbon::now()->addDays(env('SMS_TOKEN_LIFETIME_DAYS', 20));
+        $expiresAt = now()->addDays((int) env('SMS_TOKEN_LIFETIME_DAYS', 20));
+
 
         SmsToken::create([
             'token' => $token,
@@ -70,7 +71,7 @@ class SmsProviderService
         if (now()->lt($currentToken?->expires_at)) {
             return $currentToken->token;
         }
-        
+
         $response = Http::withToken($currentToken)->post($url);
 
         if ($response->failed()) {
@@ -84,7 +85,8 @@ class SmsProviderService
             return $this->fetchNewToken();
         }
 
-        $expiresAt = Carbon::now()->addDays(env('SMS_TOKEN_LIFETIME_DAYS', 20));
+        $expiresAt = now()->addDays((int) env('SMS_TOKEN_LIFETIME_DAYS', 20));
+
 
         SmsToken::create([
             'token' => $token,

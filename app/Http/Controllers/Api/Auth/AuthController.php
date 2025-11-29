@@ -501,13 +501,13 @@ class AuthController extends Controller
         if (isset($tempUsers)) {
             $tempUsers->each->delete();
         }
-        $text = "Optomall sizning ro'yhatdan o'tish uchun kodingiz : $otp";
+        $text = env('SMS_OTP_TEXT', "Kodini hech kimga bermang! Optomall platformasi ga ro'yxatdan o'tish uchun tasdiqlash kodi:") . " " . $otp;
         try {
             $sms = app(\App\Services\SmsProviderService::class);
             $response = $sms->sendSms($phoneNumber, $text);
         } catch (\Throwable $e) {
             Log::error('SMS send failed: ' . $e->getMessage());
-            return response()->json(['status' => 'error', 'message' => 'send_code_failed'], 500);
+            return response()->json(['status' => 'error', 'message' => 'send_code_failed', 'privder_error' => $e], 500);
         }
 
 
