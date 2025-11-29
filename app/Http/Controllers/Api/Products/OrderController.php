@@ -26,6 +26,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\OrderCreated;
+use Illuminate\Http\Client\Pool;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
@@ -668,6 +669,9 @@ class OrderController extends Controller
             $quantity = $item['quantity'];
             $basePrice = $item['price'];
             $finalPrice = $basePrice;
+            $quantityRanges = $item['quantityRanges'] ?? [];
+            Log::info('Item quantityRanges', $quantityRanges);
+            Log::info('type', ['type' => gettype($item['quantityRanges'])]);
 
             if (isset($item['quantityRanges']) && count($item['quantityRanges']) > 1) {
                 $applicableRange = null;
@@ -712,7 +716,7 @@ class OrderController extends Controller
                     'provider' => $item['provider'],
                     'skuId' => $item['sku_id'],
                     'product_info' => $item['product_info'] ?? null,
-                    'quantity_ranges' => $item['quantity_ranges'] ?? null,
+                    'quantity_ranges' => $item['quantityRanges'] ?? null,
                 ]);
 
                 if (isset($item['properties']) && is_array($item['properties'])) {
