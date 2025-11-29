@@ -14,6 +14,7 @@ class Kernel extends ConsoleKernel
     {
         $schedule->command('backup:run')->dailyAt('02:00');
         $schedule->command('db:purge-cache')->dailyAt('03:00');
+         $schedule->command('sms:refresh-token')->dailyAt('01:00');
     }
 
     /**

@@ -496,30 +496,19 @@ class AuthController extends Controller
 
     public function otpService($phoneNumber, $otp, $formattedPhone)
     {
-        $username = config('sms.username');
-        $password = config('sms.password');
-
-
         $tempUsers = TempUser::where('phone_number', $formattedPhone)->get();
 
         if (isset($tempUsers)) {
             $tempUsers->each->delete();
         }
-
-        $response = Http::withBasicAuth($username, $password)->post(config('sms.url'), [
-            "messages" => [
-                [
-                    "recipient" => $phoneNumber,
-                    "message-id" => uniqid("msg_"),
-                    "sms" => [
-                        "originator" => "3700",
-                        "content" => [
-                            "text" => "Optomall sizning ro'yhatdan o'tish uchun kodingiz : $otp",
-                        ],
-                    ],
-                ],
-            ],
-        ]);
+        $text = "Optomall sizning ro'yhatdan o'tish uchun kodingiz : $otp";
+        try {
+            $sms = app(\App\Services\SmsProviderService::class);
+            $response = $sms->sendSms($phoneNumber, $text);
+        } catch (\Throwable $e) {
+            Log::error('SMS send failed: ' . $e->getMessage());
+            return response()->json(['status' => 'error', 'message' => 'send_code_failed'], 500);
+        }
 
 
         $tempUser = TempUser::create([
