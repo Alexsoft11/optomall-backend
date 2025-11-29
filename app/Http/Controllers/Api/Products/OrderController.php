@@ -1416,7 +1416,22 @@ class OrderController extends Controller
         $tasks = [];
         foreach ($grouped as $productId => $itemsForProduct) {
             $totalQuantity = $itemsForProduct->sum('quantity');
+            $provider = $itemsForProduct->first()->provider ?? null;
 
+            // ========= NEW LOGIC =========
+            // If provider is NOT 1688 → skip API & use zero
+            if ($provider !== '1688') {
+                $tasks[$productId] = [
+                    'product_id' => $productId,
+                    'items' => $itemsForProduct,
+                    'skip_api' => true,
+                    'total_quantity' => $totalQuantity,
+                ];
+                continue;
+            }
+            // ==============================
+
+            // Calculate weight
             $totalWeight = $itemsForProduct->sum(function ($item) {
                 $raw = $item->product_info;
 
@@ -1450,13 +1465,18 @@ class OrderController extends Controller
                 'items' => $itemsForProduct,
                 'proxy_url' => $proxyUrl,
                 'total_quantity' => $totalQuantity,
+                'skip_api' => false,
             ];
         }
 
-        // Execute all requests in parallel
+        // Execute parallel requests (only for 1688)
         $responses = Http::pool(function (Pool $pool) use ($tasks) {
             $req = [];
             foreach ($tasks as $key => $task) {
+                if (!empty($task['skip_api'])) {
+                    continue;
+                }
+
                 $req[$key] = $pool->as($key)
                     ->retry(1, 3)
                     ->timeout(15)
@@ -1470,16 +1490,28 @@ class OrderController extends Controller
         // Process each product's response
         foreach ($tasks as $productId => $task) {
             $itemsForProduct = $task['items'];
-            $proxyUrl = $task['proxy_url'];
             $totalQuantity = $task['total_quantity'];
+
+            // ========= NEW LOGIC =========
+            // Providers other than 1688 → zero delivery
+            if (!empty($task['skip_api'])) {
+                foreach ($itemsForProduct as $item) {
+                    $fees->push([
+                        'basket_item_id' => $item->id,
+                        'product_id' => $productId,
+                        'delivery_price' => 0,
+                        'delivery_type' => 'none'
+                    ]);
+                }
+                continue;
+            }
+            // ==============================
 
             $response = $responses[$productId] ?? null;
             $unitFee = null;
             $delivery_type = null;
 
             try {
-                $isValid = $response instanceof Response;
-
                 if (!$response->successful()) {
                     $first = $itemsForProduct->first();
                     $unitFee = $this->calculateDeliveryChina((float) $first->price);
@@ -1532,4 +1564,5 @@ class OrderController extends Controller
             'items' => $items
         ]);
     }
+
 }
