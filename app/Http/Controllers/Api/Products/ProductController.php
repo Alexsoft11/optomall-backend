@@ -1411,7 +1411,7 @@ class ProductController extends Controller
             // Base API URL construction
             if ($provider == '1688') {
                 $baseApiUrl = $imageUrl
-                    ? "http://api.tmapi.top/1688/search/image?img_url=$imageUrl&page=$page&page_size=$productsCount&sort=$sort&apiToken=$tmapiToken"
+                    ? "http://api.tmapi.top/1688/search/image?img_url=$imageUrl&page=$page&page_size=$productsCount&sort=$sort&apiToken=$tmapiToken&language=$lang"
                     : "http://api.tmapi.top/1688/en/search/items?keyword=$translatedValue&page=$page&page_size=$productsCount&sort=$sort&apiToken=$tmapiToken";
             } else { // Taobao as default
                 $baseApiUrl = $imageUrl
@@ -1440,7 +1440,7 @@ class ProductController extends Controller
                 'products' => collect($provider == '1688' ? $products['data']['items'] : $products['items']['item'])->map(function ($product) use ($provider, $lang) {
                     return (new ProductResource($product, $provider, $lang))->resolve();
                 }),
-            ]), 259200); // Store in cache for 3 days
+            ]), 459200); // Store in cache for 3 days
 
             return $this->respondWithSuccess([
                 'products' => collect($provider == '1688' ? $products['data']['items'] : $products['items']['item'])->map(function ($product) use ($provider, $lang) {
