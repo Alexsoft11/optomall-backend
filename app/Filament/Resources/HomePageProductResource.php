@@ -12,34 +12,25 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\ImageColumn;
+use Filament\Tables\Columns\IconColumn;
 
 class HomePageProductResource extends Resource
 {
     protected static ?string $navigationGroup = "products";
-
     protected static ?string $navigationLabel = "Bosh sahifa uchun mahsulotlar";
-
     protected static ?string $label = "home_page";
-
     protected static ?string $model = HomePageProduct::class;
-
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('title_uz')
-                    ->maxLength(255),
-                Forms\Components\TextInput::make('title_en')
-                    ->maxLength(255),
-                Forms\Components\TextInput::make('title_ru')
-                    ->maxLength(255),
-                Forms\Components\TextInput::make('price')
-                    ->maxLength(255),
-                Forms\Components\TextInput::make('discounted_price')
-                    ->maxLength(255),
-                // Forms\Components\FileUpload::make('image')->disk('public'),
+                Forms\Components\TextInput::make('title_uz')->maxLength(255),
+                Forms\Components\TextInput::make('title_en')->maxLength(255),
+                Forms\Components\TextInput::make('title_ru')->maxLength(255),
+                Forms\Components\TextInput::make('price')->maxLength(255),
+                Forms\Components\TextInput::make('discounted_price')->maxLength(255),
                 Forms\Components\View::make('image')
                     ->label('Image Preview')
                     ->view('filament.components.image'),
@@ -49,15 +40,21 @@ class HomePageProductResource extends Resource
                 Forms\Components\TextInput::make('product_url')
                     ->url()
                     ->maxLength(255),
+
                 Select::make('provider')->options([
                     '1688' => '1688',
                     'taobao' => 'TaoBao',
                 ])->required(),
+
                 Select::make('type')->options([
                     'discount' => 'Discount',
                     'top' => 'Top products',
                     'recomend' => 'Recommend',
                 ])->required(),
+
+                Forms\Components\Toggle::make('is_deleted')
+                    ->label('Deleted')
+                    ->default(false),
             ]);
     }
 
@@ -72,12 +69,25 @@ class HomePageProductResource extends Resource
                     ->sortable()
                     ->searchable(),
                 ImageColumn::make('image'),
+                IconColumn::make('is_deleted')
+                    ->label('Status')
+                    ->boolean()
+                    ->trueIcon('heroicon-o-x-circle')
+                    ->falseIcon('heroicon-o-check-circle')
+                    ->trueColor('danger')
+                    ->falseColor('success'),
+
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable(),
             ])
             ->filters([
-                //
+                Tables\Filters\TernaryFilter::make('is_deleted')
+                    ->label('Deleted')
+                    ->trueLabel('Only Deleted')
+                    ->falseLabel('Only Active')
+                    ->placeholder('All'),
+                    
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
@@ -92,15 +102,8 @@ class HomePageProductResource extends Resource
 
     public static function getRelations(): array
     {
-        return [
-            //
-        ];
+        return [];
     }
-
-    // public static function getNavigationLabel(): string
-    // {
-    //     return trans('products');
-    // }
 
     public static function getNavigationGroup(): string
     {

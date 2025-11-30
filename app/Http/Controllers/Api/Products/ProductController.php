@@ -858,6 +858,25 @@ class ProductController extends Controller
         $lang = $request->input('lang'); // Default language
         $provider = $request->input('provider', 'taobao'); // Default provider is 'taobao'
 
+        // Handle local provider case (if the provider is 'local')
+        if ($provider == 'local') {
+            $productDatabase = ProductLocal::where('id', $productId)->first();
+
+            if (!$productDatabase) {
+                return response()->json(['error' => 'product_not_found'], 404);
+            }
+
+            $product = new ProductDetailDatabase($productDatabase, $lang);
+
+            return $this->respondWithSuccess([
+                'detail' => $product,
+                'score' => [
+                    'rating' => $productDatabase->seller_info['item_score'] ?? 4.6,
+                    'sold' => $productDatabase->sales ?? 1000,
+                ],
+            ]);
+        }
+
         // Construct the cache key for product details
         $cacheKey = "product-detail-tmapi?productId={$productId}&lang={$lang}&provider={$provider}";
 
@@ -888,32 +907,23 @@ class ProductController extends Controller
         });
 
 
-        // Handle local provider case (if the provider is 'local')
-        if ($provider == 'local') {
-            $productDatabase = ProductLocal::where('id', $productId)->first();
-
-            if (!$productDatabase) {
-                return response()->json(['error' => 'product_not_found'], 404);
-            }
-
-            $product = new ProductDetailDatabase($productDatabase, $lang);
-
-            return $this->respondWithSuccess([
-                'detail' => $product,
-                'score' => [
-                    'rating' => $productDatabase->seller_info['item_score'] ?? 4.6,
-                    'sold' => $productDatabase->sales ?? 1000,
-                ],
-            ]);
-        }
-
         // Check for failed format
         if (!isset($productDetail['code'])) {
-            return response()->json(['error' => 'error', 'productDetail' => $productDetail]);
+            return response()->json(['error' => 'error', 'productDetail' => $productDetail], 500);
         }
 
         if ($productDetail['code'] !== 200) {
-            return response()->json(['error' => 'product_not_found', 'productDetail' => $productDetail], 404);
+            if ($productDetail['code'] === 404) {
+                $clean = str_replace('abb-', '', $productId);
+                $homeProduct = HomePageProduct::whereRaw("REPLACE(product_id, 'abb-', '') = ?", [$clean])
+                    ->first();
+
+                if ($homeProduct) {
+                    $homeProduct->update(['is_deleted' => true]);
+                }
+                return response()->json(['error' => 'product_not_found', 'productDetail' => $productDetail, 'homeProduct' => $homeProduct, 'productId' => $productId], 404);
+            }
+            return response()->json(['error' => 'product_not_found', 'productDetail' => $productDetail], 500);
         }
 
         // Make an asynchronous call to construct product resource
@@ -1729,7 +1739,7 @@ class ProductController extends Controller
         $productsCount = max(1, (int) $productsCount);
 
         // Retrieve the products based on the query type
-        $productsQuery = HomePageProduct::where('type', $query)->inRandomOrder();
+        $productsQuery = HomePageProduct::where('type', $query)->where('is_deleted', false)->inRandomOrder();
 
         // Apply pagination
         $products = $productsQuery->paginate($productsCount, ['*'], 'page', $page);
