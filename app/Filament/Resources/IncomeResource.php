@@ -4,7 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\IncomeResource\Pages;
 use App\Filament\Resources\IncomeResource\RelationManagers;
-use App\Filament\Resources\IncomeResource\Widgets\TotalAmount;
+use App\Filament\Resources\IncomeResource\Widgets\IncomeStatsOverview;
 use App\Models\Income;
 use Illuminate\Support\Carbon;
 use Filament\Forms;
@@ -15,8 +15,6 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class IncomeResource extends Resource
 {
@@ -128,7 +126,7 @@ class IncomeResource extends Resource
     public static function getWidgets(): array
     {
         return [
-            TotalAmount::class,
+            IncomeStatsOverview::class,
         ];
     }
 

@@ -124,7 +124,7 @@ class OrderGroup extends Model
             [
                 'user_id'  => $this->user_id,
                 'amount'   => $this->total_price,
-                'type'     => 'order_payment',
+                'type'     => 'order',
                 'order_group_id' => $this->id
             ]
         );
