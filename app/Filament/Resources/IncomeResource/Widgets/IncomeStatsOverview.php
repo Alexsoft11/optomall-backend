@@ -15,8 +15,8 @@ class IncomeStatsOverview extends StatsOverviewWidget
     {
         $now = now();
 
-        $lastMonthStart = $now->copy()->subMonthNoOverflow()->startOfMonth();
-        $lastMonthEnd = $now->copy()->subMonthNoOverflow()->endOfMonth();
+        $lastMonthStart = $now->copy()->startOfMonth();
+        $lastMonthEnd = $now->copy()->endOfMonth();
 
         $thisYearStart = $now->copy()->startOfYear();
 
@@ -29,7 +29,7 @@ class IncomeStatsOverview extends StatsOverviewWidget
         $allTimeTotal = Income::sum('amount');
 
         return [
-            Stat::make('Oxirgi oy', number_format($lastMonthTotal, 2, '.', ' '))
+            Stat::make('Joriy oy', number_format($lastMonthTotal, 2, '.', ' '))
                 ->description($lastMonthStart->format('M Y'))
                 ->descriptionIcon('heroicon-m-calendar-days'),
 

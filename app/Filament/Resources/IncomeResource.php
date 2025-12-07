@@ -72,24 +72,63 @@ class IncomeResource extends Resource
                     ->sortable()
             ])
             ->filters([
-                Filter::make('created_at')
+                Filter::make('date_range')
                     ->form([
-                        DatePicker::make('date')
-                            ->label('Select Date')
+                        DatePicker::make('from')->label('Date from'),
+                        DatePicker::make('to')->label('Date to'),
                     ])
                     ->query(function ($query, $data) {
-                        if (!empty($data['date'])) {
-                            return $query->whereDate('created_at', $data['date']);
+                        $from = $data['from'] ?? null;
+                        $to = $data['to'] ?? null;
+
+                        if ($from) {
+                            $query->whereDate('created_at', '>=', $from);
                         }
+                        if ($to) {
+                            $query->whereDate('created_at', '<=', $to);
+                        }
+
                         return $query;
                     })
                     ->indicateUsing(function (array $data): ?string {
-                        if (empty($data['date'])) {
-                            return null;
-                        }
+                        $from = $data['from'] ?? null;
+                        $to = $data['to'] ?? null;
 
-                        return 'Created at ' . Carbon::parse($data['date'])->toFormattedDateString();
+                        if (!$from && !$to) return null;
+
+                        return "From {$from} to {$to}";
                     }),
+                Filter::make('month')
+                    ->form([
+                        Select::make('month')
+                            ->label('Select month')
+                            ->options([
+                                1 => 'Yanvar',
+                                2 => 'Fevral',
+                                3 => 'Mart',
+                                4 => 'Aprel',
+                                5 => 'May',
+                                6 => 'Iyun',
+                                7 => 'Iyul',
+                                8 => 'Avgust',
+                                9 => 'Sentabr',
+                                10 => 'Oktabr',
+                                11 => 'Noyabr',
+                                12 => 'Dekabr',
+                            ])
+                            ->searchable(),
+                    ])
+                    ->query(function ($query, $data) {
+                        if (!empty($data['month'])) {
+                            return $query->whereMonth('created_at', $data['month']);
+                        }
+                        return $query;
+                    })
+                    ->indicateUsing(
+                        fn($data) =>
+                        !empty($data['month']) ? "Month: {$data['month']}" : null
+                    ),
+
                 Filter::make('type')
                     ->form([
                         Select::make('type')->options(['order' => 'Buyurtma', 'cargo' => 'Kargo'])->label('Tipi')
