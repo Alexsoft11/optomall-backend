@@ -37,7 +37,7 @@ class IncomeStatsOverview extends StatsOverviewWidget
                 ->description($thisYearStart->year)
                 ->descriptionIcon('heroicon-m-chart-bar'),
 
-            Stat::make('Umumiy daromad', number_format($allTimeTotal, 2, '.', ' '))
+            Stat::make('Umumiy Savdo', number_format($allTimeTotal, 2, '.', ' '))
                 ->description('Barcha vaqtlar')
                 ->descriptionIcon('heroicon-m-banknotes'),
         ];
