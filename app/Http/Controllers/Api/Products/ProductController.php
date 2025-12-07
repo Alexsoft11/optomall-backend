@@ -1739,7 +1739,7 @@ class ProductController extends Controller
         $productsCount = max(1, (int) $productsCount);
 
         // Retrieve the products based on the query type
-        $productsQuery = HomePageProduct::where('type', $query)->where('is_deleted', false)->inRandomOrder();
+        $productsQuery = HomePageProduct::where('type', $query)->where('is_deleted', false)->where('provider', '1688')->inRandomOrder();
 
         // Apply pagination
         $products = $productsQuery->paginate($productsCount, ['*'], 'page', $page);

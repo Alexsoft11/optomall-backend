@@ -44,6 +44,8 @@ class BasketResource extends JsonResource
                 'district' => $this['user']['district'],
             ],
             'product_info' => $this['product_info'] ?? null,
+            'quantityRanges' => $this['quantity_ranges'] ?? null,
+            'maxQuantity' => $this['max_quantity'] ?? null
         ];
     }
 }
