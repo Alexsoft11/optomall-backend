@@ -36,7 +36,7 @@ class IncomeResource extends Resource
                     ->required()
                     ->label(trans("user_id"))
                     ->numeric(),
-                Forms\Components\TextInput::make('order_id')
+                Forms\Components\TextInput::make('order_group_id')
                     ->required()
                     ->label(trans("order_id"))
                     ->numeric(),
@@ -59,18 +59,18 @@ class IncomeResource extends Resource
                     ->numeric()
                     ->label(trans("user_id"))
                     ->sortable(),
-                Tables\Columns\TextColumn::make('order_id')
+                Tables\Columns\TextColumn::make('order_group_id')
                     ->numeric()
                     ->label(trans("order_id"))
                     ->sortable(),
                 Tables\Columns\TextColumn::make('amount')
-                ->label(trans("amount"))
+                    ->label(trans("amount"))
                     ->searchable(),
                 Tables\Columns\TextColumn::make('type')
-                ->label(trans("type"))
+                    ->label(trans("type"))
                     ->searchable(),
                 Tables\Columns\TextColumn::make('created_at')
-                ->label(trans("created_at"))
+                    ->label(trans("created_at"))
                     ->sortable()
             ])
             ->filters([
@@ -103,29 +103,25 @@ class IncomeResource extends Resource
                         return $query;
                     })
             ])
-            ->actions([
-                Tables\Actions\EditAction::make(),
-            ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ])
-            ]);
+            ->actions([])
+            ->bulkActions([]);
     }
 
     public static function getRelations(): array
     {
         return [
-            //
+            RelationManagers\OrderGroupRelationManager::class,
         ];
     }
+
 
     public static function getPages(): array
     {
         return [
             'index' => Pages\ListIncomes::route('/'),
-            'create' => Pages\CreateIncome::route('/create'),
-            'edit' => Pages\EditIncome::route('/{record}/edit'),
+            'view'  => Pages\ViewIncome::route('/{record}'),
+            // 'create' => Pages\CreateIncome::route('/create'),
+            // 'edit' => Pages\EditIncome::route('/{record}/edit'),
         ];
     }
 

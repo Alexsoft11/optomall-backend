@@ -24,6 +24,12 @@ class ListIncomes extends ListRecords
             TotalAmount::class,
         ];
     }
+    
+    protected function getTableRecordUrl($record): ?string
+    {
+        return self::getResource()::getUrl('view', ['record' => $record]);
+    }
+
 
     public function getTitle(): string
     {

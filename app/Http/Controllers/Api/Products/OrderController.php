@@ -540,14 +540,6 @@ class OrderController extends Controller
                     throw new \Exception('order_checks_limit_reached');
                 }
 
-                // Create income record
-                Income::create([
-                    'user_id' => auth()->user()->id,
-                    'order_id' => $request->order_group_id,
-                    'amount' => $orderGroup->total_price,
-                    'type' => $request->type,
-                ]);
-
                 // Find the appropriate card number
                 $cardNumber = CardNumber::orderBy('money', 'desc')
                     ->where('type', $request->type)

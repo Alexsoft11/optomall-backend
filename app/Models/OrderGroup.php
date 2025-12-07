@@ -34,9 +34,17 @@ class OrderGroup extends Model
         //     }
         // });
 
-        static::updated(function ($order) {
-            if ($order->isDirty('is_paid')) {
-                $order->orders()->update(['is_paid' => $order->is_paid]);
+        static::updated(function ($orderGroup) {
+            // Sync orders is_paid
+            if ($orderGroup->isDirty('is_paid')) {
+                $orderGroup->orders()->update([
+                    'is_paid' => $orderGroup->is_paid
+                ]);
+            }
+
+            // Sync Income if needed
+            if ($orderGroup->isDirty('is_paid') || $orderGroup->isDirty('total_price')) {
+                $orderGroup->syncIncome();
             }
         });
 
@@ -94,10 +102,31 @@ class OrderGroup extends Model
             'total_price' => $activeOrders->sum('total_price'),
             'delivery_china' => $activeOrders->sum('delivery_china'),
             'order_group_id' => $this->id,
-        ], );
+        ],);
         $this->update([
             'total_price' => $activeOrders->sum('total_price'),
             'delivery_china' => $activeOrders->sum('delivery_china'),
         ]);
+    }
+
+    private function syncIncome(): void
+    {
+        // Only if the order group is paid
+        if (!$this->is_paid) {
+            // If unpaid → delete income if exists
+            \App\Models\Income::where('order_group_id', $this->id)->delete();
+            return;
+        }
+
+        // Update if exists, otherwise create
+        \App\Models\Income::updateOrCreate(
+            ['order_group_id' => $this->id],
+            [
+                'user_id'  => $this->user_id,
+                'amount'   => $this->total_price,
+                'type'     => 'order_payment',
+                'order_group_id' => $this->id
+            ]
+        );
     }
 }
