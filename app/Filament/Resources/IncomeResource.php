@@ -71,6 +71,7 @@ class IncomeResource extends Resource
                     ->label(trans("created_at"))
                     ->sortable()
             ])
+            ->defaultSort('created_at', 'desc')
             ->filters([
                 Filter::make('date_range')
                     ->form([
