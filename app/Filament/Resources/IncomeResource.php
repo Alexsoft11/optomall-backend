@@ -97,9 +97,9 @@ class IncomeResource extends Resource
                     ]),
 
 
-                Tables\Columns\TextColumn::make('type')
-                    ->label(trans("type"))
-                    ->searchable(),
+                // Tables\Columns\TextColumn::make('type')
+                //     ->label(trans("type"))
+                //     ->searchable(),
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label(trans("created_at"))
