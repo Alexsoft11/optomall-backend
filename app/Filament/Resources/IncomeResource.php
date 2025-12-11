@@ -92,8 +92,8 @@ class IncomeResource extends Resource
                     ->label(trans("amount"))
                     ->searchable()
                     ->summarize([
-                        Tables\Columns\Summarizers\Sum::make()->label('Total'),
-                        Tables\Columns\Summarizers\Count::make()->label('Count'),
+                        Tables\Columns\Summarizers\Sum::make()->label('Summa'),
+                        Tables\Columns\Summarizers\Count::make()->label('Soni'),
                     ]),
 
 
