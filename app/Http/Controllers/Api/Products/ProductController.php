@@ -858,6 +858,25 @@ class ProductController extends Controller
         $lang = $request->input('lang'); // Default language
         $provider = $request->input('provider', 'taobao'); // Default provider is 'taobao'
 
+        // Handle local provider case (if the provider is 'local')
+        if ($provider == 'local') {
+            $productDatabase = ProductLocal::where('id', $productId)->first();
+
+            if (!$productDatabase) {
+                return response()->json(['error' => 'product_not_found'], 404);
+            }
+
+            $product = new ProductDetailDatabase($productDatabase, $lang);
+
+            return $this->respondWithSuccess([
+                'detail' => $product,
+                'score' => [
+                    'rating' => $productDatabase->seller_info['item_score'] ?? 4.6,
+                    'sold' => $productDatabase->sales ?? 1000,
+                ],
+            ]);
+        }
+
         // Construct the cache key for product details
         $cacheKey = "product-detail-tmapi?productId={$productId}&lang={$lang}&provider={$provider}";
 
@@ -888,32 +907,23 @@ class ProductController extends Controller
         });
 
 
-        // Handle local provider case (if the provider is 'local')
-        if ($provider == 'local') {
-            $productDatabase = ProductLocal::where('id', $productId)->first();
-
-            if (!$productDatabase) {
-                return response()->json(['error' => 'product_not_found'], 404);
-            }
-
-            $product = new ProductDetailDatabase($productDatabase, $lang);
-
-            return $this->respondWithSuccess([
-                'detail' => $product,
-                'score' => [
-                    'rating' => $productDatabase->seller_info['item_score'] ?? 4.6,
-                    'sold' => $productDatabase->sales ?? 1000,
-                ],
-            ]);
-        }
-
         // Check for failed format
         if (!isset($productDetail['code'])) {
-            return response()->json(['error' => 'error', 'productDetail' => $productDetail]);
+            return response()->json(['error' => 'error', 'productDetail' => $productDetail], 500);
         }
 
         if ($productDetail['code'] !== 200) {
-            return response()->json(['error' => 'product_not_found', 'productDetail' => $productDetail], 404);
+            if ($productDetail['code'] === 404) {
+                $clean = str_replace('abb-', '', $productId);
+                $homeProduct = HomePageProduct::whereRaw("REPLACE(product_id, 'abb-', '') = ?", [$clean])
+                    ->first();
+
+                if ($homeProduct) {
+                    $homeProduct->update(['is_deleted' => true]);
+                }
+                return response()->json(['error' => 'product_not_found', 'productDetail' => $productDetail, 'homeProduct' => $homeProduct, 'productId' => $productId], 404);
+            }
+            return response()->json(['error' => 'product_not_found', 'productDetail' => $productDetail], 500);
         }
 
         // Make an asynchronous call to construct product resource
@@ -1401,7 +1411,7 @@ class ProductController extends Controller
             // Base API URL construction
             if ($provider == '1688') {
                 $baseApiUrl = $imageUrl
-                    ? "http://api.tmapi.top/1688/search/image?img_url=$imageUrl&page=$page&page_size=$productsCount&sort=$sort&apiToken=$tmapiToken"
+                    ? "http://api.tmapi.top/1688/search/image?img_url=$imageUrl&page=$page&page_size=$productsCount&sort=$sort&apiToken=$tmapiToken&language=$lang"
                     : "http://api.tmapi.top/1688/en/search/items?keyword=$translatedValue&page=$page&page_size=$productsCount&sort=$sort&apiToken=$tmapiToken";
             } else { // Taobao as default
                 $baseApiUrl = $imageUrl
@@ -1430,7 +1440,7 @@ class ProductController extends Controller
                 'products' => collect($provider == '1688' ? $products['data']['items'] : $products['items']['item'])->map(function ($product) use ($provider, $lang) {
                     return (new ProductResource($product, $provider, $lang))->resolve();
                 }),
-            ]), 259200); // Store in cache for 3 days
+            ]), 459200); // Store in cache for 3 days
 
             return $this->respondWithSuccess([
                 'products' => collect($provider == '1688' ? $products['data']['items'] : $products['items']['item'])->map(function ($product) use ($provider, $lang) {
@@ -1729,7 +1739,7 @@ class ProductController extends Controller
         $productsCount = max(1, (int) $productsCount);
 
         // Retrieve the products based on the query type
-        $productsQuery = HomePageProduct::where('type', $query)->inRandomOrder();
+        $productsQuery = HomePageProduct::where('type', $query)->where('is_deleted', false)->where('provider', '1688')->inRandomOrder();
 
         // Apply pagination
         $products = $productsQuery->paginate($productsCount, ['*'], 'page', $page);

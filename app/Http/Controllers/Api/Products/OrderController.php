@@ -26,6 +26,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\OrderCreated;
+use Illuminate\Http\Client\Pool;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
@@ -539,14 +540,6 @@ class OrderController extends Controller
                     throw new \Exception('order_checks_limit_reached');
                 }
 
-                // Create income record
-                Income::create([
-                    'user_id' => auth()->user()->id,
-                    'order_id' => $request->order_group_id,
-                    'amount' => $orderGroup->total_price,
-                    'type' => $request->type,
-                ]);
-
                 // Find the appropriate card number
                 $cardNumber = CardNumber::orderBy('money', 'desc')
                     ->where('type', $request->type)
@@ -657,7 +650,6 @@ class OrderController extends Controller
             '*.properties.*.originalName' => 'nullable|string',
             '*.properties.*.originalValue' => 'nullable|string',
             '*.product_info' => 'nullable|array',
-            '*.quantity_ranges' => 'nullable|array',
         ]);
 
         if ($validator->fails()) {
@@ -669,6 +661,9 @@ class OrderController extends Controller
             $quantity = $item['quantity'];
             $basePrice = $item['price'];
             $finalPrice = $basePrice;
+            $quantityRanges = $item['quantityRanges'] ?? [];
+            Log::info('Item quantityRanges', $quantityRanges);
+            Log::info('type', ['type' => gettype($item['quantityRanges'])]);
 
             if (isset($item['quantityRanges']) && count($item['quantityRanges']) > 1) {
                 $applicableRange = null;
@@ -713,7 +708,7 @@ class OrderController extends Controller
                     'provider' => $item['provider'],
                     'skuId' => $item['sku_id'],
                     'product_info' => $item['product_info'] ?? null,
-                    'quantity_ranges' => $item['quantity_ranges'] ?? null,
+                    'quantity_ranges' => $item['quantityRanges'] ?? null,
                 ]);
 
                 if (isset($item['properties']) && is_array($item['properties'])) {
@@ -1413,7 +1408,22 @@ class OrderController extends Controller
         $tasks = [];
         foreach ($grouped as $productId => $itemsForProduct) {
             $totalQuantity = $itemsForProduct->sum('quantity');
+            $provider = $itemsForProduct->first()->provider ?? null;
 
+            // ========= NEW LOGIC =========
+            // If provider is NOT 1688 → skip API & use zero
+            if ($provider !== '1688') {
+                $tasks[$productId] = [
+                    'product_id' => $productId,
+                    'items' => $itemsForProduct,
+                    'skip_api' => true,
+                    'total_quantity' => $totalQuantity,
+                ];
+                continue;
+            }
+            // ==============================
+
+            // Calculate weight
             $totalWeight = $itemsForProduct->sum(function ($item) {
                 $raw = $item->product_info;
 
@@ -1447,13 +1457,18 @@ class OrderController extends Controller
                 'items' => $itemsForProduct,
                 'proxy_url' => $proxyUrl,
                 'total_quantity' => $totalQuantity,
+                'skip_api' => false,
             ];
         }
 
-        // Execute all requests in parallel
+        // Execute parallel requests (only for 1688)
         $responses = Http::pool(function (Pool $pool) use ($tasks) {
             $req = [];
             foreach ($tasks as $key => $task) {
+                if (!empty($task['skip_api'])) {
+                    continue;
+                }
+
                 $req[$key] = $pool->as($key)
                     ->retry(1, 3)
                     ->timeout(15)
@@ -1467,16 +1482,28 @@ class OrderController extends Controller
         // Process each product's response
         foreach ($tasks as $productId => $task) {
             $itemsForProduct = $task['items'];
-            $proxyUrl = $task['proxy_url'];
             $totalQuantity = $task['total_quantity'];
+
+            // ========= NEW LOGIC =========
+            // Providers other than 1688 → zero delivery
+            if (!empty($task['skip_api'])) {
+                foreach ($itemsForProduct as $item) {
+                    $fees->push([
+                        'basket_item_id' => $item->id,
+                        'product_id' => $productId,
+                        'delivery_price' => 0,
+                        'delivery_type' => 'none'
+                    ]);
+                }
+                continue;
+            }
+            // ==============================
 
             $response = $responses[$productId] ?? null;
             $unitFee = null;
             $delivery_type = null;
 
             try {
-                $isValid = $response instanceof Response;
-
                 if (!$response->successful()) {
                     $first = $itemsForProduct->first();
                     $unitFee = $this->calculateDeliveryChina((float) $first->price);
@@ -1529,4 +1556,5 @@ class OrderController extends Controller
             'items' => $items
         ]);
     }
+
 }

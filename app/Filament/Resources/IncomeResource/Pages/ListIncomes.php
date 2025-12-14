@@ -3,8 +3,7 @@
 namespace App\Filament\Resources\IncomeResource\Pages;
 
 use App\Filament\Resources\IncomeResource;
-use App\Filament\Resources\IncomeResource\Widgets\TotalAmount;
-use Filament\Actions;
+use App\Filament\Resources\IncomeResource\Widgets\IncomeStatsOverview;
 use Filament\Resources\Pages\ListRecords;
 
 class ListIncomes extends ListRecords
@@ -21,9 +20,15 @@ class ListIncomes extends ListRecords
     protected function getHeaderWidgets(): array
     {
         return [
-            TotalAmount::class,
+            IncomeStatsOverview::class,
         ];
     }
+
+    protected function getTableRecordUrl($record): ?string
+    {
+        return self::getResource()::getUrl('view', ['record' => $record]);
+    }
+
 
     public function getTitle(): string
     {

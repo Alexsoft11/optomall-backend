@@ -21,7 +21,12 @@ class HomePageProduct extends Model
         'product_id',
         'product_url',
         'provider',
-        'type'
+        'type',
+        'is_deleted'
+    ];
+
+    protected $casts = [
+        'is_deleted' => 'boolean',
     ];
 
     protected static function booted()
