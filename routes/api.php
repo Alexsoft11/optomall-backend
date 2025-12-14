@@ -58,6 +58,7 @@ Route::middleware('throttle:1200,60')->group(function () {
     //Tmapi 
     Route::get('product-detail-tmapi', [ProductController::class, 'productDetailTmapi']);
     Route::get('search-products-from-tmapi', [ProductController::class, 'searchProductsTmapi']);
+    Route::get('product-ratings', [ProductController::class, 'productRatings']);
     
 
     Route::get('/products', [ProductController::class, 'products']);

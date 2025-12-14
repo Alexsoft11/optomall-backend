@@ -2564,4 +2564,134 @@ class ProductController extends Controller
         }
         return $response->json();
     }
+
+    /**
+     * @OA\Get(
+     *     path="/api/product-ratings",
+     *     summary="Get product ratings",
+     *     tags={"Products"},
+     *     @OA\Parameter(
+     *         name="item_id",
+     *         in="query",
+     *         required=true,
+     *         @OA\Schema(type="string"),
+     *         description="Item ID"
+     *     ),
+     *     @OA\Parameter(
+     *         name="page",
+     *         in="query",
+     *         required=false,
+     *         @OA\Schema(type="integer"),
+     *         description="Page number"
+     *     ),
+     *     @OA\Parameter(
+     *         name="lang",
+     *         in="query",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *             enum={"uz", "ru", "en"}
+     *         ),
+     *         description="Language code for translation"
+     *     ),
+     *     @OA\Response(response="200", description="Product ratings"),
+     * )
+     */
+    public function productRatings(Request $request)
+    {
+        $itemId = $request->input('item_id');
+        $page = $request->input('page', 1);
+        $lang = $request->input('lang', 'en');
+
+        if (!$itemId) {
+            return response()->json(['error' => 'Missing item_id'], 400);
+        }
+
+        $apiToken = env('TMAPI_TOKEN'); 
+        if (!$apiToken) {
+            $apiToken = $request->input('apiToken');
+        }
+
+        if (!$apiToken) {
+            return response()->json(['error' => 'TMAPI Token not configured'], 500);
+        }
+
+        $baseUrl = env('TMAPI_URL', 'https://api.tmapi.top/');
+        if (substr($baseUrl, -1) !== '/') {
+            $baseUrl .= '/';
+        }
+        
+        $url = "{$baseUrl}1688/item/rating?apiToken={$apiToken}&item_id={$itemId}&page={$page}";
+
+        try {
+            $response = Http::get($url);
+        } catch (\Exception $e) {
+             return response()->json(['error' => 'Failed to connect to TMAPI', 'details' => $e->getMessage()], 500);
+        }
+
+        if ($response->failed()) {
+            return response()->json(['error' => 'Failed to fetch ratings from TMAPI', 'status' => $response->status(), 'body' => $response->json()], $response->status());
+        }
+
+        $data = $response->json();
+        
+        if (!isset($data['data']['items']) || empty($data['data']['items'])) {
+             return response()->json(['items' => [], 'has_next_page' => false]);
+        }
+        
+        $reviews = $data['data']['items'];
+        $hasNextPage = $data['data']['has_next'] ?? false;
+
+        $textsToTranslate = [];
+        $map = [];
+
+        foreach ($reviews as $rIndex => $review) {
+            if (!empty($review['feedback'])) {
+                $textsToTranslate[] = $review['feedback'];
+                $map[] = ['review_index' => $rIndex, 'field' => 'feedback'];
+            }
+            if (!empty($review['sku_map'])) {
+                $textsToTranslate[] = $review['sku_map'];
+                $map[] = ['review_index' => $rIndex, 'field' => 'sku_map'];
+            }
+        }
+
+        if (!empty($textsToTranslate)) {
+            $translationData = [
+                'from' => 'auto',
+                'to' => $lang,
+                'protected_paths' => [],
+                'json' => $textsToTranslate,
+            ];
+
+            $aibitUrl = "https://aibit-translator.p.rapidapi.com/api/v1/translator/json";
+            
+            try {
+                $translateResponse = Http::withHeaders([
+                    'Content-Type' => 'application/json',
+                    'x-rapidapi-host' => 'aibit-translator.p.rapidapi.com',
+                    'x-rapidapi-key' => '74e939e778mshea2f00b1b0170dap1cc6eajsnf05e5c9be03a',
+                ])->post($aibitUrl, $translationData);
+
+                if ($translateResponse->successful()) {
+                    $translated = $translateResponse->json()['trans'] ?? [];
+                    
+                    foreach ($translated as $tIndex => $text) {
+                        if (isset($map[$tIndex])) {
+                            $mapping = $map[$tIndex];
+                            $reviews[$mapping['review_index']][$mapping['field']] = $text;
+                        }
+                    }
+                }
+            } catch (\Exception $e) {
+                Log::error('Translation failed: ' . $e->getMessage());
+            }
+        }
+
+        return response()->json([
+            'items' => $reviews,
+            'page' => $page,
+            'has_next' => $hasNextPage
+        ]);
+    }
 }
