@@ -1273,8 +1273,8 @@ class ProductController extends Controller
             $subcategory = TaobaoSubcategory::where('unique_id', $request->catId)
                 ->pluck('unique')
                 ->first() ?? TaobaoSubcategoryName::where('unique_id', $request->catId)
-                    ->pluck('unique')
-                    ->first();
+                ->pluck('unique')
+                ->first();
 
             // Check if we need to translate the value before the API call
             $translatedValue = $subcategory ? $subcategory : $this->translateText($value); // Translate to Chinese for search
@@ -1401,8 +1401,8 @@ class ProductController extends Controller
             $subcategory = TaobaoSubcategory::where('unique_id', $request->catId)
                 ->pluck('unique')
                 ->first() ?? TaobaoSubcategoryName::where('unique_id', $request->catId)
-                    ->pluck('unique')
-                    ->first();
+                ->pluck('unique')
+                ->first();
 
             // Check if we need to translate the value before the API call
             $translatedValue = $subcategory ? $subcategory : $this->translateText($value); // Translate to Chinese for search
@@ -2600,103 +2600,118 @@ class ProductController extends Controller
     public function productRatings(Request $request)
     {
         $itemId = $request->input('item_id');
-        $page = $request->input('page', 1);
+        $page = (int) $request->input('page', 1);
         $lang = $request->input('lang', 'en');
 
         if (!$itemId) {
-            return response()->json(['error' => 'Missing item_id'], 400);
+            return response()->json([
+                'message' => 'item_id_missing',
+                'items' => [],
+                'page' => $page
+            ], 200);
         }
 
-        $apiToken = env('TMAPI_TOKEN'); 
+        $cacheKey = "tmapi_ratings_{$itemId}_{$page}_{$lang}";
+
+        if (Cache::has($cacheKey)) {
+            return Cache::get($cacheKey);
+        }
+
+        $apiToken = env('TMAPI_TOKEN') ?: $request->input('apiToken');
+
         if (!$apiToken) {
-            $apiToken = $request->input('apiToken');
+            return response()->json([
+                'message' => 'tmapi_token_missing',
+                'items' => [],
+                'page' => $page
+            ], 200);
         }
 
-        if (!$apiToken) {
-            return response()->json(['error' => 'TMAPI Token not configured'], 500);
-        }
-
-        $baseUrl = env('TMAPI_URL', 'https://api.tmapi.top/');
-        if (substr($baseUrl, -1) !== '/') {
-            $baseUrl .= '/';
-        }
-        
+        $baseUrl = rtrim(env('TMAPI_URL', 'http://api.tmapi.top/'), '/') . '/';
         $targetUrl = "{$baseUrl}1688/item/rating?apiToken={$apiToken}&item_id={$itemId}&page={$page}";
-        
-        // Proxy through china-proxy.optomall.uz
         $proxyUrl = "https://china-proxy.optomall.uz?url=" . urlencode($targetUrl);
 
         try {
-            $response = Http::timeout(100)
-                ->withoutVerifying()
-                ->get($proxyUrl);
-        } catch (\Exception $e) {
-             return response()->json(['error' => 'Failed to connect to TMAPI via Proxy', 'details' => $e->getMessage()], 500);
+            $response = Http::timeout(60)->withoutVerifying()->get($proxyUrl);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'message' => 'tmapi_connection_failed',
+                'items' => [],
+                'page' => $page
+            ], 200);
         }
 
-        if ($response->failed()) {
-            return response()->json(['error' => 'Failed to fetch ratings from TMAPI', 'status' => $response->status(), 'body' => $response->json()], $response->status());
+        $payload = $response->json();
+
+        if (
+            empty($payload['data']) ||
+            empty($payload['data']['list'])
+        ) {
+            $notFoundResponse = response()->json([
+                'message' => 'page_not_found',
+                'items' => [],
+                'page' => $page
+            ], 200);
+
+            Cache::put($cacheKey, $notFoundResponse, now()->addMinutes(30));
+
+            return $notFoundResponse;
         }
 
-        $data = $response->json();
-        
-        if (!isset($data['data']['items']) || empty($data['data']['items'])) {
-             return response()->json(['items' => [], 'has_next_page' => false]);
-        }
-        
-        $reviews = $data['data']['items'];
-        $hasNextPage = $data['data']['has_next'] ?? false;
+        $reviews = $payload['data']['list'];
 
-        $textsToTranslate = [];
+        $texts = [];
         $map = [];
 
-        foreach ($reviews as $rIndex => $review) {
+        foreach ($reviews as $i => $review) {
             if (!empty($review['feedback'])) {
-                $textsToTranslate[] = $review['feedback'];
-                $map[] = ['review_index' => $rIndex, 'field' => 'feedback'];
+                $texts[] = $review['feedback'];
+                $map[] = [$i, 'feedback'];
             }
+
             if (!empty($review['sku_map'])) {
-                $textsToTranslate[] = $review['sku_map'];
-                $map[] = ['review_index' => $rIndex, 'field' => 'sku_map'];
+                $texts[] = $review['sku_map'];
+                $map[] = [$i, 'sku_map'];
             }
         }
 
-        if (!empty($textsToTranslate)) {
-            $translationData = [
-                'from' => 'auto',
-                'to' => $lang,
-                'protected_paths' => [],
-                'json' => $textsToTranslate,
-            ];
-
-            $aibitUrl = "https://aibit-translator.p.rapidapi.com/api/v1/translator/json";
-            
+        if (!empty($texts)) {
             try {
                 $translateResponse = Http::withHeaders([
                     'Content-Type' => 'application/json',
                     'x-rapidapi-host' => 'aibit-translator.p.rapidapi.com',
-                    'x-rapidapi-key' => '74e939e778mshea2f00b1b0170dap1cc6eajsnf05e5c9be03a',
-                ])->post($aibitUrl, $translationData);
+                    'x-rapidapi-key' => env('RAPIDAPI_KEY'),
+                ])->post(
+                    'https://aibit-translator.p.rapidapi.com/api/v1/translator/json',
+                    [
+                        'from' => 'auto',
+                        'to' => $lang,
+                        'json' => $texts
+                    ]
+                );
 
                 if ($translateResponse->successful()) {
-                    $translated = $translateResponse->json()['trans'] ?? [];
-                    
-                    foreach ($translated as $tIndex => $text) {
-                        if (isset($map[$tIndex])) {
-                            $mapping = $map[$tIndex];
-                            $reviews[$mapping['review_index']][$mapping['field']] = $text;
+                    $translated = $translateResponse->json('trans', []);
+
+                    foreach ($translated as $idx => $text) {
+                        if (isset($map[$idx])) {
+                            [$reviewIndex, $field] = $map[$idx];
+                            $reviews[$reviewIndex][$field] = $text;
                         }
                     }
                 }
-            } catch (\Exception $e) {
-                Log::error('Translation failed: ' . $e->getMessage());
+            } catch (\Throwable $e) {
+                Log::warning('Ratings translation failed: ' . $e->getMessage());
             }
         }
 
-        return response()->json([
+        $successResponse = response()->json([
             'items' => $reviews,
-            'page' => $page,
-            'has_next' => $hasNextPage
-        ]);
+            'page' => $page
+        ], 200);
+
+        // Cache::put($cacheKey, $successResponse, now()->addHours(6));
+
+        return $successResponse;
     }
 }
