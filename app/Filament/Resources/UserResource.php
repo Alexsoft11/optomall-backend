@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Resources\UserResource\RelationManagers\BasketItemsRelationManager;
 use App\Filament\Resources\UserResource\RelationManagers\OrderRelationManager;
 use App\Filament\Resources\UserResource\Pages;
 use App\Models\User;
@@ -109,6 +110,7 @@ class UserResource extends Resource
     {
         return [
             OrderRelationManager::class,
+            BasketItemsRelationManager::class,
         ];
     }
 

@@ -83,6 +83,11 @@ class User extends Authenticatable implements FilamentUser
         return $this->hasMany(Order::class);
     }
 
+    public function basketItems()
+    {
+        return $this->hasMany(BasketItem::class);
+    }
+
     // public function canAccessPanel(Panel $panel): bool
     // {
     //     return $this->email === 'admin@mail.ru';
