@@ -690,6 +690,7 @@ class OrderController extends Controller
                 // Update the quantity if the item exists
                 $existingBasketItem->quantity += $quantity;
                 $existingBasketItem->price = $finalPrice;
+                $existingBasketItem->max_quantity = $item['max_quantity'];
                 $existingBasketItem->save();
                 $basketItem = $existingBasketItem;
             } else {
