@@ -2611,7 +2611,7 @@ class ProductController extends Controller
             ], 200);
         }
 
-        $cacheKey = "tmapi_ratings_{$itemId}_{$page}_{$lang}";
+        $cacheKey = "tmapi_ratings_v2_{$itemId}_{$page}_{$lang}";
 
         if (Cache::has($cacheKey)) {
             return Cache::get($cacheKey);
@@ -2675,12 +2675,15 @@ class ProductController extends Controller
             }
         }
 
+        $shouldCache = true;
+
         if (!empty($texts)) {
+            $shouldCache = false; // Assume failure until proven success
             try {
                 $translateResponse = Http::withHeaders([
                     'Content-Type' => 'application/json',
                     'x-rapidapi-host' => 'aibit-translator.p.rapidapi.com',
-                    'x-rapidapi-key' => env('RAPIDAPI_KEY'),
+                    'x-rapidapi-key' => env('RAPIDAPI_KEY', '74e939e778mshea2f00b1b0170dap1cc6eajsnf05e5c9be03a'),
                 ])->post(
                     'https://aibit-translator.p.rapidapi.com/api/v1/translator/json',
                     [
@@ -2699,9 +2702,11 @@ class ProductController extends Controller
                             $reviews[$reviewIndex][$field] = $text;
                         }
                     }
+                    $shouldCache = true; // Translation succeeded
                 }
             } catch (\Throwable $e) {
                 Log::warning('Ratings translation failed: ' . $e->getMessage());
+                // Leave $shouldCache as false
             }
         }
 
@@ -2710,7 +2715,9 @@ class ProductController extends Controller
             'page' => $page
         ], 200);
 
-        // Cache::put($cacheKey, $successResponse, now()->addHours(6));
+        if ($shouldCache) {
+            Cache::put($cacheKey, $successResponse, now()->addHours(6));
+        }
 
         return $successResponse;
     }
