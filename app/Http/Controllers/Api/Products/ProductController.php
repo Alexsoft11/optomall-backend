@@ -2621,12 +2621,17 @@ class ProductController extends Controller
             $baseUrl .= '/';
         }
         
-        $url = "{$baseUrl}1688/item/rating?apiToken={$apiToken}&item_id={$itemId}&page={$page}";
+        $targetUrl = "{$baseUrl}1688/item/rating?apiToken={$apiToken}&item_id={$itemId}&page={$page}";
+        
+        // Proxy through china-proxy.optomall.uz
+        $proxyUrl = "https://china-proxy.optomall.uz?url=" . urlencode($targetUrl);
 
         try {
-            $response = Http::get($url);
+            $response = Http::timeout(100)
+                ->withoutVerifying()
+                ->get($proxyUrl);
         } catch (\Exception $e) {
-             return response()->json(['error' => 'Failed to connect to TMAPI', 'details' => $e->getMessage()], 500);
+             return response()->json(['error' => 'Failed to connect to TMAPI via Proxy', 'details' => $e->getMessage()], 500);
         }
 
         if ($response->failed()) {
