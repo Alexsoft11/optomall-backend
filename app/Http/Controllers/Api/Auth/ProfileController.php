@@ -150,35 +150,40 @@ class ProfileController extends Controller
             $digits = '998' . $digits;
         }
 
-        // Format to storage format for uniqueness check
-        if (strlen($digits) === 12) {
-            $formattedStats = preg_replace('/^(\d{3})(\d{2})(\d{3})(\d{2})(\d{2})$/', '$1 $2 $3 $4 $5', $digits);
-        } else {
-            $formattedStats = $phoneNumber;
+        if (strlen($digits) !== 12) {
+            return response()->json(['error' => ['phone' => ['Invalid phone number format.']]], 422);
         }
 
-        // Check uniqueness manually against stored format
-        if (\App\Models\User::where('phone', $formattedStats)->where('id', '!=', $user->id)->exists()) {
+        // Generate both potential formats to check uniqueness
+        $formattedSpaced = preg_replace('/^(\d{3})(\d{2})(\d{3})(\d{2})(\d{2})$/', '$1 $2 $3 $4 $5', $digits);
+        $formattedParens = preg_replace('/^(\d{3})(\d{2})(\d{3})(\d{2})(\d{2})$/', '$1($2)$3-$4-$5', $digits);
+
+        // Check uniqueness manually against both stored formats
+        if (
+            \App\Models\User::where(function ($query) use ($formattedSpaced, $formattedParens) {
+                $query->where('phone', $formattedSpaced)
+                    ->orWhere('phone', $formattedParens);
+            })->where('id', '!=', $user->id)->exists()
+        ) {
             return response()->json(['error' => ['phone' => ['The phone has already been taken.']]], 422);
         }
 
-        $formattedPhoneForSms = $digits; // This will be 998901234567
-
+        // Generate OTP
         // Reuse OTP generation logic from AuthController or similar
         // For simplicity, generating here. Ideally move to a service.
         $otp = rand(100000, 999999);
 
-        // Cache OTP for 5 minutes
+        // Cache OTP and the CLEAN digits for 5 minutes
         \Illuminate\Support\Facades\Cache::put('update_phone_otp_' . $user->id, [
             'otp' => $otp,
-            'phone' => $formattedStats
+            'phone_digits' => $digits
         ], 300);
 
         try {
-            // $text = "Kodini hech kimga bermang! Optomall platformasi da telefon raqamni o'zgartirish uchun tasdiqlash kodi: " . $otp;
+            // Send SMS to the clean digits (provider usually expects digits)
             $text = "Kodini hech kimga bermang! Optomall platformasi ga ro'yxatdan o'tish uchun tasdiqlash kodi: " . $otp;
             $sms = app(\App\Services\SmsProviderService::class);
-            $sms->sendSms($formattedPhoneForSms, $text);
+            $sms->sendSms($digits, $text);
         } catch (\Throwable $e) {
             return response()->json(['message' => 'sms_sending_failed', 'error' => $e->getMessage()], 500);
         }
@@ -221,9 +226,17 @@ class ProfileController extends Controller
             return response()->json(['message' => 'invalid_or_expired_otp'], 400);
         }
 
-        $newPhone = $cachedData['phone'];
+        $digits = $cachedData['phone_digits'];
+        $formattedPhone = '';
 
-        $formattedPhone = $cachedData['phone'];
+        // Format based on is_register status
+        if ($user->is_register) {
+            // Email/Google user: 998(77)040-08-09
+            $formattedPhone = preg_replace('/^(\d{3})(\d{2})(\d{3})(\d{2})(\d{2})$/', '$1($2)$3-$4-$5', $digits);
+        } else {
+            // Phone user: 998 77 040 08 09
+            $formattedPhone = preg_replace('/^(\d{3})(\d{2})(\d{3})(\d{2})(\d{2})$/', '$1 $2 $3 $4 $5', $digits);
+        }
 
         $user->update([
             'phone' => $formattedPhone,
