@@ -152,14 +152,14 @@ class ProfileController extends Controller
 
         // Format to storage format for uniqueness check
         if (strlen($digits) === 12) {
-             $formattedStats = preg_replace('/^(\d{3})(\d{2})(\d{3})(\d{2})(\d{2})$/', '$1 $2 $3 $4 $5', $digits);
+            $formattedStats = preg_replace('/^(\d{3})(\d{2})(\d{3})(\d{2})(\d{2})$/', '$1 $2 $3 $4 $5', $digits);
         } else {
-             $formattedStats = $phoneNumber; 
+            $formattedStats = $phoneNumber;
         }
 
         // Check uniqueness manually against stored format
         if (\App\Models\User::where('phone', $formattedStats)->where('id', '!=', $user->id)->exists()) {
-             return response()->json(['error' => ['phone' => ['The phone has already been taken.']]], 422);
+            return response()->json(['error' => ['phone' => ['The phone has already been taken.']]], 422);
         }
 
         $formattedPhoneForSms = $digits; // This will be 998901234567
@@ -167,19 +167,20 @@ class ProfileController extends Controller
         // Reuse OTP generation logic from AuthController or similar
         // For simplicity, generating here. Ideally move to a service.
         $otp = rand(100000, 999999);
-        
+
         // Cache OTP for 5 minutes
         \Illuminate\Support\Facades\Cache::put('update_phone_otp_' . $user->id, [
             'otp' => $otp,
-            'phone' => $formattedStats // Store the formatted version to save later
+            'phone' => $formattedStats
         ], 300);
 
         try {
-            $text = "Kodini hech kimga bermang! Optomall platformasi da telefon raqamni o'zgartirish uchun tasdiqlash kodi: " . $otp;
+            // $text = "Kodini hech kimga bermang! Optomall platformasi da telefon raqamni o'zgartirish uchun tasdiqlash kodi: " . $otp;
+            $text = "Kodini hech kimga bermang! Optomall platformasi ga ro'yxatdan o'tish uchun tasdiqlash kodi: " . $otp;
             $sms = app(\App\Services\SmsProviderService::class);
-            $sms->sendSms($formattedPhoneForSms, $text); 
+            $sms->sendSms($formattedPhoneForSms, $text);
         } catch (\Throwable $e) {
-             return response()->json(['message' => 'sms_sending_failed', 'error' => $e->getMessage()], 500);
+            return response()->json(['message' => 'sms_sending_failed', 'error' => $e->getMessage()], 500);
         }
 
         return response()->json(['message' => 'otp_sent_successfully'], 200);
@@ -217,7 +218,7 @@ class ProfileController extends Controller
         $cachedData = \Illuminate\Support\Facades\Cache::get('update_phone_otp_' . $user->id);
 
         if (!$cachedData || $cachedData['otp'] != $request->otp) {
-             return response()->json(['message' => 'invalid_or_expired_otp'], 400);
+            return response()->json(['message' => 'invalid_or_expired_otp'], 400);
         }
 
         $newPhone = $cachedData['phone'];
@@ -280,52 +281,52 @@ class ProfileController extends Controller
         return response()->json(['message' => 'password_updated_successfully'], 200);
     }
 
-    
-/**
- * @OA\Post(
- *     path="/api/location-form",
- *     summary="Add or update location form",
- *     tags={"Profile"},
- *     security={{"bearerAuth":{}}},
- *     @OA\RequestBody(
- *         required=true,
- *         @OA\JsonContent(
- *             @OA\Property(property="region", type="string", example="example.region"),
- *             @OA\Property(property="district", type="string", example="Olmazor"),
- *             @OA\Property(property="adress", type="string", example="Rakat maxalla"),
- *         ),
- *     ),
- *     @OA\Response(response="200", description="Location added or updated successfully"),
- *     @OA\Response(response="422", description="Validation errors"),
- *     @OA\Response(response="401", description="Unauthorized")
- * )
- */
-public function locationForm(Request $request)
-{
-    $validator = Validator::make($request->all(), [
-        'region' => 'nullable|string',
-        'district' => 'nullable|string',
-        'adress' => 'nullable|string',
-    ]);
 
-    if ($validator->fails()) {
-        return response()->json(['error' => $validator->errors()], 422);
+    /**
+     * @OA\Post(
+     *     path="/api/location-form",
+     *     summary="Add or update location form",
+     *     tags={"Profile"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             @OA\Property(property="region", type="string", example="example.region"),
+     *             @OA\Property(property="district", type="string", example="Olmazor"),
+     *             @OA\Property(property="adress", type="string", example="Rakat maxalla"),
+     *         ),
+     *     ),
+     *     @OA\Response(response="200", description="Location added or updated successfully"),
+     *     @OA\Response(response="422", description="Validation errors"),
+     *     @OA\Response(response="401", description="Unauthorized")
+     * )
+     */
+    public function locationForm(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'region' => 'nullable|string',
+            'district' => 'nullable|string',
+            'adress' => 'nullable|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 422);
+        }
+
+        $user = $request->user();
+
+        if (!$user) {
+            return response()->json(['error' => 'user_not_found'], 404);
+        }
+
+        $user->update([
+            'region' => $request->region,
+            'district' => $request->district,
+            'adress' => $request->adress,
+
+        ]);
+
+        return response()->json(['message' => 'location_added_successfully'], 200);
     }
-
-    $user = $request->user();
-
-    if (!$user) {
-        return response()->json(['error' => 'user_not_found'], 404);
-    }
-
-    $user->update([
-        'region' => $request->region,
-        'district' => $request->district,
-        'adress' => $request->adress,
-
-    ]);
-
-    return response()->json(['message' => 'location_added_successfully'], 200);
-}
 
 }
