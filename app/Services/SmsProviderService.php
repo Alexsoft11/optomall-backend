@@ -62,17 +62,17 @@ class SmsProviderService
     public function refreshToken(): string
     {
         $url = env('SMS_URL') . '/auth/refresh';
-        $currentToken = optional($this->tokenRecord())->token;
+        $record = $this->tokenRecord();
 
-        if (!$currentToken) {
+        if (!$record || !$record->token) {
             return $this->fetchNewToken();
         }
 
-        if (now()->lt($currentToken?->expires_at)) {
-            return $currentToken->token;
+        if ($record->expires_at && now()->lt($record->expires_at)) {
+            return $record->token;
         }
 
-        $response = Http::withToken($currentToken)->post($url);
+        $response = Http::withToken($record->token)->post($url);
 
         if ($response->failed()) {
             return $this->fetchNewToken();
