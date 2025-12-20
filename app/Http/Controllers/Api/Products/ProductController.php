@@ -2820,7 +2820,72 @@ class ProductController extends Controller
 
         $shopData = $payload['data'];
 
-        // Return data without translation (user requested raw data)
+        // Translate shop name, company name and location if language is not Chinese
+        if ($lang !== 'zh') {
+            $textsToTranslate = [];
+            $fieldMap = [];
+
+            // Collect fields to translate
+            if (!empty($shopData['shop_name'])) {
+                $textsToTranslate[] = $shopData['shop_name'];
+                $fieldMap[] = 'shop_name';
+            }
+            if (!empty($shopData['company_name'])) {
+                $textsToTranslate[] = $shopData['company_name'];
+                $fieldMap[] = 'company_name';
+            }
+            if (!empty($shopData['location_str'])) {
+                $textsToTranslate[] = $shopData['location_str'];
+                $fieldMap[] = 'location_str';
+            }
+
+            // Translate rating titles
+            if (!empty($shopData['shop_ratings']) && is_array($shopData['shop_ratings'])) {
+                foreach ($shopData['shop_ratings'] as $idx => $rating) {
+                    if (!empty($rating['title'])) {
+                        $textsToTranslate[] = $rating['title'];
+                        $fieldMap[] = ['shop_ratings', $idx, 'title'];
+                    }
+                }
+            }
+
+            if (!empty($textsToTranslate)) {
+                try {
+                    $translateResponse = Http::withHeaders([
+                        'Content-Type' => 'application/json',
+                        'x-rapidapi-host' => 'aibit-translator.p.rapidapi.com',
+                        'x-rapidapi-key' => env('RAPIDAPI_KEY', '74e939e778mshea2f00b1b0170dap1cc6eajsnf05e5c9be03a'),
+                    ])->post(
+                            'https://aibit-translator.p.rapidapi.com/api/v1/translator/json',
+                            [
+                                'from' => 'zh',
+                                'to' => $lang,
+                                'json' => $textsToTranslate
+                            ]
+                        );
+
+                    if ($translateResponse->successful()) {
+                        $translated = $translateResponse->json('trans', []);
+                        foreach ($translated as $idx => $text) {
+                            if (isset($fieldMap[$idx])) {
+                                $field = $fieldMap[$idx];
+                                if (is_array($field)) {
+                                    // Nested field (shop_ratings)
+                                    $shopData[$field[0]][$field[1]][$field[2]] = $text;
+                                } else {
+                                    // Simple field
+                                    $shopData[$field] = $text;
+                                }
+                            }
+                        }
+                    }
+                } catch (\Throwable $e) {
+                    Log::warning('Shop info translation failed: ' . $e->getMessage());
+                    // Continue with original data if translation fails
+                }
+            }
+        }
+
         $successResponse = response()->json([
             'message' => 'success',
             'data' => $shopData
