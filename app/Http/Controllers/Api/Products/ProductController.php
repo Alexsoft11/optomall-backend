@@ -1273,8 +1273,8 @@ class ProductController extends Controller
             $subcategory = TaobaoSubcategory::where('unique_id', $request->catId)
                 ->pluck('unique')
                 ->first() ?? TaobaoSubcategoryName::where('unique_id', $request->catId)
-                ->pluck('unique')
-                ->first();
+                    ->pluck('unique')
+                    ->first();
 
             // Check if we need to translate the value before the API call
             $translatedValue = $subcategory ? $subcategory : $this->translateText($value); // Translate to Chinese for search
@@ -1401,8 +1401,8 @@ class ProductController extends Controller
             $subcategory = TaobaoSubcategory::where('unique_id', $request->catId)
                 ->pluck('unique')
                 ->first() ?? TaobaoSubcategoryName::where('unique_id', $request->catId)
-                ->pluck('unique')
-                ->first();
+                    ->pluck('unique')
+                    ->first();
 
             // Check if we need to translate the value before the API call
             $translatedValue = $subcategory ? $subcategory : $this->translateText($value); // Translate to Chinese for search
@@ -2685,13 +2685,13 @@ class ProductController extends Controller
                     'x-rapidapi-host' => 'aibit-translator.p.rapidapi.com',
                     'x-rapidapi-key' => env('RAPIDAPI_KEY', '74e939e778mshea2f00b1b0170dap1cc6eajsnf05e5c9be03a'),
                 ])->post(
-                    'https://aibit-translator.p.rapidapi.com/api/v1/translator/json',
-                    [
-                        'from' => 'auto',
-                        'to' => $lang,
-                        'json' => $texts
-                    ]
-                );
+                        'https://aibit-translator.p.rapidapi.com/api/v1/translator/json',
+                        [
+                            'from' => 'auto',
+                            'to' => $lang,
+                            'json' => $texts
+                        ]
+                    );
 
                 if ($translateResponse->successful()) {
                     $translated = $translateResponse->json('trans', []);
@@ -2717,6 +2717,322 @@ class ProductController extends Controller
 
         if ($shouldCache) {
             Cache::put($cacheKey, $successResponse, now()->addHours(6));
+        }
+
+        return $successResponse;
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/shop-information",
+     *     summary="Get shop/seller information from 1688",
+     *     tags={"Shop"},
+     *     @OA\Parameter(
+     *         name="member_id",
+     *         in="query",
+     *         required=false,
+     *         @OA\Schema(type="string"),
+     *         description="Seller Member ID"
+     *     ),
+     *     @OA\Parameter(
+     *         name="shop_url",
+     *         in="query",
+     *         required=false,
+     *         @OA\Schema(type="string"),
+     *         description="Shop homepage URL"
+     *     ),
+     *     @OA\Parameter(
+     *         name="lang",
+     *         in="query",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *             enum={"uz", "ru", "en"}
+     *         ),
+     *         description="Language code for translation"
+     *     ),
+     *     @OA\Response(response="200", description="Shop information"),
+     * )
+     */
+    public function getShopInformation(Request $request)
+    {
+        $memberId = $request->input('member_id');
+        $shopUrl = $request->input('shop_url');
+        $lang = $request->input('lang', 'en');
+
+        if (!$memberId && !$shopUrl) {
+            return response()->json([
+                'message' => 'member_id_or_shop_url_required',
+                'data' => null
+            ], 200);
+        }
+
+        $cacheKey = "tmapi_shop_info_v1_" . ($memberId ?: md5($shopUrl)) . "_{$lang}";
+
+        if (Cache::has($cacheKey)) {
+            return Cache::get($cacheKey);
+        }
+
+        $apiToken = env('TMAPI_TOKEN') ?: $request->input('apiToken');
+
+        if (!$apiToken) {
+            return response()->json([
+                'message' => 'tmapi_token_missing',
+                'data' => null
+            ], 200);
+        }
+
+        $baseUrl = rtrim(env('TMAPI_URL', 'https://api.tmapi.top/'), '/') . '/';
+        $params = "apiToken={$apiToken}";
+
+        if ($memberId) {
+            $params .= "&member_id={$memberId}";
+        }
+        if ($shopUrl) {
+            $params .= "&shop_url=" . urlencode($shopUrl);
+        }
+
+        $targetUrl = "{$baseUrl}ali/shop/get-shop-information?{$params}";
+        $proxyUrl = "https://china-proxy.optomall.uz?url=" . urlencode($targetUrl);
+
+        try {
+            $response = Http::timeout(60)->withoutVerifying()->get($proxyUrl);
+        } catch (\Throwable $e) {
+            Log::warning('Shop info API failed: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'tmapi_connection_failed',
+                'data' => null
+            ], 200);
+        }
+
+        $payload = $response->json();
+
+        if (empty($payload['data'])) {
+            return response()->json([
+                'message' => 'shop_not_found',
+                'data' => null
+            ], 200);
+        }
+
+        $shopData = $payload['data'];
+
+        // Translate shop name and company name if needed
+        if ($lang !== 'zh' && !empty($shopData['companyName'])) {
+            try {
+                $translateResponse = Http::withHeaders([
+                    'Content-Type' => 'application/json',
+                    'x-rapidapi-host' => 'aibit-translator.p.rapidapi.com',
+                    'x-rapidapi-key' => env('RAPIDAPI_KEY', '74e939e778mshea2f00b1b0170dap1cc6eajsnf05e5c9be03a'),
+                ])->post(
+                        'https://aibit-translator.p.rapidapi.com/api/v1/translator/json',
+                        [
+                            'from' => 'auto',
+                            'to' => $lang,
+                            'json' => [$shopData['companyName']]
+                        ]
+                    );
+
+                if ($translateResponse->successful()) {
+                    $translated = $translateResponse->json('trans', []);
+                    if (!empty($translated[0])) {
+                        $shopData['companyName'] = $translated[0];
+                    }
+                }
+            } catch (\Throwable $e) {
+                Log::warning('Shop name translation failed: ' . $e->getMessage());
+            }
+        }
+
+        $successResponse = response()->json([
+            'message' => 'success',
+            'data' => $shopData
+        ], 200);
+
+        Cache::put($cacheKey, $successResponse, now()->addHours(24));
+
+        return $successResponse;
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/shop-products",
+     *     summary="Get shop products from 1688",
+     *     tags={"Shop"},
+     *     @OA\Parameter(
+     *         name="member_id",
+     *         in="query",
+     *         required=true,
+     *         @OA\Schema(type="string"),
+     *         description="Seller Member ID"
+     *     ),
+     *     @OA\Parameter(
+     *         name="page",
+     *         in="query",
+     *         required=false,
+     *         @OA\Schema(type="integer"),
+     *         description="Page number (default 1)"
+     *     ),
+     *     @OA\Parameter(
+     *         name="page_size",
+     *         in="query",
+     *         required=false,
+     *         @OA\Schema(type="integer"),
+     *         description="Page size (default 20)"
+     *     ),
+     *     @OA\Parameter(
+     *         name="sort",
+     *         in="query",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *             enum={"default", "sales", "price_up", "price_down", "time_up", "time_down"}
+     *         ),
+     *         description="Sort order"
+     *     ),
+     *     @OA\Parameter(
+     *         name="lang",
+     *         in="query",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *             enum={"uz", "ru", "en"}
+     *         ),
+     *         description="Language code for translation"
+     *     ),
+     *     @OA\Response(response="200", description="Shop products list"),
+     * )
+     */
+    public function getShopProducts(Request $request)
+    {
+        $memberId = $request->input('member_id');
+        $page = (int) $request->input('page', 1);
+        $pageSize = (int) $request->input('page_size', 20);
+        $sort = $request->input('sort', 'default');
+        $lang = $request->input('lang', 'en');
+        $priceStart = $request->input('price_start');
+        $priceEnd = $request->input('price_end');
+        $shopCatId = $request->input('shop_cat_id');
+
+        if (!$memberId) {
+            return response()->json([
+                'message' => 'member_id_required',
+                'data' => null
+            ], 200);
+        }
+
+        $cacheKey = "tmapi_shop_products_v1_{$memberId}_{$page}_{$pageSize}_{$sort}_{$lang}";
+
+        if (Cache::has($cacheKey)) {
+            return Cache::get($cacheKey);
+        }
+
+        $apiToken = env('TMAPI_TOKEN') ?: $request->input('apiToken');
+
+        if (!$apiToken) {
+            return response()->json([
+                'message' => 'tmapi_token_missing',
+                'data' => null
+            ], 200);
+        }
+
+        $baseUrl = rtrim(env('TMAPI_URL', 'https://api.tmapi.top/'), '/') . '/';
+        $params = "apiToken={$apiToken}&member_id={$memberId}&page={$page}&page_size={$pageSize}&sort={$sort}";
+
+        if ($priceStart) {
+            $params .= "&price_start={$priceStart}";
+        }
+        if ($priceEnd) {
+            $params .= "&price_end={$priceEnd}";
+        }
+        if ($shopCatId) {
+            $params .= "&shop_cat_id={$shopCatId}";
+        }
+
+        $targetUrl = "{$baseUrl}ali/shop/get-shop-items?{$params}";
+        $proxyUrl = "https://china-proxy.optomall.uz?url=" . urlencode($targetUrl);
+
+        try {
+            $response = Http::timeout(60)->withoutVerifying()->get($proxyUrl);
+        } catch (\Throwable $e) {
+            Log::warning('Shop products API failed: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'tmapi_connection_failed',
+                'data' => null
+            ], 200);
+        }
+
+        $payload = $response->json();
+
+        if (empty($payload['data']) || empty($payload['data']['items'])) {
+            return response()->json([
+                'message' => 'no_products_found',
+                'data' => [
+                    'total' => 0,
+                    'page' => $page,
+                    'pageSize' => $pageSize,
+                    'items' => []
+                ]
+            ], 200);
+        }
+
+        $items = $payload['data']['items'];
+        $titles = [];
+        $titleMap = [];
+
+        // Collect titles for translation
+        foreach ($items as $i => $item) {
+            if (!empty($item['title'])) {
+                $titles[] = $item['title'];
+                $titleMap[] = $i;
+            }
+        }
+
+        $shouldCache = true;
+
+        // Translate titles if needed
+        if ($lang !== 'zh' && !empty($titles)) {
+            $shouldCache = false;
+            try {
+                $translateResponse = Http::withHeaders([
+                    'Content-Type' => 'application/json',
+                    'x-rapidapi-host' => 'aibit-translator.p.rapidapi.com',
+                    'x-rapidapi-key' => env('RAPIDAPI_KEY', '74e939e778mshea2f00b1b0170dap1cc6eajsnf05e5c9be03a'),
+                ])->post(
+                        'https://aibit-translator.p.rapidapi.com/api/v1/translator/json',
+                        [
+                            'from' => 'auto',
+                            'to' => $lang,
+                            'json' => $titles
+                        ]
+                    );
+
+                if ($translateResponse->successful()) {
+                    $translated = $translateResponse->json('trans', []);
+
+                    foreach ($translated as $idx => $text) {
+                        if (isset($titleMap[$idx])) {
+                            $items[$titleMap[$idx]]['title'] = $text;
+                        }
+                    }
+                    $shouldCache = true;
+                }
+            } catch (\Throwable $e) {
+                Log::warning('Shop products translation failed: ' . $e->getMessage());
+            }
+        }
+
+        $successResponse = response()->json([
+            'message' => 'success',
+            'data' => [
+                'total' => $payload['data']['total'] ?? count($items),
+                'page' => $page,
+                'pageSize' => $pageSize,
+                'items' => $items
+            ]
+        ], 200);
+
+        if ($shouldCache) {
+            Cache::put($cacheKey, $successResponse, now()->addHours(1));
         }
 
         return $successResponse;
