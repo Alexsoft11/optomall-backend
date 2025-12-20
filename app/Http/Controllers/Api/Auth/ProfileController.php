@@ -114,8 +114,28 @@ class ProfileController extends Controller
      *     @OA\Response(response="401", description="Unauthorized")
      * )
      */
-    public function updatePhone(Request $request)
+    /**
+     * @OA\Post(
+     *     path="/api/profile/send-update-phone-otp",
+     *     summary="Send OTP for updating user phone",
+     *     tags={"User"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"phone"},
+     *             @OA\Property(property="phone", type="string", example="998901234567"),
+     *         ),
+     *     ),
+     *     @OA\Response(response="200", description="OTP sent successfully"),
+     *     @OA\Response(response="422", description="Validation errors"),
+     *     @OA\Response(response="401", description="Unauthorized")
+     * )
+     */
+    public function sendUpdatePhoneOTP(Request $request)
     {
+        $user = Auth::user();
+
         $validator = Validator::make($request->all(), [
             'phone' => 'required|string|max:255',
         ]);
@@ -123,10 +143,93 @@ class ProfileController extends Controller
         if ($validator->fails()) {
             return response()->json(['error' => $validator->errors()], 422);
         }
-        $user = Auth::user();
-        $user->update([
-            'phone' => $request->phone,
+
+        $phoneNumber = $request->phone;
+        $digits = preg_replace('/\D/', '', $phoneNumber);
+        if (strlen($digits) === 9) {
+            $digits = '998' . $digits;
+        }
+
+        // Format to storage format for uniqueness check
+        if (strlen($digits) === 12) {
+             $formattedStats = preg_replace('/^(\d{3})(\d{2})(\d{3})(\d{2})(\d{2})$/', '$1 $2 $3 $4 $5', $digits);
+        } else {
+             $formattedStats = $phoneNumber; 
+        }
+
+        // Check uniqueness manually against stored format
+        if (\App\Models\User::where('phone', $formattedStats)->where('id', '!=', $user->id)->exists()) {
+             return response()->json(['error' => ['phone' => ['The phone has already been taken.']]], 422);
+        }
+
+        $formattedPhoneForSms = $digits; // This will be 998901234567
+
+        // Reuse OTP generation logic from AuthController or similar
+        // For simplicity, generating here. Ideally move to a service.
+        $otp = rand(100000, 999999);
+        
+        // Cache OTP for 5 minutes
+        \Illuminate\Support\Facades\Cache::put('update_phone_otp_' . $user->id, [
+            'otp' => $otp,
+            'phone' => $formattedStats // Store the formatted version to save later
+        ], 300);
+
+        try {
+            $text = "Kodini hech kimga bermang! Optomall platformasi da telefon raqamni o'zgartirish uchun tasdiqlash kodi: " . $otp;
+            $sms = app(\App\Services\SmsProviderService::class);
+            $sms->sendSms($formattedPhoneForSms, $text); 
+        } catch (\Throwable $e) {
+             return response()->json(['message' => 'sms_sending_failed', 'error' => $e->getMessage()], 500);
+        }
+
+        return response()->json(['message' => 'otp_sent_successfully'], 200);
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/api/profile/verify-update-phone-otp",
+     *     summary="Verify OTP and update user phone",
+     *     tags={"User"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"otp"},
+     *             @OA\Property(property="otp", type="string", example="123456"),
+     *         ),
+     *     ),
+     *     @OA\Response(response="200", description="Phone updated successfully"),
+     *     @OA\Response(response="422", description="Validation errors"),
+     *     @OA\Response(response="400", description="Invalid OTP")
+     * )
+     */
+    public function verifyUpdatePhoneOTP(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'otp' => 'required|string',
         ]);
+
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 422);
+        }
+
+        $user = Auth::user();
+        $cachedData = \Illuminate\Support\Facades\Cache::get('update_phone_otp_' . $user->id);
+
+        if (!$cachedData || $cachedData['otp'] != $request->otp) {
+             return response()->json(['message' => 'invalid_or_expired_otp'], 400);
+        }
+
+        $newPhone = $cachedData['phone'];
+
+        $formattedPhone = $cachedData['phone'];
+
+        $user->update([
+            'phone' => $formattedPhone,
+        ]);
+
+        // Clear cache
+        \Illuminate\Support\Facades\Cache::forget('update_phone_otp_' . $user->id);
 
         return response()->json(['message' => 'phone_updated_successfully'], 200);
     }

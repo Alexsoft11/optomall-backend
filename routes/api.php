@@ -106,6 +106,8 @@ Route::middleware('throttle:1200,60')->group(function () {
             Route::post('update-email', [ProfileController::class, 'updateEmail']);
             Route::post('update-name', [ProfileController::class, 'updateName']);
             Route::post('update-phone', [ProfileController::class, 'updatePhone']);
+            Route::post('send-update-phone-otp', [ProfileController::class, 'sendUpdatePhoneOTP']);
+            Route::post('verify-update-phone-otp', [ProfileController::class, 'verifyUpdatePhoneOTP']);
             Route::post('update-password', [ProfileController::class, 'updatePassword']);
         });
 
