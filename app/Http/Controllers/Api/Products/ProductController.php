@@ -2820,33 +2820,7 @@ class ProductController extends Controller
 
         $shopData = $payload['data'];
 
-        // Translate shop name and company name if needed
-        if ($lang !== 'zh' && !empty($shopData['companyName'])) {
-            try {
-                $translateResponse = Http::withHeaders([
-                    'Content-Type' => 'application/json',
-                    'x-rapidapi-host' => 'aibit-translator.p.rapidapi.com',
-                    'x-rapidapi-key' => env('RAPIDAPI_KEY', '74e939e778mshea2f00b1b0170dap1cc6eajsnf05e5c9be03a'),
-                ])->post(
-                        'https://aibit-translator.p.rapidapi.com/api/v1/translator/json',
-                        [
-                            'from' => 'auto',
-                            'to' => $lang,
-                            'json' => [$shopData['companyName']]
-                        ]
-                    );
-
-                if ($translateResponse->successful()) {
-                    $translated = $translateResponse->json('trans', []);
-                    if (!empty($translated[0])) {
-                        $shopData['companyName'] = $translated[0];
-                    }
-                }
-            } catch (\Throwable $e) {
-                Log::warning('Shop name translation failed: ' . $e->getMessage());
-            }
-        }
-
+        // Return data without translation (user requested raw data)
         $successResponse = response()->json([
             'message' => 'success',
             'data' => $shopData
