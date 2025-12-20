@@ -1623,42 +1623,47 @@ class ProductController extends Controller
         $imageFullPath = url('storage/' . $imagePath);
         $tmapiToken = env('TMAPI_TOKEN');
 
-        $apiUrl = "http://api.tmapi.top/1688/tools/image/convert_url?apiToken=$tmapiToken";
-        $response = Http::post($apiUrl, [
-            'url' => $imageFullPath,
-        ]);
+        // Build target URL with url parameter in query string
+        $targetUrl = "http://api.tmapi.top/1688/tools/image/convert_url?apiToken={$tmapiToken}&url=" . urlencode($imageFullPath);
 
-        // // Convert the image to Base64
-        // $imageData = file_get_contents($imageFullPath);
-        // $base64Image = base64_encode($imageData);
+        // Use proxy for API call
+        $proxyUrl = "https://china-proxy.optomall.uz?url=" . urlencode($targetUrl);
 
-        // // Build the API URL with query parameters
+        try {
+            $response = Http::timeout(60)
+                ->withoutVerifying()
+                ->get($proxyUrl);
 
-        // // Send POST request to the API with Base64 image in the body
+            $responseData = $response->json();
 
-        // // Decode the response from the API
-        // $responseData = $response->json();
-        // // Check if the API call was successful
-        // if (isset($responseData['items']['item']['name'])) {
-        //     return response()->json([
-        //         'url' => $responseData['items']['item']['name'],  // Adjust according to the actual API response structure
-        //     ]);
-        // } else {
-        //     return response()->json([
-        //         'error' => true,
-        //         'messages' => 'external_api_error',
-        //         'details' => $responseData,  // Return error details from the API
-        //     ], 500);
-        // }
-        if ($response['data'] === null) {
+            if (!$response->successful() || empty($responseData['data'])) {
+                Log::warning('Image search API failed', [
+                    'target_url' => $targetUrl,
+                    'response' => $responseData,
+                ]);
+
+                return response()->json([
+                    'messages' => $responseData['msg'] ?? 'external_api_error',
+                    'urlOrg' => $imageFullPath,
+                    'error' => true
+                ], 500);
+            }
+
             return response()->json([
-                'messages' => $response['data'] ?? null, // Ensure 'messages' exists
+                'url' => $responseData['data']['image_url'],
+                'urlOrg' => $imageFullPath
+            ]);
+
+        } catch (\Throwable $e) {
+            Log::error('Image search connection failed: ' . $e->getMessage());
+
+            return response()->json([
+                'messages' => 'connection_failed',
                 'urlOrg' => $imageFullPath,
-                'error' => true
+                'error' => true,
+                'details' => $e->getMessage()
             ], 500);
         }
-
-        return response()->json(['url' => $response['data']['image_url'], 'urlOrg' => $imageFullPath]);
     }
 
 
