@@ -3047,7 +3047,7 @@ class ProductController extends Controller
                 ])->post(
                         'https://aibit-translator.p.rapidapi.com/api/v1/translator/json',
                         [
-                            'from' => 'auto',
+                            'from' => 'zh',
                             'to' => $lang,
                             'json' => $titles
                         ]
@@ -3068,13 +3068,31 @@ class ProductController extends Controller
             }
         }
 
+        // Format items to match CardInterface for frontend
+        $formattedItems = [];
+        foreach ($items as $item) {
+            $formattedItems[] = [
+                'id' => $item['item_id'] ?? '',
+                'product_id' => $item['item_id'] ?? '',
+                'title' => $item['title'] ?? '',
+                'price' => $item['price'] ?? '0',
+                'image' => $item['img'] ?? '',
+                'provider' => 'Alibaba1688',
+                'is_liked' => false,
+                // Extra info for display
+                'sale_quantity_30days' => $item['sale_info']['sale_quantity_30days'] ?? 0,
+                'category_name' => $item['category_name'] ?? '',
+            ];
+        }
+
         $successResponse = response()->json([
             'message' => 'success',
             'data' => [
-                'total' => $payload['data']['total'] ?? count($items),
+                'total' => $payload['data']['total_count'] ?? count($formattedItems),
                 'page' => $page,
                 'pageSize' => $pageSize,
-                'items' => $items
+                'has_next_page' => $payload['data']['has_next_page'] ?? false,
+                'items' => $formattedItems
             ]
         ], 200);
 
