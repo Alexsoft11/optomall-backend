@@ -2792,7 +2792,7 @@ class ProductController extends Controller
             $params .= "&shop_url=" . urlencode($shopUrl);
         }
 
-        $targetUrl = "{$baseUrl}ali/shop/get-shop-information?{$params}";
+        $targetUrl = "{$baseUrl}1688/shop/shop_info?{$params}";
         $proxyUrl = "https://china-proxy.optomall.uz?url=" . urlencode($targetUrl);
 
         try {
@@ -2801,6 +2801,8 @@ class ProductController extends Controller
             Log::warning('Shop info API failed: ' . $e->getMessage());
             return response()->json([
                 'message' => 'tmapi_connection_failed',
+                'error' => $e->getMessage(),
+                'target_url' => $targetUrl,
                 'data' => null
             ], 200);
         }
@@ -2810,6 +2812,8 @@ class ProductController extends Controller
         if (empty($payload['data'])) {
             return response()->json([
                 'message' => 'shop_not_found',
+                'target_url' => $targetUrl,
+                'raw_response' => $payload,
                 'data' => null
             ], 200);
         }
@@ -2948,7 +2952,7 @@ class ProductController extends Controller
             $params .= "&shop_cat_id={$shopCatId}";
         }
 
-        $targetUrl = "{$baseUrl}ali/shop/get-shop-items?{$params}";
+        $targetUrl = "{$baseUrl}1688/shop/items?{$params}";
         $proxyUrl = "https://china-proxy.optomall.uz?url=" . urlencode($targetUrl);
 
         try {
@@ -2957,6 +2961,8 @@ class ProductController extends Controller
             Log::warning('Shop products API failed: ' . $e->getMessage());
             return response()->json([
                 'message' => 'tmapi_connection_failed',
+                'error' => $e->getMessage(),
+                'target_url' => $targetUrl,
                 'data' => null
             ], 200);
         }
@@ -2966,6 +2972,8 @@ class ProductController extends Controller
         if (empty($payload['data']) || empty($payload['data']['items'])) {
             return response()->json([
                 'message' => 'no_products_found',
+                'target_url' => $targetUrl,
+                'raw_response' => $payload,
                 'data' => [
                     'total' => 0,
                     'page' => $page,
