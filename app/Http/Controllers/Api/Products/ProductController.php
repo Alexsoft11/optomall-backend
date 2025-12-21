@@ -1623,19 +1623,21 @@ class ProductController extends Controller
         $imageFullPath = url('storage/' . $imagePath);
         $tmapiToken = env('TMAPI_TOKEN');
 
-        // Build target URL with url parameter in query string - Direct call without proxy
-        $targetUrl = "http://api.tmapi.top/1688/tools/image/convert_url?apiToken={$tmapiToken}&url=" . urlencode($imageFullPath);
+        // Build API URL and send POST request with url in body
+        $apiUrl = "http://api.tmapi.top/1688/tools/image/convert_url?apiToken=$tmapiToken";
 
         try {
             $response = Http::timeout(60)
                 ->withoutVerifying()
-                ->get($targetUrl);
+                ->post($apiUrl, [
+                    'url' => $imageFullPath,
+                ]);
 
             $responseData = $response->json();
 
             if (!$response->successful() || empty($responseData['data'])) {
                 Log::warning('Image search API failed', [
-                    'target_url' => $targetUrl,
+                    'api_url' => $apiUrl,
                     'status_code' => $response->status(),
                     'response' => $responseData,
                 ]);
