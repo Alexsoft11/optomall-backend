@@ -1623,35 +1623,21 @@ class ProductController extends Controller
         $imageFullPath = url('storage/' . $imagePath);
         $tmapiToken = env('TMAPI_TOKEN');
 
-        // Build target URL with url parameter in query string
+        // Build target URL with url parameter in query string - Direct call without proxy
         $targetUrl = "http://api.tmapi.top/1688/tools/image/convert_url?apiToken={$tmapiToken}&url=" . urlencode($imageFullPath);
-
-        // Use proxy for API call
-        $proxyUrl = "https://china-proxy.optomall.uz?url=" . urlencode($targetUrl);
 
         try {
             $response = Http::timeout(60)
                 ->withoutVerifying()
-                ->get($proxyUrl);
+                ->get($targetUrl);
 
             $responseData = $response->json();
-            $responseBody = $response->body();
-
-            Log::info('Image search API response', [
-                'proxy_url' => $proxyUrl,
-                'target_url' => $targetUrl,
-                'status_code' => $response->status(),
-                'response_body' => $responseBody,
-                'response_data' => $responseData,
-            ]);
 
             if (!$response->successful() || empty($responseData['data'])) {
                 Log::warning('Image search API failed', [
                     'target_url' => $targetUrl,
-                    'proxy_url' => $proxyUrl,
                     'status_code' => $response->status(),
                     'response' => $responseData,
-                    'response_body' => $responseBody,
                 ]);
 
                 return response()->json([
@@ -1661,9 +1647,6 @@ class ProductController extends Controller
                     'debug' => [
                         'status_code' => $response->status(),
                         'response_data' => $responseData,
-                        'response_body' => $responseBody,
-                        'target_url' => $targetUrl,
-                        'proxy_url' => $proxyUrl,
                     ]
                 ], 500);
             }
@@ -1684,6 +1667,7 @@ class ProductController extends Controller
             ], 500);
         }
     }
+
 
 
     /**
