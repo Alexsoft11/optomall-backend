@@ -1635,17 +1635,36 @@ class ProductController extends Controller
                 ->get($proxyUrl);
 
             $responseData = $response->json();
+            $responseBody = $response->body();
+
+            Log::info('Image search API response', [
+                'proxy_url' => $proxyUrl,
+                'target_url' => $targetUrl,
+                'status_code' => $response->status(),
+                'response_body' => $responseBody,
+                'response_data' => $responseData,
+            ]);
 
             if (!$response->successful() || empty($responseData['data'])) {
                 Log::warning('Image search API failed', [
                     'target_url' => $targetUrl,
+                    'proxy_url' => $proxyUrl,
+                    'status_code' => $response->status(),
                     'response' => $responseData,
+                    'response_body' => $responseBody,
                 ]);
 
                 return response()->json([
                     'messages' => $responseData['msg'] ?? 'external_api_error',
                     'urlOrg' => $imageFullPath,
-                    'error' => true
+                    'error' => true,
+                    'debug' => [
+                        'status_code' => $response->status(),
+                        'response_data' => $responseData,
+                        'response_body' => $responseBody,
+                        'target_url' => $targetUrl,
+                        'proxy_url' => $proxyUrl,
+                    ]
                 ], 500);
             }
 
