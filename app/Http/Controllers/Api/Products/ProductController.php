@@ -33,6 +33,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use App\Services\ProductCacheService;
 
 class ProductController extends Controller
 {
@@ -850,15 +851,13 @@ class ProductController extends Controller
     {
         $productId = $request->productId;
 
-        // Remove 'abb-' if present in the product ID
         if (strpos($productId, 'abb-') !== false) {
             $productId = str_replace('abb-', '', $productId);
         }
 
-        $lang = $request->input('lang'); // Default language
-        $provider = $request->input('provider', 'taobao'); // Default provider is 'taobao'
+        $lang = $request->input('lang', 'en');
+        $provider = $request->input('provider', 'taobao');
 
-        // Handle local provider case (if the provider is 'local')
         if ($provider == 'local') {
             $productDatabase = ProductLocal::where('id', $productId)->first();
 
@@ -877,65 +876,131 @@ class ProductController extends Controller
             ]);
         }
 
-        // Construct the cache key for product details
-        $cacheKey = "product-detail-tmapi?productId={$productId}&lang={$lang}&provider={$provider}";
+        $cacheService = app(ProductCacheService::class);
+        $cachedProduct = $cacheService->getCachedProduct($productId, $provider, $lang);
+        
+        $forceRefresh = $request->input('force_refresh', false);
+        $needsRefresh = $forceRefresh || !$cachedProduct || $cacheService->isCacheExpired($productId, $provider, $lang);
+
+        if ($cachedProduct && !$needsRefresh) {
+            return $this->respondWithSuccess([
+                'detail' => $cachedProduct->toDetailArray(),
+                'score' => [
+                    'rating' => $cachedProduct->rating ?? 4.6,
+                    'sold' => $cachedProduct->sales ?? 1000,
+                ],
+                'source' => 'cache',
+            ]);
+        }
 
         $tmapiToken = env('TMAPI_TOKEN');
-
-        // Build the target URL (actual API endpoint)
         $targetUrl = $provider === 'taobao'
             ? "http://api.tmapi.top/taobao/item_detail?item_id={$productId}&apiToken={$tmapiToken}"
             : "http://api.tmapi.top/1688/v2/item_detail?item_id={$productId}&apiToken={$tmapiToken}";
 
-        // Wrap it with your proxy
         $proxyUrl = "https://china-proxy.optomall.uz?url=" . urlencode($targetUrl);
 
-        // Cache key and request through proxy
-        $productDetail = Cache::remember($cacheKey, 60 * 10, function () use ($proxyUrl) {
-            try {
-                return Http::withOptions([
-                    'verify' => false,
-                ])
-                    ->timeout(50)
-                    ->retry(1, 2)
-                    ->withoutVerifying()
-                    ->get($proxyUrl)
-                    ->json();
-            } catch (\Illuminate\Http\Client\ConnectionException $e) {
-                return null;
+        $productDetail = null;
+        try {
+            $productDetail = Http::withOptions(['verify' => false])
+                ->timeout(50)
+                ->retry(1, 2)
+                ->withoutVerifying()
+                ->get($proxyUrl)
+                ->json();
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            if ($cachedProduct) {
+                return $this->respondWithSuccess([
+                    'detail' => $cachedProduct->toDetailArray(),
+                    'score' => [
+                        'rating' => $cachedProduct->rating ?? 4.6,
+                        'sold' => $cachedProduct->sales ?? 1000,
+                    ],
+                    'source' => 'cache_fallback',
+                ]);
             }
-        });
+            return response()->json(['error' => 'connection_error'], 500);
+        }
 
-
-        // Check for failed format
         if (!isset($productDetail['code'])) {
+            if ($cachedProduct) {
+                return $this->respondWithSuccess([
+                    'detail' => $cachedProduct->toDetailArray(),
+                    'score' => [
+                        'rating' => $cachedProduct->rating ?? 4.6,
+                        'sold' => $cachedProduct->sales ?? 1000,
+                    ],
+                    'source' => 'cache_fallback',
+                ]);
+            }
             return response()->json(['error' => 'error', 'productDetail' => $productDetail], 500);
         }
 
         if ($productDetail['code'] !== 200) {
             if ($productDetail['code'] === 404) {
                 $clean = str_replace('abb-', '', $productId);
-                $homeProduct = HomePageProduct::whereRaw("REPLACE(product_id, 'abb-', '') = ?", [$clean])
-                    ->first();
+                $homeProduct = HomePageProduct::whereRaw("REPLACE(product_id, 'abb-', '') = ?", [$clean])->first();
 
                 if ($homeProduct) {
                     $homeProduct->update(['is_deleted' => true]);
                 }
-                return response()->json(['error' => 'product_not_found', 'productDetail' => $productDetail, 'homeProduct' => $homeProduct, 'productId' => $productId], 404);
+
+                $cacheService->markAsUnavailable($productId, $provider);
+
+                if ($cachedProduct) {
+                    return $this->respondWithSuccess([
+                        'detail' => $cachedProduct->toDetailArray(),
+                        'score' => [
+                            'rating' => $cachedProduct->rating ?? 4.6,
+                            'sold' => $cachedProduct->sales ?? 1000,
+                        ],
+                        'source' => 'cache_unavailable',
+                        'warning' => 'product_may_be_unavailable',
+                    ]);
+                }
+
+                return response()->json([
+                    'error' => 'product_not_found',
+                    'productDetail' => $productDetail,
+                    'homeProduct' => $homeProduct,
+                    'productId' => $productId
+                ], 404);
             }
+
+            if ($cachedProduct) {
+                return $this->respondWithSuccess([
+                    'detail' => $cachedProduct->toDetailArray(),
+                    'score' => [
+                        'rating' => $cachedProduct->rating ?? 4.6,
+                        'sold' => $cachedProduct->sales ?? 1000,
+                    ],
+                    'source' => 'cache_fallback',
+                ]);
+            }
+
             return response()->json(['error' => 'product_not_found', 'productDetail' => $productDetail], 500);
         }
 
-        // Make an asynchronous call to construct product resource
         $product = new ProductDetailTmapi($productDetail['data'], $provider);
 
-        // Return success response with product details and score
+        $score = [
+            'rating' => $productDetail['data']['shop_info']['item_score'] ?? 4.6,
+            'sold' => $productDetail['data']['sale_count'] ?? 1000,
+        ];
+
+        $cacheService->saveFromTmapiResponse(
+            $productId,
+            $provider,
+            $lang,
+            $productDetail['data'],
+            $product->toArray(request()),
+            $score
+        );
+
         return $this->respondWithSuccess([
             'detail' => $product,
-            'score' => [
-                'rating' => $productDetail['item']['seller_info']['item_score'] ?? 4.6,
-                'sold' => $productDetail['item']['sales'] ?? 1000,
-            ],
+            'score' => $score,
+            'source' => 'api',
         ]);
     }
 

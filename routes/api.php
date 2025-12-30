@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\Slider\SliderController;
 use App\Http\Controllers\Api\Products\OrderController;
 use App\Http\Controllers\Api\Products\ProductController;
 use App\Http\Controllers\Api\Products\ProductLocalController;
+use App\Http\Controllers\Api\Products\CachedProductController;
 
 Route::middleware('throttle:1200,60')->group(function () {
     // Auth & Registration
@@ -62,6 +63,10 @@ Route::middleware('throttle:1200,60')->group(function () {
     Route::get('shop-information', [ProductController::class, 'getShopInformation']);
     Route::get('shop-products', [ProductController::class, 'getShopProducts']);
 
+    // Cached Products (Fast local + background sync)
+    Route::get('cached-product', [CachedProductController::class, 'getCachedProduct']);
+    Route::post('sync-product', [CachedProductController::class, 'syncProduct']);
+    Route::get('check-availability', [CachedProductController::class, 'checkAvailability']);
 
     Route::get('/products', [ProductController::class, 'products']);
     Route::get('/get-prices', [ProductController::class, 'getPrices']);
