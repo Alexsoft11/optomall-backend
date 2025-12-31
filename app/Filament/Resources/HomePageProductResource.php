@@ -26,34 +26,50 @@ class HomePageProductResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('title_uz')->maxLength(255),
-                Forms\Components\TextInput::make('title_en')->maxLength(255),
-                Forms\Components\TextInput::make('title_ru')->maxLength(255),
-                Forms\Components\TextInput::make('price')->maxLength(255),
-                Forms\Components\TextInput::make('discounted_price')->maxLength(255),
+                Forms\Components\TextInput::make('title_uz')
+                    ->label(trans('title_uz'))
+                    ->maxLength(255),
+                Forms\Components\TextInput::make('title_en')
+                    ->label(trans('title_en'))
+                    ->maxLength(255),
+                Forms\Components\TextInput::make('title_ru')
+                    ->label(trans('title_ru'))
+                    ->maxLength(255),
+                Forms\Components\TextInput::make('price')
+                    ->label(trans('price'))
+                    ->maxLength(255),
+                Forms\Components\TextInput::make('discounted_price')
+                    ->label(trans('discounted_price'))
+                    ->maxLength(255),
                 Forms\Components\View::make('image')
-                    ->label('Image Preview')
+                    ->label(trans('image'))
                     ->view('filament.components.image'),
                 Forms\Components\TextInput::make('product_id')
+                    ->label(trans('product_id'))
                     ->required()
                     ->maxLength(255),
                 Forms\Components\TextInput::make('product_url')
+                    ->label(trans('url'))
                     ->url()
                     ->maxLength(255),
 
-                Select::make('provider')->options([
-                    '1688' => '1688',
-                    'taobao' => 'TaoBao',
-                ])->required(),
+                Select::make('provider')
+                    ->label(trans('provider'))
+                    ->options([
+                        '1688' => '1688',
+                        'taobao' => 'TaoBao',
+                    ])->required(),
 
-                Select::make('type')->options([
-                    'discount' => 'Discount',
-                    'top' => 'Top products',
-                    'recomend' => 'Recommend',
-                ])->required(),
+                Select::make('type')
+                    ->label(trans('type'))
+                    ->options([
+                        'discount' => 'Discount',
+                        'top' => 'Top products',
+                        'recomend' => 'Recommend',
+                    ])->required(),
 
                 Forms\Components\Toggle::make('is_deleted')
-                    ->label('Deleted')
+                    ->label(trans('deleted'))
                     ->default(false),
             ]);
     }
@@ -63,14 +79,18 @@ class HomePageProductResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('product_id')
+                    ->label(trans('product_id'))
                     ->sortable()
                     ->searchable(),
                 TextColumn::make('title_uz')
+                    ->label(trans('title_uz'))
                     ->sortable()
                     ->searchable(),
-                ImageColumn::make('image'),
+                ImageColumn::make('image')
+                    ->label(trans('image'))
+                    ->getStateUsing(fn (HomePageProduct $record): string => "https://china-proxy.optomall.uz/image-proxy?url=" . urlencode($record->image)),
                 IconColumn::make('is_deleted')
-                    ->label('Status')
+                    ->label(trans('status'))
                     ->boolean()
                     ->trueIcon('heroicon-o-x-circle')
                     ->falseIcon('heroicon-o-check-circle')
@@ -78,15 +98,16 @@ class HomePageProductResource extends Resource
                     ->falseColor('success'),
 
                 TextColumn::make('created_at')
+                    ->label(trans('created_at'))
                     ->dateTime()
                     ->sortable(),
             ])
             ->filters([
                 Tables\Filters\TernaryFilter::make('is_deleted')
-                    ->label('Deleted')
-                    ->trueLabel('Only Deleted')
-                    ->falseLabel('Only Active')
-                    ->placeholder('All'),
+                    ->label(trans('deleted'))
+                    ->trueLabel(trans('only_deleted'))
+                    ->falseLabel(trans('only_active'))
+                    ->placeholder(trans('all')),
                     
             ])
             ->actions([
@@ -109,11 +130,11 @@ class HomePageProductResource extends Resource
 
     public static function getNavigationGroup(): string
     {
-        return 'Mahsulotlar';
+        return trans('products');
     }
     public static function getLabel(): string
     {
-        return 'Mahsulotlar';
+        return trans('products');
     }
 
     public static function getPages(): array
@@ -127,7 +148,7 @@ class HomePageProductResource extends Resource
 
     public static function getNavigationLabel(): string
     {
-        return 'Bosh sahifa mahsulotlari';
+        return trans('home_page');
     }
 
     public static function getNavigationBadge(): ?string
