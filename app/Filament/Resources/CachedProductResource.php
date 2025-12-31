@@ -17,9 +17,9 @@ class CachedProductResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-archive-box';
 
-    protected static ?string $navigationGroup = 'Products';
+    protected static ?string $navigationGroup = 'Mahsulotlar';
 
-    protected static ?string $navigationLabel = 'Cached Products';
+    protected static ?string $navigationLabel = 'Keshdagi mahsulotlar';
 
     protected static ?int $navigationSort = 5;
 
@@ -44,6 +44,9 @@ class CachedProductResource extends Resource
                             ->disabled(),
                         Forms\Components\TextInput::make('sales')
                             ->label('Total Sales')
+                            ->disabled(),
+                        Forms\Components\TextInput::make('views')
+                            ->label('Total Views')
                             ->disabled(),
                         Forms\Components\TextInput::make('rating')
                             ->disabled(),
@@ -108,6 +111,10 @@ class CachedProductResource extends Resource
                 Tables\Columns\TextColumn::make('price')
                     ->money('CNY')
                     ->sortable(),
+                Tables\Columns\TextColumn::make('views')
+                    ->label('Views')
+                    ->numeric()
+                    ->sortable(),
                 Tables\Columns\IconColumn::make('is_available')
                     ->label('Available')
                     ->boolean(),
@@ -141,12 +148,17 @@ class CachedProductResource extends Resource
                 Tables\Filters\Filter::make('fresh')
                     ->query(fn (Builder $query): Builder => $query->valid())
                     ->label('Fresh Cache'),
+                Tables\Filters\Filter::make('most_viewed')
+                    ->query(fn (Builder $query): Builder => $query->reorder()->orderBy('views', 'desc'))
+                    ->label('Most Viewed')
+                    ->toggle(), 
             ])
             ->actions([
                 Tables\Actions\Action::make('open_product')
                     ->label('Open')
                     ->icon('heroicon-o-arrow-top-right-on-square')
                     ->url(fn (CachedProduct $record): string => "https://optomall.uz/{$record->language}/product/{$record->external_id}?provider={$record->provider}")
+                    ->openUrlInNewTab()
                     ->color('primary'),
                 Tables\Actions\Action::make('similar_products')
                     ->label('Similar')
@@ -154,12 +166,6 @@ class CachedProductResource extends Resource
                     ->url(fn (CachedProduct $record): string => "https://optomall.uz/{$record->language}/search?imageUrl=" . urlencode($record->image) . "&provider={$record->provider}")
                     ->openUrlInNewTab()
                     ->color('gray'),
-                Tables\Actions\Action::make('new_tab')
-                    ->label('New Tab')
-                    ->icon('heroicon-o-arrow-up-right')
-                    ->url(fn (CachedProduct $record): string => "https://optomall.uz/{$record->language}/product/{$record->external_id}?provider={$record->provider}")
-                    ->openUrlInNewTab()
-                    ->color('success'),
                 Tables\Actions\ViewAction::make()
                     ->label('Details'),
                 Tables\Actions\DeleteAction::make(),
@@ -170,7 +176,8 @@ class CachedProductResource extends Resource
                 ]),
             ])
             ->defaultSort('synced_at', 'desc')
-            ->recordUrl(fn (CachedProduct $record): string => "https://optomall.uz/{$record->language}/product/{$record->external_id}?provider={$record->provider}");
+            ->recordUrl(fn (CachedProduct $record): string => "https://optomall.uz/{$record->language}/product/{$record->external_id}?provider={$record->provider}")
+            ->openRecordUrlInNewTab();
     }
 
     public static function getRelations(): array

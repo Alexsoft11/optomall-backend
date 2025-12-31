@@ -29,6 +29,7 @@ class CachedProduct extends Model
         'rating',
         'is_available',
         'synced_at',
+        'views',
     ];
 
     protected $casts = [
@@ -43,6 +44,7 @@ class CachedProduct extends Model
         'rating' => 'decimal:2',
         'is_available' => 'boolean',
         'synced_at' => 'datetime',
+        'views' => 'integer',
     ];
 
     const CACHE_TTL_HOURS = 6;

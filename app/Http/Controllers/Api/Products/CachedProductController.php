@@ -43,6 +43,8 @@ class CachedProductController extends Controller
             ]);
         }
 
+        $cachedProduct->increment('views');
+
         $isExpired = $cachedProduct->isExpired();
 
         return $this->respondWithSuccess([
