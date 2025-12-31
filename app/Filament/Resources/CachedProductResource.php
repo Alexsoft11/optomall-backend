@@ -109,7 +109,8 @@ class CachedProductResource extends Resource
                     ->label(trans('external_id'))
                     ->searchable()
                     ->sortable()
-                    ->copyable(),
+                    ->copyable()
+                    ->summarize(Tables\Columns\Summarizers\Count::make()->label(trans('all'))),
                 Tables\Columns\TextColumn::make('title')
                     ->label(trans('name'))
                     ->limit(40)
@@ -209,15 +210,5 @@ class CachedProductResource extends Resource
             'index' => Pages\ListCachedProducts::route('/'),
             'view' => Pages\ViewCachedProduct::route('/{record}'),
         ];
-    }
-
-    public static function getNavigationBadge(): ?string
-    {
-        return static::getModel()::count() ?: null;
-    }
-
-    public static function getNavigationBadgeColor(): ?string
-    {
-        return 'info';
     }
 }

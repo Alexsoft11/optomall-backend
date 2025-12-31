@@ -81,7 +81,8 @@ class HomePageProductResource extends Resource
                 TextColumn::make('product_id')
                     ->label(trans('product_id'))
                     ->sortable()
-                    ->searchable(),
+                    ->searchable()
+                    ->summarize(Tables\Columns\Summarizers\Count::make()->label(trans('all'))),
                 TextColumn::make('title_uz')
                     ->label(trans('title_uz'))
                     ->sortable()
@@ -149,15 +150,5 @@ class HomePageProductResource extends Resource
     public static function getNavigationLabel(): string
     {
         return trans('home_page');
-    }
-
-    public static function getNavigationBadge(): ?string
-    {
-        return static::getModel()::count() ?: null;
-    }
-
-    public static function getNavigationBadgeColor(): ?string
-    {
-        return 'info';
     }
 }

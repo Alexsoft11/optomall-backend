@@ -80,9 +80,13 @@ class OrderGroupResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('user.unique_id')->label(trans("user_id"))->sortable(),
+                TextColumn::make('user.unique_id')
+                    ->label(trans("user_id"))
+                    ->sortable(),
                 TextColumn::make('user.name')->label(trans("ism"))->sortable(),
-                TextColumn::make('total_price')->label(trans("price"))->sortable(),
+                TextColumn::make('total_price')
+                    ->label(trans("price"))
+                    ->sortable(),
                 TextColumn::make('getStatus.name_uz')
                     ->label("Status")
                     ->sortable()
@@ -103,27 +107,13 @@ class OrderGroupResource extends Resource
                             });
                         }
                     }),
-                Filter::make('User Unique ID')
-                    ->form([
-                        TextInput::make('user_unique_id')
-                            ->label('Search by User Unique ID'),
-                    ])
-                    ->query(function (Builder $query, array $data) {
-                        if ($data['user_unique_id']) {
-                            $query->whereHas('user', function (Builder $query) use ($data) {
-                                $query->where('unique_id', 'like', '%' . $data['user_unique_id'] . '%');
-                            });
-                        }
-                    }),
+                Tables\Filters\SelectFilter::make('user')
+                    ->relationship('user', 'name')
+                    ->searchable()
+                    ->label(trans('users')),
                 Tables\Filters\SelectFilter::make('status')->label('Sort by status')
                     ->options(
                         OrderStatus::pluck('name_uz', 'id')->mapWithKeys(function ($item, $key) {
-                            return [(string) $key => (string) $item];
-                        })->toArray()
-                    ),
-                Tables\Filters\SelectFilter::make('user_id')->label('Sort by user')
-                    ->options(
-                        User::pluck('name', 'id')->mapWithKeys(function ($item, $key) {
                             return [(string) $key => (string) $item];
                         })->toArray()
                     ),
