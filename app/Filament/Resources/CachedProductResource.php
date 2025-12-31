@@ -21,7 +21,21 @@ class CachedProductResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->orderBy('synced_at', 'desc');
+        return parent::getEloquentQuery()
+            ->select([
+                'id',
+                'external_id',
+                'title',
+                'provider',
+                'language',
+                'image',
+                'price',
+                'views',
+                'is_available',
+                'synced_at',
+                'created_at',
+            ])
+            ->orderBy('synced_at', 'desc');
     }
 
     public static function getNavigationGroup(): ?string
@@ -195,7 +209,9 @@ class CachedProductResource extends Resource
                 ]),
             ])
             ->recordUrl(fn (CachedProduct $record): string => "https://optomall.uz/{$record->language}/product/{$record->external_id}?provider={$record->provider}")
-            ->openRecordUrlInNewTab();
+            ->openRecordUrlInNewTab()
+            ->paginated([25, 50, 100])
+            ->defaultPaginationPageOption(25);
     }
 
     public static function getRelations(): array
