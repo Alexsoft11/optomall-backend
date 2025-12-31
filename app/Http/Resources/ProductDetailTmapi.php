@@ -105,6 +105,51 @@ class ProductDetailTmapi extends JsonResource
         return $composition;
     }
 
+    private function transformPictures($pictures)
+    {
+        return is_array($pictures) ? array_map(function ($attribute) {
+            return [
+                'image_url' => preg_replace('/^\/\//', 'https://', $attribute) ?? null,
+                'is_main' => 0,
+            ];
+        }, $pictures) : $pictures->map(function ($picture) {
+            return [
+                'image_url' => url('storage/' . $picture->image_url),
+                'is_main' => $picture->is_main,
+            ];
+        })->toArray();
+    }
+
+    private function transformSkus($skus)
+    {
+        if (is_null($skus) || empty($skus)) {
+            return [
+                [
+                    'price' => round($this->addPercentToPrice($this->resource['price_info']['price'], $this->amount, $this->percent)),
+                    'total_price' => 0,
+                    'orginal_price' => round($this->addPercentToPrice($this->resource['price_info']['price'] ?? 0, $this->amount, $this->percent)),
+                    'properties' => "1.1:1.1",
+                    'properties_name' => "1.1:property:default",
+                    'quantity' => $this->resource['num'],
+                    'sku_id' => $this->resource['num_iid'] . 0,
+                ]
+            ];
+        }
+
+        return array_map(function ($sku) {
+            return [
+                'price' => round($this->addPercentToPrice($sku['sale_price'], $this->amount, $this->percent)),
+                'total_price' => round($this->addPercentToPrice($sku['sale_price'], $this->amount, $this->percent)),
+                'orginal_price' => round($this->addPercentToPrice($sku['orginal_price'] ?? 0, $this->amount, $this->percent)),
+                'properties' => $sku['props_ids'],
+                'properties_name' => $sku['props_names'],
+                'quantity' => $sku['stock'],
+                'sku_id' => $sku['skuid'],
+                'package_info' => $sku['package_info'] ?? '',
+            ];
+        }, $skus);
+    }
+
     private function translateProductDetails()
     {
         // First maximize structural consistency
