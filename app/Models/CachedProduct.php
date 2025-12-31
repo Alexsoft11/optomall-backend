@@ -193,6 +193,7 @@ class CachedProduct extends Model
             'skus' => $skus,
             'prop_imgs' => [],
             'props_list' => $this->sku_props ?? [],
+            'props' => $this->props ?? [],
             'composition' => $this->props ?? [],
             'is_liked' => false,
         ];
