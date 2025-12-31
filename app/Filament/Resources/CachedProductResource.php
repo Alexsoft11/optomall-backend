@@ -88,7 +88,7 @@ class CachedProductResource extends Resource
                     ->label('Image')
                     ->circular()
                     ->size(50)
-                    ->getStateUsing(fn (CachedProduct $record): string => "https://china-proxy.optomall.uz?url=" . urlencode($record->image)),
+                    ->getStateUsing(fn (CachedProduct $record): string => "https://china-proxy.optomall.uz/image-proxy?url=" . urlencode($record->image)),
                 Tables\Columns\TextColumn::make('external_id')
                     ->label('External ID')
                     ->searchable()
