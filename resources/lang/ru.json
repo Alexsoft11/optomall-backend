@@ -113,5 +113,6 @@
     "only_deleted": "Только удаленные",
     "only_active": "Только активные",
     "all": "Все",
-    "discounted_price": "Цена со скидкой"
+    "discounted_price": "Цена со скидкой",
+    "statistics": "Статистика"
 }

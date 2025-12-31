@@ -109,8 +109,7 @@ class CachedProductResource extends Resource
                     ->label(trans('external_id'))
                     ->searchable()
                     ->sortable()
-                    ->copyable()
-                    ->summarize(Tables\Columns\Summarizers\Count::make()->label(trans('all'))),
+                    ->copyable(),
                 Tables\Columns\TextColumn::make('title')
                     ->label(trans('name'))
                     ->limit(40)

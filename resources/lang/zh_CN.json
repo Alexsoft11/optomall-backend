@@ -113,5 +113,6 @@
     "only_deleted": "仅已删除",
     "only_active": "仅活动",
     "all": "全部",
-    "discounted_price": "折后价"
+    "discounted_price": "折后价",
+    "statistics": "统计"
 }

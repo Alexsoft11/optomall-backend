@@ -81,8 +81,7 @@ class HomePageProductResource extends Resource
                 TextColumn::make('product_id')
                     ->label(trans('product_id'))
                     ->sortable()
-                    ->searchable()
-                    ->summarize(Tables\Columns\Summarizers\Count::make()->label(trans('all'))),
+                    ->searchable(),
                 TextColumn::make('title_uz')
                     ->label(trans('title_uz'))
                     ->sortable()

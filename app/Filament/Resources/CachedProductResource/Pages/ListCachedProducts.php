@@ -23,6 +23,19 @@ class ListCachedProducts extends ListRecords
                 ->modifyQueryUsing(fn (Builder $query) => $query), // Keeps default sort from Resource
             'most_viewed' => Tab::make(trans('most_viewed'))
                 ->modifyQueryUsing(fn (Builder $query) => $query->reorder()->orderBy('views', 'desc')),
+            'statistics' => Tab::make(trans('statistics'))
+                ->modifyQueryUsing(fn (Builder $query) => $query),
         ];
+    }
+
+    protected function getHeaderWidgets(): array
+    {
+        if ($this->activeTab === 'statistics') {
+            return [
+                CachedProductResource\Widgets\ProductStats::class,
+            ];
+        }
+
+        return [];
     }
 }
