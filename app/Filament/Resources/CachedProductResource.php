@@ -19,6 +19,11 @@ class CachedProductResource extends Resource
 
     protected static ?int $navigationSort = 5;
 
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()->orderBy('synced_at', 'desc');
+    }
+
     public static function getNavigationGroup(): ?string
     {
         return trans('products');
@@ -94,7 +99,6 @@ class CachedProductResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn (Builder $query) => $query->orderBy('synced_at', 'desc'))
             ->columns([
                 Tables\Columns\ImageColumn::make('image')
                     ->label(trans('image'))
