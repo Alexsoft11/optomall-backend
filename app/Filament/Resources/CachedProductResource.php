@@ -171,10 +171,6 @@ class CachedProductResource extends Resource
                 Tables\Filters\Filter::make('fresh')
                     ->query(fn (Builder $query): Builder => $query->valid())
                     ->label(trans('fresh_cache')),
-                Tables\Filters\Filter::make('most_viewed')
-                    ->query(fn (Builder $query): Builder => $query->reorder()->orderBy('views', 'desc'))
-                    ->label(trans('most_viewed'))
-                    ->toggle(), 
             ])
             ->actions([
                 Tables\Actions\Action::make('open_product')
