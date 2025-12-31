@@ -97,7 +97,9 @@ class HomePageProductResource extends Resource
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
-            ]);
+            ])
+            ->recordUrl(fn (HomePageProduct $record): string => "https://optomall.uz/uz/product/{$record->product_id}?provider={$record->provider}")
+            ->openRecordUrlInNewTab();
     }
 
     public static function getRelations(): array
@@ -107,11 +109,11 @@ class HomePageProductResource extends Resource
 
     public static function getNavigationGroup(): string
     {
-        return trans('products');
+        return 'Mahsulotlar';
     }
     public static function getLabel(): string
     {
-        return trans('products');
+        return 'Mahsulotlar';
     }
 
     public static function getPages(): array
@@ -125,6 +127,6 @@ class HomePageProductResource extends Resource
 
     public static function getNavigationLabel(): string
     {
-        return trans('home_page');
+        return 'Bosh sahifa mahsulotlari';
     }
 }

@@ -76,11 +76,28 @@ class ProductDetailTmapi extends JsonResource
     {
         $composition = [];
 
-        foreach ($props as $prop) {
-            foreach ($prop as $key => $value) {
+        if (!is_array($props)) {
+            return [];
+        }
+
+        foreach ($props as $key => $value) {
+            // Handle grouped properties (Value is array/object)
+            if (is_array($value)) {
+                foreach ($value as $subKey => $subValue) {
+                    $composition[] = [
+                        'key' => $subKey,
+                        'value' => is_array($subValue) ? json_encode($subValue) : (string)$subValue,
+                    ];
+                }
+            } else {
+                // Handle flat properties (Value is string/number)
+                // BUT: logic above (original) assumed nested due to double loop.
+                // If the original loop was "foreach ($props as $prop) { foreach($prop...)}"
+                // It ignored the top-level keys.
+                // If we want to support both, we check type of $value.
                 $composition[] = [
                     'key' => $key,
-                    'value' => $value,
+                    'value' => (string)$value,
                 ];
             }
         }
@@ -135,31 +152,38 @@ class ProductDetailTmapi extends JsonResource
 
     private function translateProductDetails()
     {
+        // First maximize structural consistency
+        $formattedProps = $this->transformProductProps($this['product_props'] ?? []);
+
         $data = [
             'from' => 'auto',
             'to' => request()->input('lang', 'uz'),
             'protected_paths' => ["extra.last_comment.author"],
             'common_protected_paths' => ["image"],
-            'json' => [$this['title'], $this->transformProductProps($this['product_props'])],
+            'json' => [$this['title'], $formattedProps],
         ];
 
-        // Make the translation API call
-        $translateUrl = "https://aibit-translator.p.rapidapi.com/api/v1/translator/json";
-        // \Log::info('Product creation translation request:', $data);
-        $response = Http::withHeaders([
-            'Content-Type' => 'application/json',
-            'x-rapidapi-host' => 'aibit-translator.p.rapidapi.com',
-            'x-rapidapi-key' => '74e939e778mshea2f00b1b0170dap1cc6eajsnf05e5c9be03a',
-        ])->post($translateUrl, $data);
+        try {
+            // Make the translation API call
+            $translateUrl = "https://aibit-translator.p.rapidapi.com/api/v1/translator/json";
+            
+            $response = Http::withHeaders([
+                'Content-Type' => 'application/json',
+                'x-rapidapi-host' => 'aibit-translator.p.rapidapi.com',
+                'x-rapidapi-key' => '74e939e778mshea2f00b1b0170dap1cc6eajsnf05e5c9be03a',
+            ])->post($translateUrl, $data);
 
-        // \Log::info('Product creation translation response:', $response->json());
-
-        // Update product details with the translated text
-        if ($response->successful() && isset($response['trans'])) {
-            $this['title'] = $response['trans'][0];
-            $this['product_props'] = $response['trans'][1];
-        } else {
-            return 'Api is not working';
+            if ($response->successful() && isset($response['trans'])) {
+                $this['title'] = $response['trans'][0];
+                $this['product_props'] = $response['trans'][1];
+                return;
+            }
+        } catch (\Exception $e) {
+            // Log error if needed
         }
+
+        // Fallback: If translation failed, ensure we at least use the formatted props
+        // so the frontend receives the correct structure (Array of {key, value})
+        $this['product_props'] = $formattedProps;
     }
 }
