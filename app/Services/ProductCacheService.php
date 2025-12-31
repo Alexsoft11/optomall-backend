@@ -86,7 +86,7 @@ class ProductCacheService
                     'images' => $images,
                     'skus' => $skus,
                     'sku_props' => $skuProps,
-                    'props' => $rawApiData['composition'] ?? $rawApiData['product_props'] ?? [],
+                    'props' => $transformedDetail['composition'] ?? $rawApiData['product_props'] ?? [],
                     'tier_prices' => $tierPrices,
                     'seller_info' => $rawApiData['shop_info'] ?? [],
                     'sales' => $score['sold'] ?? $rawApiData['sale_count'] ?? 0,
