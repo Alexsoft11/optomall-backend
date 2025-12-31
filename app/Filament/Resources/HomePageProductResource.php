@@ -129,4 +129,14 @@ class HomePageProductResource extends Resource
     {
         return 'Bosh sahifa mahsulotlari';
     }
+
+    public static function getNavigationBadge(): ?string
+    {
+        return static::getModel()::count() ?: null;
+    }
+
+    public static function getNavigationBadgeColor(): ?string
+    {
+        return 'info';
+    }
 }
