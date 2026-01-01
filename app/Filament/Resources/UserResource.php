@@ -76,6 +76,7 @@ class UserResource extends Resource
                 Tables\Columns\TextColumn::make('unique_id')
                     ->numeric()
                     ->sortable()
+                    ->searchable()
                     ->label(trans('unique_id')),
                 Tables\Columns\TextColumn::make('name')
                     ->searchable()

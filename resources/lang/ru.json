@@ -114,5 +114,6 @@
     "only_active": "Только активные",
     "all": "Все",
     "discounted_price": "Цена со скидкой",
-    "statistics": "Статистика"
+    "statistics": "Статистика",
+    "order_group_id": "ID Группы заказов"
 }

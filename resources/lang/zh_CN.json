@@ -114,5 +114,6 @@
     "only_active": "仅活动",
     "all": "全部",
     "discounted_price": "折后价",
-    "statistics": "统计"
+    "statistics": "统计",
+    "order_group_id": "订单组 ID"
 }

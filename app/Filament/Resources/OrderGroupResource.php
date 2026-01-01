@@ -80,10 +80,15 @@ class OrderGroupResource extends Resource
     {
         return $table
             ->columns([
+                TextColumn::make('unique_id')
+                    ->label(trans("order_group_id"))
+                    ->sortable()
+                    ->searchable(),
                 TextColumn::make('user.unique_id')
                     ->label(trans("user_id"))
-                    ->sortable(),
-                TextColumn::make('user.name')->label(trans("ism"))->sortable(),
+                    ->sortable()
+                    ->searchable(),
+                TextColumn::make('user.name')->label(trans("ism"))->sortable()->searchable(),
                 TextColumn::make('total_price')
                     ->label(trans("price"))
                     ->sortable(),
