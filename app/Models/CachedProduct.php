@@ -134,7 +134,10 @@ class CachedProduct extends Model
         $amount = \App\Models\Exchanges::where('currency', 'yuan')->first()->amount ?? 1800;
         $percent = \App\Models\Exchanges::where('currency', 'product_percent')->first()->amount ?? 0;
 
-        $priceInSum = round($this->addPercentToPrice($this->price, $amount, $percent));
+        $mainPriceInSumBase = floatval($this->price) * floatval($amount);
+        $mainProfitAmount = $mainPriceInSumBase * ($percent / 100);
+
+        $priceInSum = round($mainPriceInSumBase + $mainProfitAmount);
 
         $pictures = [];
         if (is_array($this->images)) {
@@ -150,10 +153,17 @@ class CachedProduct extends Model
         if (is_array($this->skus)) {
             foreach ($this->skus as $sku) {
                 $skuPrice = $sku['price'] ?? $this->price;
+                $originalPriceYuan = $sku['original_price'] ?? $skuPrice;
+                
+                $skuPriceInSumBase = floatval($skuPrice) * floatval($amount);
+                $skuProfitAmount = $skuPriceInSumBase * ($percent / 100);
+
                 $skus[] = [
-                    'price' => round($this->addPercentToPrice($skuPrice, $amount, $percent)),
-                    'total_price' => round($this->addPercentToPrice($skuPrice, $amount, $percent)),
-                    'orginal_price' => round($this->addPercentToPrice($sku['original_price'] ?? $skuPrice, $amount, $percent)),
+                    'price' => round($skuPriceInSumBase + $skuProfitAmount),
+                    'total_price' => round($skuPriceInSumBase + $skuProfitAmount),
+                    'orginal_price' => round($this->addPercentToPrice($originalPriceYuan, $amount, $percent)), // Keeping for backward compat
+                    'original_price_yuan' => $originalPriceYuan,
+                    'profit_amount' => round($skuProfitAmount),
                     'properties' => $sku['props_ids'] ?? '',
                     'properties_name' => $sku['props_names'] ?? '',
                     'quantity' => $sku['stock'] ?? 0,
@@ -178,6 +188,8 @@ class CachedProduct extends Model
             'id' => $this->external_id,
             'title' => $this->title,
             'price' => $priceInSum,
+            'original_price_yuan' => $this->price,
+            'profit_amount' => round($mainProfitAmount),
             'discounted_price' => 0,
             'discount_percentage' => 0,
             'quantityRanges' => $quantityRanges,
@@ -185,6 +197,7 @@ class CachedProduct extends Model
             'quantity' => $this->sales ?? 0,
             'seller_info' => $this->seller_info ?? [],
             'delivery_info' => $this->raw_data['delivery_info'] ?? [],
+            'local_delivery_yuan' => $this->raw_data['delivery_info']['price'] ?? $this->raw_data['delivery_info']['area_price'] ?? 0,
             'provider' => $this->provider,
             'description' => str_replace(["\n", "\\"], '', $this->description ?? ''),
             'pictures' => $pictures,

@@ -43,6 +43,9 @@ class ProductDetailTmapi extends JsonResource
             'id' => $this['item_id'],
             'title' => $this['title'],
             'price' => round($this->addPercentToPrice($this['price_info']['price'], $this->amount, $this->percent)),
+            'original_price_yuan' => $this['price_info']['price'],
+            'profit_amount' => round(floatval($this['price_info']['price']) * floatval($this->amount) * ($this->percent / 100)),
+            'local_delivery_yuan' => $this['delivery_info']['price'] ?? $this['delivery_info']['area_price'] ?? 0,
             'discounted_price' => round($this->addPercentToPrice($this['price_info']['origin_price'] ?? 0, $this->amount, $this->percent)),
             'discount_percentage' => round(((floatval($this['price_info']['price']) - floatval($this['price_info']['origin_price'] ?? 0)) / 1) * 100),
             'quantityRanges' => $quantityRanges,
@@ -141,6 +144,8 @@ class ProductDetailTmapi extends JsonResource
                 'price' => round($this->addPercentToPrice($sku['sale_price'], $this->amount, $this->percent)),
                 'total_price' => round($this->addPercentToPrice($sku['sale_price'], $this->amount, $this->percent)),
                 'orginal_price' => round($this->addPercentToPrice($sku['orginal_price'] ?? 0, $this->amount, $this->percent)),
+                'original_price_yuan' => $sku['sale_price'], // Using sale_price as the base
+                'profit_amount' => round(floatval($sku['sale_price']) * floatval($this->amount) * ($this->percent / 100)),
                 'properties' => $sku['props_ids'],
                 'properties_name' => $sku['props_names'],
                 'quantity' => $sku['stock'],

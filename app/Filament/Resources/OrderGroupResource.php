@@ -70,8 +70,33 @@ class OrderGroupResource extends Resource
                             return [(string) $key => (string) $item];
                         })
                     ),
-                TextInput::make('total_price')->label(trans("total_amount"))->disabled(),
-                TextInput::make('delivery_china')->label(trans("delivery_china"))->disabled(),
+                Section::make(trans("financial_details"))
+                    ->schema([
+                        TextInput::make('total_price')->label(trans("total_amount"))->disabled(),
+                        TextInput::make('delivery_china')->label(trans("delivery_china"))->disabled(),
+                        TextInput::make('original_price_yuan_display')
+                            ->label(trans("original_price_yuan"))
+                            ->disabled()
+                            ->dehydrated(false)
+                            ->formatStateUsing(fn ($record) => $record?->orders
+                                ->filter(fn($order) => $order->getStatus && !$order->getStatus->is_cancel)
+                                ->flatMap->items->sum('original_price_yuan') ?? 0),
+                        TextInput::make('local_delivery_yuan_display')
+                            ->label(trans("local_delivery_yuan"))
+                            ->disabled()
+                            ->dehydrated(false)
+                            ->formatStateUsing(fn ($record) => $record?->orders
+                                ->filter(fn($order) => $order->getStatus && !$order->getStatus->is_cancel)
+                                ->flatMap->items->sum('local_delivery_yuan') ?? 0),
+                        TextInput::make('profit_amount_display')
+                            ->label(trans("profit_amount"))
+                            ->disabled()
+                            ->dehydrated(false)
+                            ->formatStateUsing(fn ($record) => $record?->orders
+                                ->filter(fn($order) => $order->getStatus && !$order->getStatus->is_cancel)
+                                ->flatMap->items->sum('profit_amount') ?? 0),
+                    ])
+                    ->columns(3),
                 Toggle::make('is_paid'),
             ]);
     }

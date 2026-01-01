@@ -226,6 +226,9 @@ class OrderController extends Controller
                             'delivery_price' => $deliveryPriceForThisItem,
                             'delivery_type' => $matchedFee ? $matchedFee['delivery_type'] : null,
                             'product_info' => $item['product_info'] ?? null,
+                            'original_price_yuan' => $item['original_price_yuan'] ?? 0,
+                            'local_delivery_yuan' => $item['local_delivery_yuan'] ?? 0,
+                            'profit_amount' => $item['profit_amount'] ?? 0,
                         ]);
 
                         foreach ($item['properties'] as $property) {
@@ -710,6 +713,9 @@ class OrderController extends Controller
                     'skuId' => $item['sku_id'],
                     'product_info' => $item['product_info'] ?? null,
                     'quantity_ranges' => $item['quantityRanges'] ?? null,
+                    'original_price_yuan' => $item['original_price_yuan'] ?? 0,
+                    'local_delivery_yuan' => $item['local_delivery_yuan'] ?? 0,
+                    'profit_amount' => $item['profit_amount'] ?? 0,
                 ]);
 
                 if (isset($item['properties']) && is_array($item['properties'])) {

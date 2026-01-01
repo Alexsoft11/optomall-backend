@@ -39,6 +39,9 @@ class ProductDetailResource extends JsonResource
             'id' => $this['num_iid'],
             'title' => $this['title'],
             'price' => round($this->addPercentToPrice($this['price'] ?? $this['orginal_price'], $this->amount, $this->percent)),
+            'original_price_yuan' => $this['price'] ?? $this['orginal_price'],
+            'profit_amount' => round(($this['price'] ?? $this['orginal_price']) * $this->amount * ($this->percent / 100)),
+            'local_delivery_yuan' => $this['delivery_info']['price'] ?? $this['delivery_info']['area_price'] ?? 0,
             'discounted_price' => round($this->addPercentToPrice($this['orginal_price'], $this->amount, $this->percent)),
             'discount_percentage' => round((($this['orginal_price'] - $this['price']) / $this['orginal_price']) * 100),
             'quantityRanges' => $quantityRanges,
@@ -101,6 +104,8 @@ class ProductDetailResource extends JsonResource
         return array_map(function ($sku) {
             return [
                 'price' => round($this->addPercentToPrice($sku['price'], $this->amount, $this->percent)),
+                'original_price_yuan' => $sku['price'],
+                'profit_amount' => round($sku['price'] * $this->amount * ($this->percent / 100)),
                 'total_price' => round($this->addPercentToPrice($sku['total_price'], $this->amount, $this->percent)),
                 'orginal_price' => round($this->addPercentToPrice($sku['orginal_price'] ?? 0, $this->amount, $this->percent)),
                 'properties' => $sku['properties'],

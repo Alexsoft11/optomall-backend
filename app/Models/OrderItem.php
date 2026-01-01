@@ -22,7 +22,10 @@ class OrderItem extends Model
         'provider',
         'delivery_price',
         'product_info',
-        "delivery_type"
+        "delivery_type",
+        "original_price_yuan",
+        "local_delivery_yuan",
+        "profit_amount",
     ];
 
     protected $casts = [

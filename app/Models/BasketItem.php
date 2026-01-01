@@ -22,7 +22,10 @@ class BasketItem extends Model
         'basket_id',
         'user_id',
         'product_info',
-        'quantity_ranges'
+        'quantity_ranges',
+        "original_price_yuan",
+        "local_delivery_yuan",
+        "profit_amount",
     ];
 
     protected $casts = [

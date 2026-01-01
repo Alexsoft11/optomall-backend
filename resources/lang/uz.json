@@ -118,5 +118,9 @@
     "all": "Barchasi",
     "discounted_price": "Chegirmali narx",
     "statistics": "Statistika",
-    "order_group_id": "Buyurtma guruhi ID"
+    "order_group_id": "Buyurtma guruhi ID",
+    "financial_details": "Moliyaviy tafsilotlar",
+    "original_price_yuan": "Original narx (Yuan)",
+    "local_delivery_yuan": "Mahalliy yetkazib berish (Yuan)",
+    "profit_amount": "Foyda miqdori"
 }

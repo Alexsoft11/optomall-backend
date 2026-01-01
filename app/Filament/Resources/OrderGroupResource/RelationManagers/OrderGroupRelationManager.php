@@ -88,6 +88,20 @@ class OrderGroupRelationManager extends RelationManager
                     ->searchable(),
                 ColorColumn::make('getStatus.color')->label('Status Rangi'),
                 TextColumn::make('created_at')->label('Created At')->sortable(),
+                TextColumn::make('original_price_yuan')
+                    ->label(trans('original_price_yuan'))
+                    ->getStateUsing(fn ($record) => $record->items->sum('original_price_yuan') ?? 0)
+                    ->sortable(),
+                TextColumn::make('local_delivery_yuan')
+                    ->label(trans('local_delivery_yuan'))
+                    ->getStateUsing(fn ($record) => $record->items->sum('local_delivery_yuan') ?? 0)
+                    ->sortable(),
+                TextColumn::make('profit_amount')
+                    ->label(trans('profit_amount'))
+                    ->getStateUsing(fn ($record) => $record->items->sum('profit_amount') ?? 0)
+                    ->color('success')
+                    ->prefix('+')
+                    ->sortable(),
             ])
             ->filters([
                 // Add your filters here

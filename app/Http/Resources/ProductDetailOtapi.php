@@ -44,6 +44,9 @@ class ProductDetailOtapi extends JsonResource
             'id' => $this['Id'],
             'title' => $this['Title'],
             'price' => round($this->addPercentToPrice($this['Price']['OriginalPrice'], $this->amount, $this->percent)),
+            'original_price_yuan' => $this['Price']['OriginalPrice'],
+            'profit_amount' => round($this['Price']['OriginalPrice'] * $this->amount * ($this->percent / 100)),
+            'local_delivery_yuan' => 0, // Placeholder
             'quantityRanges' => $quantityRanges,
             // 'discounted_price' => round($this->addPercentToPrice($this['orginal_price'], $this->amount, $this->percent)),
             // 'discount_percentage' => round((($this['orginal_price'] - $this['price']) / $this['orginal_price']) * 100),
@@ -191,6 +194,8 @@ class ProductDetailOtapi extends JsonResource
                 'salesCount' => $item['SalesCount'],
                 'configurators' => $item['Configurators'],
                 'price' => round($this->addPercentToPrice($item['Price']['OriginalPrice'], $this->amount, $this->percent)),
+                'original_price_yuan' => $item['Price']['OriginalPrice'],
+                'profit_amount' => round($item['Price']['OriginalPrice'] * $this->amount * ($this->percent / 100)),
                 'quantityRanges' => $quantityRanges ?? [],
             ];
         }, $items);

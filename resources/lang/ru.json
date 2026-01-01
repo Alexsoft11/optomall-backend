@@ -115,5 +115,9 @@
     "all": "Все",
     "discounted_price": "Цена со скидкой",
     "statistics": "Статистика",
-    "order_group_id": "ID Группы заказов"
+    "order_group_id": "ID Группы заказов",
+    "financial_details": "Финансовые детали",
+    "original_price_yuan": "Оригинальная цена (Юань)",
+    "local_delivery_yuan": "Местная доставка (Юань)",
+    "profit_amount": "Сумма прибыли"
 }
