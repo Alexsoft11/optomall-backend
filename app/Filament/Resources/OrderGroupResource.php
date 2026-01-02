@@ -75,6 +75,7 @@ class OrderGroupResource extends Resource
 
                         TextInput::make('total_price')->label(trans("total_amount"))->disabled(),
                         TextInput::make('delivery_china')->label(trans("delivery_china"))->disabled(),
+
                         TextInput::make('profit_amount_display')
                             ->label(trans("profit_amount"))
                             ->disabled()
@@ -97,7 +98,7 @@ class OrderGroupResource extends Resource
                                 ->filter(fn($order) => $order->getStatus && !$order->getStatus->is_cancel)
                                 ->flatMap->items->sum('local_delivery_yuan') ?? 0),
                         TextInput::make('all_amount')
-                            ->label('Amount')
+                            ->label(trans('all_amount'))
                             ->disabled()
                             ->dehydrated(false)
                             ->formatStateUsing(fn($record) => $record->total_price + $record->delivery_china),
