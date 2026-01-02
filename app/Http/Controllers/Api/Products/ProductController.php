@@ -878,7 +878,7 @@ class ProductController extends Controller
 
         $cacheService = app(ProductCacheService::class);
         $cachedProduct = $cacheService->getCachedProduct($productId, $provider, $lang);
-        
+
         $forceRefresh = $request->input('force_refresh', false);
         $needsRefresh = $forceRefresh || !$cachedProduct || $cacheService->isCacheExpired($productId, $provider, $lang);
 
@@ -3038,7 +3038,7 @@ class ProductController extends Controller
             ], 200);
         }
 
-        $cacheKey = "tmapi_shop_products_v1_{$memberId}_{$page}_{$pageSize}_{$sort}_{$lang}";
+        $cacheKey = "tmapi_shop_products_v2_{$memberId}_{$page}_{$pageSize}_{$sort}_{$lang}";
 
         if (Cache::has($cacheKey)) {
             return Cache::get($cacheKey);
@@ -3144,21 +3144,9 @@ class ProductController extends Controller
         }
 
         // Format items to match CardInterface for frontend
-        $formattedItems = [];
-        foreach ($items as $item) {
-            $formattedItems[] = [
-                'id' => $item['item_id'] ?? '',
-                'product_id' => $item['item_id'] ?? '',
-                'title' => $item['title'] ?? '',
-                'price' => $item['price'] ?? '0',
-                'image' => $item['img'] ?? '',
-                'provider' => 'Alibaba1688',
-                'is_liked' => false,
-                // Extra info for display
-                'sale_quantity_30days' => $item['sale_info']['sale_quantity_30days'] ?? 0,
-                'category_name' => $item['category_name'] ?? '',
-            ];
-        }
+        $formattedItems = collect($items)->map(function ($item) use ($lang) {
+            return (new ProductResource($item, '1688', $lang))->resolve();
+        })->values()->all();
 
         $successResponse = response()->json([
             'message' => 'success',
