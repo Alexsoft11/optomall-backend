@@ -72,6 +72,9 @@ class OrderGroupResource extends Resource
                     ),
                 Section::make(trans("financial_details"))
                     ->schema([
+
+                        TextInput::make('total_price')->label(trans("total_amount"))->disabled(),
+                        TextInput::make('delivery_china')->label(trans("delivery_china"))->disabled(),
                         TextInput::make('profit_amount_display')
                             ->label(trans("profit_amount"))
                             ->disabled()
@@ -79,8 +82,6 @@ class OrderGroupResource extends Resource
                             ->formatStateUsing(fn($record) => $record?->orders
                                 ->filter(fn($order) => $order->getStatus && !$order->getStatus->is_cancel)
                                 ->flatMap->items->sum('profit_amount') ?? 0),
-                        TextInput::make('total_price')->label(trans("total_amount"))->disabled(),
-                        TextInput::make('delivery_china')->label(trans("delivery_china"))->disabled(),
                         TextInput::make('original_price_yuan_display')
                             ->label(trans("original_price_yuan"))
                             ->disabled()
