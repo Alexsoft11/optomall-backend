@@ -32,7 +32,7 @@ class ProductResource extends JsonResource
         $amount = Exchanges::where('currency', 'yuan')->first()->amount ?? 1800;
 
         // Convert price to float
-        $price = floatval($this->resource['price']);
+        $price = floatval($this->resource['price'] ?? 0);
 
         // Check if promotion_price exists and convert it to float, otherwise set it to null
         // Check if promotion_price exists and convert it to float, otherwise set it to null
@@ -53,15 +53,15 @@ class ProductResource extends JsonResource
         // $translatedTitle = $this->translateText($this->resource['title'], $this->lang);
 
         return [
-            'id' => $this->resource['num_iid'] ?? $this->resource['item_id'],
-            'title' => $this->resource['title'], // Return translated title
+            'id' => $this->resource['num_iid'] ?? $this->resource['item_id'] ?? null,
+            'title' => $this->resource['title'] ?? '', // Return translated title
             'price' => round($this->addPercentToPrice($calculatedPrice, $this->percent)),
             'discounted_price' => round($calculatedPromotionPrice
                 ? $this->addPercentToPrice($calculatedPromotionPrice, $this->percent)
                 : $this->addPercentToPrice($calculatedPrice, $this->percent)),
             'discount_percent' => $discountPercent,
-            'image' => $this->resource['pic_url'] ?? $this->resource['img'],
-            'product_url' => $this->resource['detail_url'] ?? $this->resource['product_url'],
+            'image' => $this->resource['pic_url'] ?? $this->resource['img'] ?? null,
+            'product_url' => $this->resource['detail_url'] ?? $this->resource['product_url'] ?? null,
             'provider' => $this->provider,
             'is_liked' => false,
         ];
