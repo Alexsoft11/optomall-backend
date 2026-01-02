@@ -119,5 +119,6 @@
     "financial_details": "Финансовые детали",
     "original_price_yuan": "Оригинальная цена (Юань)",
     "local_delivery_yuan": "Местная доставка (Юань)",
-    "profit_amount": "Сумма прибыли"
+    "profit_amount": "Сумма прибыли",
+    "all_amount": "Итоговая сумма"
 }

@@ -96,7 +96,11 @@ class OrderGroupResource extends Resource
                             ->formatStateUsing(fn($record) => $record?->orders
                                 ->filter(fn($order) => $order->getStatus && !$order->getStatus->is_cancel)
                                 ->flatMap->items->sum('local_delivery_yuan') ?? 0),
-
+                        TextInput::make('all_amount')
+                            ->label('Amount')
+                            ->disabled()
+                            ->dehydrated(false)
+                            ->formatStateUsing(fn($record) => $record->total_price + $record->delivery_china),
                     ])
                     ->columns(3),
                 Toggle::make('is_paid'),

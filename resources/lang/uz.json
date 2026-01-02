@@ -122,5 +122,6 @@
     "financial_details": "Moliyaviy tafsilotlar",
     "original_price_yuan": "Original narx (Yuan)",
     "local_delivery_yuan": "Mahalliy yetkazib berish (Yuan)",
-    "profit_amount": "Foyda miqdori"
+    "profit_amount": "Foyda miqdori",
+    "all_amount": "Jami summa"
 }
