@@ -37,6 +37,12 @@ class OrderGroupResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
+    // Helper function to format price with spaces
+    private static function formatPrice($value): string
+    {
+        return number_format((float) $value, 0, '', ' ');
+    }
+
     public static function form(Form $form): Form
     {
         return $form
@@ -73,35 +79,55 @@ class OrderGroupResource extends Resource
                 Section::make(trans("financial_details"))
                     ->schema([
 
-                        TextInput::make('total_price')->label(trans("total_amount"))->disabled(),
-                        TextInput::make('delivery_china')->label(trans("delivery_china"))->disabled(),
+                        TextInput::make('total_price_display')
+                            ->label(trans("total_amount"))
+                            ->disabled()
+                            ->dehydrated(false)
+                            ->formatStateUsing(fn($record) => self::formatPrice($record?->total_price ?? 0)),
+                        TextInput::make('delivery_china_display')
+                            ->label(trans("delivery_china"))
+                            ->disabled()
+                            ->dehydrated(false)
+                            ->formatStateUsing(fn($record) => self::formatPrice($record?->delivery_china ?? 0)),
 
                         TextInput::make('profit_amount_display')
                             ->label(trans("profit_amount"))
                             ->disabled()
                             ->dehydrated(false)
-                            ->formatStateUsing(fn($record) => $record?->orders
-                                ->filter(fn($order) => $order->getStatus && !$order->getStatus->is_cancel)
-                                ->flatMap->items->sum('profit_amount') ?? 0),
+                            ->formatStateUsing(function ($record) {
+                                $sum = $record?->orders
+                                    ->filter(fn($order) => $order->getStatus && !$order->getStatus->is_cancel)
+                                    ->flatMap(fn($order) => $order->items)
+                                    ->sum('profit_amount') ?? 0;
+                                return self::formatPrice($sum);
+                            }),
                         TextInput::make('original_price_yuan_display')
                             ->label(trans("original_price_yuan"))
                             ->disabled()
                             ->dehydrated(false)
-                            ->formatStateUsing(fn($record) => $record?->orders
-                                ->filter(fn($order) => $order->getStatus && !$order->getStatus->is_cancel)
-                                ->flatMap->items->sum('original_price_yuan') ?? 0),
+                            ->formatStateUsing(function ($record) {
+                                $sum = $record?->orders
+                                    ->filter(fn($order) => $order->getStatus && !$order->getStatus->is_cancel)
+                                    ->flatMap(fn($order) => $order->items)
+                                    ->sum('original_price_yuan') ?? 0;
+                                return number_format((float) $sum, 2, '.', ' ');
+                            }),
                         TextInput::make('local_delivery_yuan_display')
                             ->label(trans("local_delivery_yuan"))
                             ->disabled()
                             ->dehydrated(false)
-                            ->formatStateUsing(fn($record) => $record?->orders
-                                ->filter(fn($order) => $order->getStatus && !$order->getStatus->is_cancel)
-                                ->flatMap->items->sum('local_delivery_yuan') ?? 0),
+                            ->formatStateUsing(function ($record) {
+                                $sum = $record?->orders
+                                    ->filter(fn($order) => $order->getStatus && !$order->getStatus->is_cancel)
+                                    ->flatMap(fn($order) => $order->items)
+                                    ->sum('local_delivery_yuan') ?? 0;
+                                return number_format((float) $sum, 2, '.', ' ');
+                            }),
                         TextInput::make('all_amount')
                             ->label(trans('all_amount'))
                             ->disabled()
                             ->dehydrated(false)
-                            ->formatStateUsing(fn($record) => $record->total_price + $record->delivery_china),
+                            ->formatStateUsing(fn($record) => self::formatPrice(($record->total_price ?? 0) + ($record->delivery_china ?? 0))),
                     ])
                     ->columns(3),
                 Toggle::make('is_paid'),
@@ -123,7 +149,8 @@ class OrderGroupResource extends Resource
                 TextColumn::make('user.name')->label(trans("ism"))->sortable()->searchable(),
                 TextColumn::make('total_price')
                     ->label(trans("price"))
-                    ->sortable(),
+                    ->sortable()
+                    ->formatStateUsing(fn($state) => number_format((float) $state, 0, '', ' ')),
                 TextColumn::make('getStatus.name_uz')
                     ->label("Status")
                     ->sortable()

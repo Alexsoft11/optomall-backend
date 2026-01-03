@@ -80,8 +80,14 @@ class OrderGroupRelationManager extends RelationManager
                     ->label('Order ID'),
                 TextColumn::make('user.unique_id')->label('User ID')->sortable(),
                 TextColumn::make('user.name')->label('Ismi')->sortable(),
-                TextColumn::make('total_price')->label('Jami narx')->sortable(),
-                TextColumn::make('delivery_china')->label('Xitoy ichki yo\'lkiro')->sortable(),
+                TextColumn::make('total_price')
+                    ->label('Jami narx')
+                    ->sortable()
+                    ->formatStateUsing(fn($state) => number_format((float) $state, 0, '', ' ')),
+                TextColumn::make('delivery_china')
+                    ->label('Xitoy ichki yo\'lkiro')
+                    ->sortable()
+                    ->formatStateUsing(fn($state) => number_format((float) $state, 0, '', ' ')),
                 TextColumn::make('getStatus.name_uz')
                     ->label('Status')
                     ->sortable()
@@ -91,16 +97,19 @@ class OrderGroupRelationManager extends RelationManager
                 TextColumn::make('original_price_yuan')
                     ->label(trans('original_price_yuan'))
                     ->getStateUsing(fn($record) => $record->items->sum('original_price_yuan') ?? 0)
+                    ->formatStateUsing(fn($state) => number_format((float) $state, 2, '.', ' '))
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('local_delivery_yuan')
                     ->label(trans('local_delivery_yuan'))
                     ->getStateUsing(fn($record) => $record->items->sum('local_delivery_yuan') ?? 0)
+                    ->formatStateUsing(fn($state) => number_format((float) $state, 2, '.', ' '))
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('profit_amount')
                     ->label(trans('profit_amount'))
                     ->getStateUsing(fn($record) => $record->items->sum('profit_amount') ?? 0)
+                    ->formatStateUsing(fn($state) => number_format((float) $state, 2, '.', ' '))
                     ->color('success')
                     ->prefix('+')
                     ->sortable()

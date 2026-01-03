@@ -226,35 +226,33 @@ class OrderController extends Controller
                         $localDeliveryYuan = 0;
                         $profitAmount = 0;
 
-                        // Try from matched fee first (this comes from delivery calculation)
+                        // Priority for original_price_yuan and profit_amount:
+                        // 1. Request item (comes from basket with correct values)
+                        // 2. Basket item DB
+                        // 3. Matched fee (only as fallback)
+
+                        // original_price_yuan - from request item first (basket data)
+                        $originalPriceYuan = floatval($item['original_price_yuan'] ?? 0);
+                        if ($originalPriceYuan == 0 && $basketItem) {
+                            $originalPriceYuan = floatval($basketItem->original_price_yuan ?? 0);
+                        }
+
+                        // profit_amount - from request item first (basket data)
+                        $profitAmount = floatval($item['profit_amount'] ?? 0);
+                        if ($profitAmount == 0 && $basketItem) {
+                            $profitAmount = floatval($basketItem->profit_amount ?? 0);
+                        }
+
+                        // local_delivery_yuan - from matched fee first (delivery calculation)
+                        // This is calculated in the confirm modal
                         if ($matchedFee) {
-                            $originalPriceYuan = floatval($matchedFee['original_price_yuan'] ?? 0);
                             $localDeliveryYuan = floatval($matchedFee['local_delivery_yuan'] ?? 0);
-                            $profitAmount = floatval($matchedFee['profit_amount'] ?? 0);
-                        }
-
-                        // If values are 0, try from basket item DB
-                        if ($basketItem) {
-                            if ($originalPriceYuan == 0) {
-                                $originalPriceYuan = floatval($basketItem->original_price_yuan ?? 0);
-                            }
-                            if ($localDeliveryYuan == 0) {
-                                $localDeliveryYuan = floatval($basketItem->local_delivery_yuan ?? 0);
-                            }
-                            if ($profitAmount == 0) {
-                                $profitAmount = floatval($basketItem->profit_amount ?? 0);
-                            }
-                        }
-
-                        // If still 0, try from request item
-                        if ($originalPriceYuan == 0) {
-                            $originalPriceYuan = floatval($item['original_price_yuan'] ?? 0);
                         }
                         if ($localDeliveryYuan == 0) {
                             $localDeliveryYuan = floatval($item['local_delivery_yuan'] ?? 0);
                         }
-                        if ($profitAmount == 0) {
-                            $profitAmount = floatval($item['profit_amount'] ?? 0);
+                        if ($localDeliveryYuan == 0 && $basketItem) {
+                            $localDeliveryYuan = floatval($basketItem->local_delivery_yuan ?? 0);
                         }
 
                         // Log for debugging
@@ -1632,16 +1630,14 @@ class OrderController extends Controller
                     $localDeliveryYuan = $currency > 0 ? $deliveryPriceUZS / $currency : 0;
                 }
 
-                // Calculate profit: (price in Yuan) - original_price - delivery_yuan
-                $priceInYuan = $currency > 0 ? $item->price / $currency : 0;
-                $originalYuan = floatval($item->original_price_yuan ?? 0);
-                $profitAmount = $priceInYuan - $originalYuan - $localDeliveryYuan;
-
-                // Round values
+                // Round value
                 $localDeliveryYuanRounded = round($localDeliveryYuan, 2);
-                $profitAmountRounded = round($profitAmount, 2);
 
-                // Log before save
+                // Keep existing values from basket - don't recalculate
+                $originalYuan = floatval($item->original_price_yuan ?? 0);
+                $profitAmount = floatval($item->profit_amount ?? 0);
+
+                // Log for debugging
                 Log::info('basket_item_delivery_calc', [
                     'basket_item_id' => $item->id,
                     'product_id' => $productId,
@@ -1653,13 +1649,13 @@ class OrderController extends Controller
                     'unit_fee_uzs' => $unitFee,
                     'delivery_price_uzs' => $deliveryPriceUZS,
                     'local_delivery_yuan_calc' => $localDeliveryYuanRounded,
-                    'original_price_yuan_existing' => $item->original_price_yuan,
-                    'profit_amount_calc' => $profitAmountRounded,
+                    'original_price_yuan_existing' => $originalYuan,
+                    'profit_amount_existing' => $profitAmount,
                 ]);
 
-                // Save to BasketItem
+                // Save ONLY local_delivery_yuan to BasketItem
+                // Don't overwrite profit_amount - it's already correct from basket creation
                 $item->local_delivery_yuan = $localDeliveryYuanRounded;
-                $item->profit_amount = $profitAmountRounded;
                 $saved = $item->save();
 
                 // Log after save
@@ -1667,7 +1663,6 @@ class OrderController extends Controller
                     'basket_item_id' => $item->id,
                     'save_success' => $saved,
                     'local_delivery_yuan_saved' => $item->local_delivery_yuan,
-                    'profit_amount_saved' => $item->profit_amount,
                 ]);
 
                 $fees->push([
@@ -1677,7 +1672,7 @@ class OrderController extends Controller
                     'delivery_type' => $delivery_type,
                     'local_delivery_yuan' => $localDeliveryYuanRounded,
                     'original_price_yuan' => $originalYuan,
-                    'profit_amount' => $profitAmountRounded,
+                    'profit_amount' => $profitAmount,
                 ]);
             }
         }
