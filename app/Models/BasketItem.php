@@ -31,6 +31,9 @@ class BasketItem extends Model
     protected $casts = [
         'product_info' => 'json',
         'quantity_ranges' => 'json',
+        'original_price_yuan' => 'decimal:2',
+        'local_delivery_yuan' => 'decimal:2',
+        'profit_amount' => 'decimal:2',
     ];
     public function user(): BelongsTo
     {

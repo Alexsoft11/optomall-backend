@@ -215,9 +215,23 @@ class OrderController extends Controller
 
                         // Look up basket item from DB to get the calculated pricing fields
                         $basketItem = BasketItem::find($item['id']);
-                        $originalPriceYuan = $basketItem->original_price_yuan ?? $item['original_price_yuan'] ?? 0;
-                        $localDeliveryYuan = $basketItem->local_delivery_yuan ?? $item['local_delivery_yuan'] ?? 0;
-                        $profitAmount = $basketItem->profit_amount ?? $item['profit_amount'] ?? 0;
+
+                        // Get values from DB first, then fall back to request, then to 0
+                        // Use floatval to handle string values like "308.00"
+                        $originalPriceYuan = 0;
+                        $localDeliveryYuan = 0;
+                        $profitAmount = 0;
+
+                        if ($basketItem) {
+                            $originalPriceYuan = floatval($basketItem->original_price_yuan) ?: floatval($item['original_price_yuan'] ?? 0);
+                            $localDeliveryYuan = floatval($basketItem->local_delivery_yuan) ?: floatval($item['local_delivery_yuan'] ?? 0);
+                            $profitAmount = floatval($basketItem->profit_amount) ?: floatval($item['profit_amount'] ?? 0);
+                        } else {
+                            // Basket item not found, use request values
+                            $originalPriceYuan = floatval($item['original_price_yuan'] ?? 0);
+                            $localDeliveryYuan = floatval($item['local_delivery_yuan'] ?? 0);
+                            $profitAmount = floatval($item['profit_amount'] ?? 0);
+                        }
 
                         $orderItem = OrderItem::create([
                             'order_id' => $order->id,
@@ -1555,16 +1569,33 @@ class OrderController extends Controller
             }
 
             foreach ($itemsForProduct as $item) {
-                // Save calculated fields directly to DB
-                $localDeliveryYuan = $unitFeeCNY * (int) $item->quantity;
-                $item->local_delivery_yuan = $localDeliveryYuan;
-                $item->profit_amount = ($item->price / $currency) - ($item->original_price_yuan ?? 0) - $localDeliveryYuan;
+                // Calculate delivery price in UZS for this item
+                $deliveryPriceUZS = round($unitFee * (int) $item->quantity);
+
+                // Calculate local_delivery_yuan:
+                // - If API succeeded, use the CNY value directly
+                // - If local fallback, back-calculate from UZS price
+                if ($delivery_type === 'api' && $unitFeeCNY > 0) {
+                    $localDeliveryYuan = $unitFeeCNY * (int) $item->quantity;
+                } else {
+                    // Back-calculate Yuan from UZS delivery price
+                    $localDeliveryYuan = $currency > 0 ? $deliveryPriceUZS / $currency : 0;
+                }
+
+                // Calculate profit: (price in Yuan) - original_price - delivery_yuan
+                $priceInYuan = $currency > 0 ? $item->price / $currency : 0;
+                $originalYuan = floatval($item->original_price_yuan ?? 0);
+                $profitAmount = $priceInYuan - $originalYuan - $localDeliveryYuan;
+
+                // Save to BasketItem
+                $item->local_delivery_yuan = round($localDeliveryYuan, 2);
+                $item->profit_amount = round($profitAmount, 2);
                 $item->save();
 
                 $fees->push([
                     'basket_item_id' => $item->id,
                     'product_id' => $productId,
-                    'delivery_price' => round($unitFee * (int) $item->quantity),
+                    'delivery_price' => $deliveryPriceUZS,
                     'delivery_type' => $delivery_type
                 ]);
             }
