@@ -694,6 +694,9 @@ class OrderController extends Controller
                 $existingBasketItem->quantity += $quantity;
                 $existingBasketItem->price = $finalPrice;
                 $existingBasketItem->max_quantity = $item['max_quantity'];
+                $existingBasketItem->original_price_yuan = $item['original_price_yuan'] ?? $existingBasketItem->original_price_yuan;
+                $existingBasketItem->local_delivery_yuan = $item['local_delivery_yuan'] ?? $existingBasketItem->local_delivery_yuan;
+                $existingBasketItem->profit_amount = $item['profit_amount'] ?? $existingBasketItem->profit_amount;
                 $existingBasketItem->save();
                 $basketItem = $existingBasketItem;
             } else {
@@ -1508,6 +1511,7 @@ class OrderController extends Controller
 
             $response = $responses[$productId] ?? null;
             $unitFee = null;
+            $unitFeeCNY = 0;
             $delivery_type = null;
 
             try {
@@ -1518,6 +1522,7 @@ class OrderController extends Controller
                 } else {
                     $data = $response->json();
 
+
                     if (
                         !isset($data['data']['total_fee']) ||
                         !is_numeric($data['data']['total_fee'])
@@ -1527,6 +1532,8 @@ class OrderController extends Controller
                         $delivery_type = 'local';
                     } else {
                         $totalFee = (float) $data['data']['total_fee'];
+
+                        $unitFeeCNY = $totalQuantity > 0 ? $totalFee / $totalQuantity : 0;
 
                         $unitFee = $totalQuantity > 0
                             ? round(($totalFee * $currency) / $totalQuantity)
@@ -1542,6 +1549,12 @@ class OrderController extends Controller
             }
 
             foreach ($itemsForProduct as $item) {
+                // Save calculated fields directly to DB
+                $localDeliveryYuan = $unitFeeCNY * (int) $item->quantity;
+                $item->local_delivery_yuan = $localDeliveryYuan;
+                $item->profit_amount = ($item->price / $currency) - ($item->original_price_yuan ?? 0) - $localDeliveryYuan;
+                $item->save();
+
                 $fees->push([
                     'basket_item_id' => $item->id,
                     'product_id' => $productId,

@@ -45,7 +45,10 @@ class BasketResource extends JsonResource
             ],
             'product_info' => $this['product_info'] ?? null,
             'quantityRanges' => $this['quantity_ranges'] ?? null,
-            'maxQuantity' => $this['max_quantity'] ?? null
+            'maxQuantity' => $this['max_quantity'] ?? null,
+            'original_price_yuan' => $this['original_price_yuan'] ?? 0,
+            'local_delivery_yuan' => $this['local_delivery_yuan'] ?? 0,
+            'profit_amount' => $this['profit_amount'] ?? 0,
         ];
     }
 }
