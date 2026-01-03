@@ -102,7 +102,7 @@ class OrderGroup extends Model
             'total_price' => $activeOrders->sum('total_price'),
             'delivery_china' => $activeOrders->sum('delivery_china'),
             'order_group_id' => $this->id,
-        ],);
+        ], );
         $this->update([
             'total_price' => $activeOrders->sum('total_price'),
             'delivery_china' => $activeOrders->sum('delivery_china'),
@@ -118,14 +118,27 @@ class OrderGroup extends Model
             return;
         }
 
+        // Calculate pricing fields from order items (only non-cancelled orders)
+        $this->load(['orders.items', 'orders.getStatus']);
+
+        $activeOrders = $this->orders->filter(fn($order) => $order->getStatus && !$order->getStatus->is_cancel);
+        $allItems = $activeOrders->flatMap(fn($order) => $order->items);
+
+        $originalPriceYuan = $allItems->sum('original_price_yuan') ?? 0;
+        $localDeliveryYuan = $allItems->sum('local_delivery_yuan') ?? 0;
+        $profitAmount = $allItems->sum('profit_amount') ?? 0;
+
         // Update if exists, otherwise create
         \App\Models\Income::updateOrCreate(
             ['order_group_id' => $this->id],
             [
-                'user_id'  => $this->user_id,
-                'amount'   => $this->total_price,
-                'type'     => 'order',
-                'order_group_id' => $this->id
+                'user_id' => $this->user_id,
+                'amount' => $this->total_price,
+                'type' => 'order',
+                'order_group_id' => $this->id,
+                'original_price_yuan' => $originalPriceYuan,
+                'local_delivery_yuan' => $localDeliveryYuan,
+                'profit_amount' => $profitAmount,
             ]
         );
     }

@@ -42,11 +42,28 @@ class IncomeResource extends Resource
                 Forms\Components\TextInput::make('amount')
                     ->required()
                     ->label(trans("amount"))
+                    ->formatStateUsing(fn($state) => number_format((float) $state, 0, '', ' '))
                     ->maxLength(255),
                 Forms\Components\TextInput::make('type')
                     ->required()
                     ->label(trans("type"))
                     ->maxLength(255),
+                Forms\Components\Section::make(trans('financial_details'))
+                    ->schema([
+                        Forms\Components\TextInput::make('original_price_yuan')
+                            ->label(trans('original_price_yuan'))
+                            ->formatStateUsing(fn($state) => number_format((float) $state, 2, '.', ' '))
+                            ->disabled(),
+                        Forms\Components\TextInput::make('local_delivery_yuan')
+                            ->label(trans('local_delivery_yuan'))
+                            ->formatStateUsing(fn($state) => number_format((float) $state, 2, '.', ' '))
+                            ->disabled(),
+                        Forms\Components\TextInput::make('profit_amount')
+                            ->label(trans('profit_amount'))
+                            ->formatStateUsing(fn($state) => number_format((float) $state, 2, '.', ' '))
+                            ->disabled(),
+                    ])
+                    ->columns(3),
             ]);
     }
 
@@ -64,7 +81,8 @@ class IncomeResource extends Resource
                 Tables\Columns\TextColumn::make('user.name')
                     ->label('User')
                     ->formatStateUsing(function ($record) {
-                        if (!$record->user) return '-';
+                        if (!$record->user)
+                            return '-';
                         return $record->user->name . ' ' . $record->user->last_name . ' (' . $record->user->unique_id . ')';
                     })
                     ->searchable([
@@ -90,11 +108,31 @@ class IncomeResource extends Resource
 
                 Tables\Columns\TextColumn::make('amount')
                     ->label(trans("amount"))
+                    ->formatStateUsing(fn($state) => number_format((float) $state, 0, '', ' '))
                     ->searchable()
                     ->summarize([
                         Tables\Columns\Summarizers\Sum::make()->label('Summa'),
                         Tables\Columns\Summarizers\Count::make()->label('Soni'),
                     ]),
+
+                Tables\Columns\TextColumn::make('original_price_yuan')
+                    ->label(trans('original_price_yuan'))
+                    ->formatStateUsing(fn($state) => number_format((float) $state, 2, '.', ' '))
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                Tables\Columns\TextColumn::make('local_delivery_yuan')
+                    ->label(trans('local_delivery_yuan'))
+                    ->formatStateUsing(fn($state) => number_format((float) $state, 2, '.', ' '))
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                Tables\Columns\TextColumn::make('profit_amount')
+                    ->label(trans('profit_amount'))
+                    ->formatStateUsing(fn($state) => number_format((float) $state, 2, '.', ' '))
+                    ->color('success')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
 
 
                 // Tables\Columns\TextColumn::make('type')
@@ -154,7 +192,8 @@ class IncomeResource extends Resource
                         $from = $data['from'] ?? null;
                         $to = $data['to'] ?? null;
 
-                        if (!$from && !$to) return null;
+                        if (!$from && !$to)
+                            return null;
 
                         return "From {$from} to {$to}";
                     }),
@@ -231,7 +270,7 @@ class IncomeResource extends Resource
     {
         return [
             'index' => Pages\ListIncomes::route('/'),
-            'view'  => Pages\ViewIncome::route('/{record}'),
+            'view' => Pages\ViewIncome::route('/{record}'),
             // 'create' => Pages\CreateIncome::route('/create'),
             // 'edit' => Pages\EditIncome::route('/{record}/edit'),
         ];
