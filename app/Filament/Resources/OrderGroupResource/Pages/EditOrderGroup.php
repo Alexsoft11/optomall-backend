@@ -16,4 +16,9 @@ class EditOrderGroup extends EditRecord
             Actions\DeleteAction::make(),
         ];
     }
+
+    protected function resolveRecord(int|string $key): \Illuminate\Database\Eloquent\Model
+    {
+        return static::getModel()::with(['orders.items', 'orders.getStatus'])->findOrFail($key);
+    }
 }
