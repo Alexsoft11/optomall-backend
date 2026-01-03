@@ -213,6 +213,12 @@ class OrderController extends Controller
 
                         $deliveryPriceForThisItem = $matchedFee ? (float) $matchedFee['delivery_price'] : 0;
 
+                        // Look up basket item from DB to get the calculated pricing fields
+                        $basketItem = BasketItem::find($item['id']);
+                        $originalPriceYuan = $basketItem->original_price_yuan ?? $item['original_price_yuan'] ?? 0;
+                        $localDeliveryYuan = $basketItem->local_delivery_yuan ?? $item['local_delivery_yuan'] ?? 0;
+                        $profitAmount = $basketItem->profit_amount ?? $item['profit_amount'] ?? 0;
+
                         $orderItem = OrderItem::create([
                             'order_id' => $order->id,
                             'product_id' => $productId,
@@ -226,9 +232,9 @@ class OrderController extends Controller
                             'delivery_price' => $deliveryPriceForThisItem,
                             'delivery_type' => $matchedFee ? $matchedFee['delivery_type'] : null,
                             'product_info' => $item['product_info'] ?? null,
-                            'original_price_yuan' => $item['original_price_yuan'] ?? 0,
-                            'local_delivery_yuan' => $item['local_delivery_yuan'] ?? 0,
-                            'profit_amount' => $item['profit_amount'] ?? 0,
+                            'original_price_yuan' => $originalPriceYuan,
+                            'local_delivery_yuan' => $localDeliveryYuan,
+                            'profit_amount' => $profitAmount,
                         ]);
 
                         foreach ($item['properties'] as $property) {
@@ -1219,7 +1225,7 @@ class OrderController extends Controller
                     $price = $this->calculateDeliveryChina($item->price);
                     $deliveryType = 'local';
                 }
-            } catch (ConnectionException $e) {
+            } catch (\Illuminate\Http\Client\ConnectionException $e) {
                 $price = $this->calculateDeliveryChina($item->price);
                 $deliveryType = 'local';
             }
