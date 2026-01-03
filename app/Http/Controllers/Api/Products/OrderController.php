@@ -204,11 +204,16 @@ class OrderController extends Controller
 
                     foreach ($grouped as $item) {
                         $matchedFee = null;
+                        $itemId = (string) $item['id'];
 
-                        if ($feesByBasketItemId->has($item['id'])) {
-                            $matchedFee = $feesByBasketItemId[$item['id']];
+                        if ($feesByBasketItemId->has($itemId)) {
+                            $matchedFee = $feesByBasketItemId[$itemId];
+                        } elseif ($feesByBasketItemId->has((int) $item['id'])) {
+                            $matchedFee = $feesByBasketItemId[(int) $item['id']];
                         } elseif ($feesByProductId->has($productId)) {
                             $matchedFee = $feesByProductId[$productId];
+                        } elseif ($feesByProductId->has((string) $productId)) {
+                            $matchedFee = $feesByProductId[(string) $productId];
                         }
 
                         $deliveryPriceForThisItem = $matchedFee ? (float) $matchedFee['delivery_price'] : 0;
@@ -216,22 +221,59 @@ class OrderController extends Controller
                         // Look up basket item from DB to get the calculated pricing fields
                         $basketItem = BasketItem::find($item['id']);
 
-                        // Get values from DB first, then fall back to request, then to 0
-                        // Use floatval to handle string values like "308.00"
+                        // Get values from DB first, then from matched fee, then from request, then 0
                         $originalPriceYuan = 0;
                         $localDeliveryYuan = 0;
                         $profitAmount = 0;
 
+                        // Try from matched fee first (this comes from delivery calculation)
+                        if ($matchedFee) {
+                            $originalPriceYuan = floatval($matchedFee['original_price_yuan'] ?? 0);
+                            $localDeliveryYuan = floatval($matchedFee['local_delivery_yuan'] ?? 0);
+                            $profitAmount = floatval($matchedFee['profit_amount'] ?? 0);
+                        }
+
+                        // If values are 0, try from basket item DB
                         if ($basketItem) {
-                            $originalPriceYuan = floatval($basketItem->original_price_yuan) ?: floatval($item['original_price_yuan'] ?? 0);
-                            $localDeliveryYuan = floatval($basketItem->local_delivery_yuan) ?: floatval($item['local_delivery_yuan'] ?? 0);
-                            $profitAmount = floatval($basketItem->profit_amount) ?: floatval($item['profit_amount'] ?? 0);
-                        } else {
-                            // Basket item not found, use request values
+                            if ($originalPriceYuan == 0) {
+                                $originalPriceYuan = floatval($basketItem->original_price_yuan ?? 0);
+                            }
+                            if ($localDeliveryYuan == 0) {
+                                $localDeliveryYuan = floatval($basketItem->local_delivery_yuan ?? 0);
+                            }
+                            if ($profitAmount == 0) {
+                                $profitAmount = floatval($basketItem->profit_amount ?? 0);
+                            }
+                        }
+
+                        // If still 0, try from request item
+                        if ($originalPriceYuan == 0) {
                             $originalPriceYuan = floatval($item['original_price_yuan'] ?? 0);
+                        }
+                        if ($localDeliveryYuan == 0) {
                             $localDeliveryYuan = floatval($item['local_delivery_yuan'] ?? 0);
+                        }
+                        if ($profitAmount == 0) {
                             $profitAmount = floatval($item['profit_amount'] ?? 0);
                         }
+
+                        // Log for debugging
+                        Log::info('order_item_pricing_debug', [
+                            'basket_item_id' => $item['id'],
+                            'product_id' => $productId,
+                            'matched_fee_exists' => (bool) $matchedFee,
+                            'matched_fee_data' => $matchedFee,
+                            'basket_item_exists' => (bool) $basketItem,
+                            'basket_item_original_price_yuan' => $basketItem?->original_price_yuan,
+                            'basket_item_local_delivery_yuan' => $basketItem?->local_delivery_yuan,
+                            'basket_item_profit_amount' => $basketItem?->profit_amount,
+                            'request_original_price_yuan' => $item['original_price_yuan'] ?? null,
+                            'request_local_delivery_yuan' => $item['local_delivery_yuan'] ?? null,
+                            'request_profit_amount' => $item['profit_amount'] ?? null,
+                            'final_original_price_yuan' => $originalPriceYuan,
+                            'final_local_delivery_yuan' => $localDeliveryYuan,
+                            'final_profit_amount' => $profitAmount,
+                        ]);
 
                         $orderItem = OrderItem::create([
                             'order_id' => $order->id,
@@ -249,6 +291,14 @@ class OrderController extends Controller
                             'original_price_yuan' => $originalPriceYuan,
                             'local_delivery_yuan' => $localDeliveryYuan,
                             'profit_amount' => $profitAmount,
+                        ]);
+
+                        // Log created order item
+                        Log::info('order_item_created', [
+                            'order_item_id' => $orderItem->id,
+                            'original_price_yuan' => $orderItem->original_price_yuan,
+                            'local_delivery_yuan' => $orderItem->local_delivery_yuan,
+                            'profit_amount' => $orderItem->profit_amount,
                         ]);
 
                         foreach ($item['properties'] as $property) {
@@ -1587,25 +1637,62 @@ class OrderController extends Controller
                 $originalYuan = floatval($item->original_price_yuan ?? 0);
                 $profitAmount = $priceInYuan - $originalYuan - $localDeliveryYuan;
 
+                // Round values
+                $localDeliveryYuanRounded = round($localDeliveryYuan, 2);
+                $profitAmountRounded = round($profitAmount, 2);
+
+                // Log before save
+                Log::info('basket_item_delivery_calc', [
+                    'basket_item_id' => $item->id,
+                    'product_id' => $productId,
+                    'item_price' => $item->price,
+                    'item_quantity' => $item->quantity,
+                    'currency_rate' => $currency,
+                    'delivery_type' => $delivery_type,
+                    'unit_fee_cny' => $unitFeeCNY ?? 0,
+                    'unit_fee_uzs' => $unitFee,
+                    'delivery_price_uzs' => $deliveryPriceUZS,
+                    'local_delivery_yuan_calc' => $localDeliveryYuanRounded,
+                    'original_price_yuan_existing' => $item->original_price_yuan,
+                    'profit_amount_calc' => $profitAmountRounded,
+                ]);
+
                 // Save to BasketItem
-                $item->local_delivery_yuan = round($localDeliveryYuan, 2);
-                $item->profit_amount = round($profitAmount, 2);
-                $item->save();
+                $item->local_delivery_yuan = $localDeliveryYuanRounded;
+                $item->profit_amount = $profitAmountRounded;
+                $saved = $item->save();
+
+                // Log after save
+                Log::info('basket_item_save_result', [
+                    'basket_item_id' => $item->id,
+                    'save_success' => $saved,
+                    'local_delivery_yuan_saved' => $item->local_delivery_yuan,
+                    'profit_amount_saved' => $item->profit_amount,
+                ]);
 
                 $fees->push([
                     'basket_item_id' => $item->id,
                     'product_id' => $productId,
                     'delivery_price' => $deliveryPriceUZS,
-                    'delivery_type' => $delivery_type
+                    'delivery_type' => $delivery_type,
+                    'local_delivery_yuan' => $localDeliveryYuanRounded,
+                    'original_price_yuan' => $originalYuan,
+                    'profit_amount' => $profitAmountRounded,
                 ]);
             }
         }
 
         $price = $items->sum(fn($item) => $item->price * $item->quantity);
         $delivery_china = $fees->sum('delivery_price');
+        $total_local_delivery_yuan = $fees->sum('local_delivery_yuan');
+        $total_original_price_yuan = $fees->sum('original_price_yuan');
+        $total_profit_amount = $fees->sum('profit_amount');
 
         return response()->json([
             'delivery_china' => $delivery_china,
+            'total_local_delivery_yuan' => round($total_local_delivery_yuan, 2),
+            'total_original_price_yuan' => round($total_original_price_yuan, 2),
+            'total_profit_amount' => round($total_profit_amount, 2),
             'fees' => $fees->values(),
             'total_quantity' => $items->sum('quantity'),
             'price' => $price,
