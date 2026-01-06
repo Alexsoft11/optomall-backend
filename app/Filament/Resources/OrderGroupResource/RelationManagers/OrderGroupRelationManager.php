@@ -96,19 +96,19 @@ class OrderGroupRelationManager extends RelationManager
                 TextColumn::make('created_at')->label('Created At')->sortable(),
                 TextColumn::make('original_price_yuan')
                     ->label(trans('original_price_yuan'))
-                    ->getStateUsing(fn($record) => $record->items->sum('original_price_yuan') ?? 0)
+                    ->getStateUsing(fn($record) => $record->items->sum(fn($item) => ($item->original_price_yuan ?? 0) * ($item->quantity ?? 1)) ?? 0)
                     ->formatStateUsing(fn($state) => number_format((float) $state, 2, '.', ' '))
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('local_delivery_yuan')
                     ->label(trans('local_delivery_yuan'))
-                    ->getStateUsing(fn($record) => $record->items->sum('local_delivery_yuan') ?? 0)
+                    ->getStateUsing(fn($record) => $record->items->sum(fn($item) => ($item->local_delivery_yuan ?? 0) * ($item->quantity ?? 1)) ?? 0)
                     ->formatStateUsing(fn($state) => number_format((float) $state, 2, '.', ' '))
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('profit_amount')
                     ->label(trans('profit_amount'))
-                    ->getStateUsing(fn($record) => $record->items->sum('profit_amount') ?? 0)
+                    ->getStateUsing(fn($record) => $record->items->sum(fn($item) => ($item->profit_amount ?? 0) * ($item->quantity ?? 1)) ?? 0)
                     ->formatStateUsing(fn($state) => number_format((float) $state, 2, '.', ' '))
                     ->color('success')
                     ->prefix('+')

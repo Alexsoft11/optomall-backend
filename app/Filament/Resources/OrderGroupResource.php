@@ -98,7 +98,7 @@ class OrderGroupResource extends Resource
                                 $sum = $record?->orders
                                     ->filter(fn($order) => $order->getStatus && !$order->getStatus->is_cancel)
                                     ->flatMap(fn($order) => $order->items)
-                                    ->sum('profit_amount') ?? 0;
+                                    ->sum(fn($item) => ($item->profit_amount ?? 0) * ($item->quantity ?? 1)) ?? 0;
                                 return self::formatPrice($sum);
                             }),
                         TextInput::make('original_price_yuan_display')
@@ -109,7 +109,7 @@ class OrderGroupResource extends Resource
                                 $sum = $record?->orders
                                     ->filter(fn($order) => $order->getStatus && !$order->getStatus->is_cancel)
                                     ->flatMap(fn($order) => $order->items)
-                                    ->sum('original_price_yuan') ?? 0;
+                                    ->sum(fn($item) => ($item->original_price_yuan ?? 0) * ($item->quantity ?? 1)) ?? 0;
                                 return number_format((float) $sum, 2, '.', ' ');
                             }),
                         TextInput::make('local_delivery_yuan_display')
