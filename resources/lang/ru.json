@@ -120,5 +120,8 @@
     "original_price_yuan": "Оригинальная цена (Юань)",
     "local_delivery_yuan": "Местная доставка (Юань)",
     "profit_amount": "Сумма прибыли",
-    "all_amount": "Итоговая сумма"
+    "all_amount": "Итоговая сумма",
+    "delete_income": "Удалить квитанцию",
+    "delete_income_confirm": "Вы уверены, что хотите удалить эту квитанцию? Это действие нельзя отменить.",
+    "delete_income_confirm_yes": "Да, удалить"
 }

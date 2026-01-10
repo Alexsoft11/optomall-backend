@@ -116,5 +116,8 @@
     "discounted_price": "折后价",
     "statistics": "统计",
     "order_group_id": "订单组 ID",
-    "all_amount": "总计"
+    "all_amount": "总计",
+    "delete_income": "删除收据",
+    "delete_income_confirm": "您确定要删除此收据记录吗？此操作无法撤消。",
+    "delete_income_confirm_yes": "是的，删除"
 }

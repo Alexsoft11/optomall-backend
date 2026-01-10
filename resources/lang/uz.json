@@ -123,5 +123,8 @@
     "original_price_yuan": "Original narx (Yuan)",
     "local_delivery_yuan": "Mahalliy yetkazib berish (Yuan)",
     "profit_amount": "Foyda miqdori",
-    "all_amount": "Jami summa"
+    "all_amount": "Jami summa",
+    "delete_income": "Tushumni o'chirish",
+    "delete_income_confirm": "Haqiqatan ham bu tushum yozuvini o'chirmoqchimisiz? Bu amalni qaytarib bo'lmaydi.",
+    "delete_income_confirm_yes": "Ha, o'chirish"
 }
