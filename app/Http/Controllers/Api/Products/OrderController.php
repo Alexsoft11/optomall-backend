@@ -153,7 +153,11 @@ class OrderController extends Controller
         $orders = [];
         $orderGroup = null;
 
-        DB::transaction(function () use ($groupedItems, $user, $request, &$orders, &$orderGroup, $feesByBasketItemId, $feesByProductId, $incomingFees) {
+        // Fetch exchange rates once before the transaction for performance
+        $yuanRate = Exchanges::where('currency', 'yuan')->first()->amount ?? 1800;
+        $percentRate = Exchanges::where('currency', 'product_percent')->first()->amount ?? 0;
+
+        DB::transaction(function () use ($groupedItems, $user, $request, &$orders, &$orderGroup, $feesByBasketItemId, $feesByProductId, $incomingFees, $yuanRate, $percentRate) {
             $defaultStatus = OrderStatus::where('for_first', true)->first();
             $statusId = $defaultStatus ? $defaultStatus->id : '3';
 
@@ -230,6 +234,7 @@ class OrderController extends Controller
                         // 1. Request item (comes from basket with correct values)
                         // 2. Basket item DB
                         // 3. Matched fee (only as fallback)
+                        // 4. Calculate from finalPrice if all above are 0
 
                         // original_price_yuan - from request item first (basket data)
                         $originalPriceYuan = floatval($item['original_price_yuan'] ?? 0);
@@ -253,6 +258,36 @@ class OrderController extends Controller
                         }
                         if ($localDeliveryYuan == 0 && $basketItem) {
                             $localDeliveryYuan = floatval($basketItem->local_delivery_yuan ?? 0);
+                        }
+
+                        // FALLBACK: If original_price_yuan is still 0, calculate it from finalPrice
+                        // Formula: finalPrice = originalPriceYuan * yuanRate * (1 + percent/100)
+                        // Reverse:  originalPriceYuan = finalPrice / yuanRate / (1 + percent/100)
+                        if ($originalPriceYuan == 0 && $finalPrice > 0) {
+                            $divisor = $yuanRate * (1 + $percentRate / 100);
+                            if ($divisor > 0) {
+                                $originalPriceYuan = round($finalPrice / $divisor, 2);
+                            }
+
+                            Log::info('original_price_yuan_calculated_from_price', [
+                                'finalPrice' => $finalPrice,
+                                'yuanRate' => $yuanRate,
+                                'percentRate' => $percentRate,
+                                'calculated_originalPriceYuan' => $originalPriceYuan,
+                            ]);
+                        }
+
+                        // FALLBACK: If profit_amount is still 0, calculate it
+                        // Formula: profit_amount = originalPriceYuan * yuanRate * (percent/100)
+                        if ($profitAmount == 0 && $originalPriceYuan > 0 && $percentRate > 0) {
+                            $profitAmount = round($originalPriceYuan * $yuanRate * ($percentRate / 100), 2);
+
+                            Log::info('profit_amount_calculated', [
+                                'originalPriceYuan' => $originalPriceYuan,
+                                'yuanRate' => $yuanRate,
+                                'percentRate' => $percentRate,
+                                'calculated_profitAmount' => $profitAmount,
+                            ]);
                         }
 
                         // Log for debugging
