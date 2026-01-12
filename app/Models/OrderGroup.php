@@ -124,9 +124,9 @@ class OrderGroup extends Model
         $activeOrders = $this->orders->filter(fn($order) => $order->getStatus && !$order->getStatus->is_cancel);
         $allItems = $activeOrders->flatMap(fn($order) => $order->items);
 
-        $originalPriceYuan = $allItems->sum('original_price_yuan') ?? 0;
-        $localDeliveryYuan = $allItems->sum('local_delivery_yuan') ?? 0;
-        $profitAmount = $allItems->sum('profit_amount') ?? 0;
+        $originalPriceYuan = $allItems->sum(fn($item) => ($item->original_price_yuan ?? 0) * ($item->quantity ?? 1));
+        $localDeliveryYuan = $allItems->sum(fn($item) => ($item->local_delivery_yuan ?? 0) * ($item->quantity ?? 1));
+        $profitAmount = $allItems->sum(fn($item) => ($item->profit_amount ?? 0) * ($item->quantity ?? 1));
 
         // Update if exists, otherwise create
         \App\Models\Income::updateOrCreate(

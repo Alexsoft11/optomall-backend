@@ -32,16 +32,27 @@ class GenerateOldIncomes extends Command
             }
 
             // Calculate amount from NON-cancelled orders
-            $amount = $group->orders()
+            $activeOrders = $group->orders()
+                ->with(['items', 'getStatus'])
                 ->whereHas('getStatus', fn($q) => $q->where('is_cancel', false))
-                ->sum('total_price');
+                ->get();
+
+            $amount = $activeOrders->sum('total_price');
+            $allItems = $activeOrders->flatMap(fn($order) => $order->items);
+
+            $originalPriceYuan = $allItems->sum(fn($item) => ($item->original_price_yuan ?? 0) * ($item->quantity ?? 1));
+            $localDeliveryYuan = $allItems->sum(fn($item) => ($item->local_delivery_yuan ?? 0) * ($item->quantity ?? 1));
+            $profitAmount = $allItems->sum(fn($item) => ($item->profit_amount ?? 0) * ($item->quantity ?? 1));
 
             // Create income
             Income::create([
-                'user_id'        => $group->user_id,
+                'user_id' => $group->user_id,
                 'order_group_id' => $group->id,
-                'amount'         => $amount,
-                'type'           => 'order_payment',
+                'amount' => $amount,
+                'type' => 'order_payment',
+                'original_price_yuan' => $originalPriceYuan,
+                'local_delivery_yuan' => $localDeliveryYuan,
+                'profit_amount' => $profitAmount,
             ]);
 
             $created++;

@@ -68,10 +68,13 @@ class Order extends Model
                 $newStatus = $order->getStatus()->first();
                 $oldStatus = \App\Models\OrderStatus::find($oldStatusId);
                 Log::info('Order status changed from ' . ($oldStatus?->name ?? 'unknown') . ' to ' . ($newStatus?->name ?? 'unknown'));
-                $wasCanceled = $oldStatus?->is_cancel;
+                $wasActive = !$oldStatus?->is_cancel;
                 $isNowActive = !$newStatus?->is_cancel;
 
-                if ($wasCanceled || !$isNowActive) {
+                // Recalculate only when cancellation state changes:
+                // 1. Active -> Cancelled (was active, now cancelled)
+                // 2. Cancelled -> Active (was cancelled, now active)
+                if ($wasActive !== $isNowActive) {
                     $order->orderGroup->recalculateTotals();
                 }
 
