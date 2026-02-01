@@ -110,49 +110,51 @@ class AiController extends Controller
         $keywords = array_slice($keywords, 0, 3);
 
         $results = [];
-        $promises = [];
-
         $page = $request->page ?? 1;
-        $pageSize = 20; // smaller page size per request since we mix
+        $pageSize = 20;
+        $tmapiToken = env('TMAPI_TOKEN');
+        $lang = 'en';
 
-        // Parallel requests would be ideal, but Laravel sync execution is easier to implement first.
-        // For true parallel execution in PHP we might need Guzzle Promises or similar.
-        // Using Http::pool if available (Laravel 8+)
-
+        // Uses Http::pool for parallel requests
         $responses = Http::pool(
             fn($pool) =>
-            collect($keywords)->map(function ($keyword) use ($pool, $history, $page, $pageSize) {
+            collect($keywords)->map(function ($keyword) use ($pool, $history, $page, $pageSize, $tmapiToken, $lang) {
+                // Construct inner API URL (1688 default)
+                // We assume keywords are appropriate for search (English or Chinese)
+                $baseApiUrl = "http://api.tmapi.top/1688/en/search/items?keyword=" . urlencode($keyword) . "&page=$page&page_size=$pageSize&sort=default&apiToken=$tmapiToken&language=$lang";
 
-                // Construct URL similar to ProductController
-                $lang = 'en'; // default
-                $url = "https://api.kongcrdv.com/taobao/api_call.php?api_name=item_search&lang=$lang&q=$keyword&page=$page&page_size=$pageSize&key=kingdev5809@gmail.com";
+                // Proxy through china-proxy.optomall.uz
+                $proxyUrl = "https://china-proxy.optomall.uz?url=" . urlencode($baseApiUrl);
+
                 Log::channel('ai')->info('AI Search Request', [
                     'history_id' => $history->id,
                     'keyword' => $keyword,
-                    'page' => $page,
-                    'page_size' => $pageSize,
-                    'url' => $url,
+                    'url' => $proxyUrl,
                 ]);
-                return $pool->get($url);
+
+                return $pool->timeout(100)->withoutVerifying()->get($proxyUrl);
             })
         );
 
         foreach ($responses as $response) {
-
             if ($response instanceof \Illuminate\Http\Client\Response && $response->ok()) {
                 $data = $response->json();
-                if (isset($data['items']['item'])) {
-                    $results[] = $data['items']['item'];
+                // 1688 structure from Tmapi is usually data.data.items
+                // But ProductController line 1496 says: $provider == '1688' ? empty($products['data']['items'])
+                // So we look for ['data']['items']
+                if (isset($data['data']['items'])) {
+                    $results[] = $data['data']['items'];
                 }
+            } else {
+                Log::channel('ai')->error('AI Search API Error', [
+                    'history_id' => $history->id,
+                    'status' => $response instanceof \Illuminate\Http\Client\Response ? $response->status() : 'Unknown',
+                    'body' => $response instanceof \Illuminate\Http\Client\Response ? $response->body() : 'Exception',
+                ]);
             }
-            Log::channel('ai')->error('AI Search API Error', [
-                'history_id' => $history->id,
-                'response' => $response,
-            ]);
         }
 
         // Mix results
-        // Strategy: Take 1st from A, 1st from B, 1st from C, 2nd from A...
         $mixed = [];
         $maxCount = 0;
         foreach ($results as $list) {
@@ -162,23 +164,38 @@ class AiController extends Controller
         for ($i = 0; $i < $maxCount; $i++) {
             foreach ($results as $list) {
                 if (isset($list[$i])) {
-                    // Check for duplicates by num_iid
-                    $exists = false;
-                    foreach ($mixed as $m) {
-                        if (isset($m['num_iid']) && isset($list[$i]['num_iid']) && $m['num_iid'] == $list[$i]['num_iid']) {
-                            $exists = true;
-                            break;
+                    // Check for duplicates by num_iid/item_id
+                    // TMAPI 1688 usually has 'item_id' or 'num_iid'
+                    // We check both or normalize earlier? 
+                    // ProductResource normalizes to 'id'.
+                    // Let's rely on raw id check first.
+                    $rawId = $list[$i]['item_id'] ?? $list[$i]['num_iid'] ?? null;
+
+                    if ($rawId) {
+                        $exists = false;
+                        foreach ($mixed as $m) {
+                            $mId = $m['item_id'] ?? $m['num_iid'] ?? null;
+                            if ($mId == $rawId) {
+                                $exists = true;
+                                break;
+                            }
                         }
-                    }
-                    if (!$exists) {
-                        $mixed[] = $list[$i];
+                        if (!$exists) {
+                            $mixed[] = $list[$i];
+                        }
                     }
                 }
             }
         }
 
+        // Use ProductResource to format and calculate prices exactly like ProductController
+        // ProductResource constructor: ($resource, $provider, $lang)
+        $formatted = collect($mixed)->map(function ($product) {
+            return (new \App\Http\Resources\ProductResource($product, '1688', 'en'))->resolve();
+        });
+
         return response()->json([
-            'data' => ProductTokenResource::collection($mixed),
+            'data' => $formatted,
             'meta' => [
                 'keywords' => $keywords
             ]
