@@ -83,6 +83,10 @@ class AiSearchHistoryResource extends Resource
                     ->label('Used Tokens')
                     ->numeric()
                     ->sortable(),
+                Tables\Columns\IconColumn::make('feedback_like')
+                    ->label('Feedback')
+                    ->boolean()
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
