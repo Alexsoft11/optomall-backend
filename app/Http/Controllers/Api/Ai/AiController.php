@@ -130,7 +130,7 @@ class AiController extends Controller
         );
 
         foreach ($responses as $response) {
-            if ($response->ok()) {
+            if ($response instanceof \Illuminate\Http\Client\Response && $response->ok()) {
                 $data = $response->json();
                 if (isset($data['items']['item'])) {
                     $results[] = $data['items']['item'];
