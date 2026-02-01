@@ -122,20 +122,33 @@ class AiController extends Controller
         $responses = Http::pool(
             fn($pool) =>
             collect($keywords)->map(function ($keyword) use ($pool, $history, $page, $pageSize) {
+
                 // Construct URL similar to ProductController
                 $lang = 'en'; // default
                 $url = "https://api.kongcrdv.com/taobao/api_call.php?api_name=item_search&lang=$lang&q=$keyword&page=$page&page_size=$pageSize&key=kingdev5809@gmail.com";
+                Log::channel('ai')->info('AI Search Request', [
+                    'history_id' => $history->id,
+                    'keyword' => $keyword,
+                    'page' => $page,
+                    'page_size' => $pageSize,
+                    'url' => $url,
+                ]);
                 return $pool->get($url);
             })
         );
 
         foreach ($responses as $response) {
+
             if ($response instanceof \Illuminate\Http\Client\Response && $response->ok()) {
                 $data = $response->json();
                 if (isset($data['items']['item'])) {
                     $results[] = $data['items']['item'];
                 }
             }
+            Log::channel('ai')->error('AI Search API Error', [
+                'history_id' => $history->id,
+                'response' => $response,
+            ]);
         }
 
         // Mix results
