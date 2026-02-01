@@ -49,8 +49,6 @@ class AiController extends Controller
             return response()->json(['error' => $validator->errors()], 422);
         }
 
-        Log::channel('ai')->info("AI Init Request", ['user_id' => $request->user()?->id, 'prompt' => $request->prompt, 'model' => $request->model]);
-
         $result = $this->aiService->generateSearchKeys($request->prompt, $request->model ?? 'openai');
 
         // Handle unexpected structure or error array
@@ -99,8 +97,6 @@ class AiController extends Controller
             return response()->json(['error' => 'Not found'], 404);
         }
 
-        Log::channel('ai')->info("AI Search Execution", ['history_id' => $history->id, 'keywords' => $history->generated_keywords]);
-
         $keywords = $history->generated_keywords;
         if (empty($keywords)) {
             $keywords = [$history->prompt];
@@ -125,12 +121,6 @@ class AiController extends Controller
 
                 // Proxy through china-proxy.optomall.uz
                 $proxyUrl = "https://china-proxy.optomall.uz?url=" . urlencode($baseApiUrl);
-
-                Log::channel('ai')->info('AI Search Request', [
-                    'history_id' => $history->id,
-                    'keyword' => $keyword,
-                    'url' => $proxyUrl,
-                ]);
 
                 return $pool->timeout(100)->withoutVerifying()->get($proxyUrl);
             })
@@ -224,8 +214,6 @@ class AiController extends Controller
         if (!$history) {
             return response()->json(['error' => 'Not found'], 404);
         }
-
-        Log::channel('ai')->info("AI Feedback", ['id' => $request->id, 'like' => $request->like, 'comment' => $request->comment]);
 
         if ($request->has('like')) {
             $history->feedback_like = $request->like;
