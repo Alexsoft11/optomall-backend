@@ -132,6 +132,12 @@ return [
             'level' => 'error',
             'days' => 30,
         ],
+        'ai' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/ai.log'),
+            'level' => 'debug',
+            'days' => 14,
+        ],
     ],
 
 ];

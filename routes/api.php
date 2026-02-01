@@ -82,6 +82,13 @@ Route::middleware('throttle:1200,60')->group(function () {
     Route::get('orders/{order}/delivery‑fees/tmapi', [OrderController::class, 'deliveryFeesTmapi']);
     Route::get('basket/delivery‑fees/tmapi', [OrderController::class, 'deliveryFeesForBasketItems']);
 
+    Route::prefix('ai')->group(function () {
+        Route::post('/init', [AiController::class, 'init']);
+        Route::post('/search', [AiController::class, 'search']);
+        Route::post('/feedback', [AiController::class, 'feedback']);
+        Route::get('/history', [AiController::class, 'history']);
+    });
+
     // Authenticated Routes
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('refresh-token', [AuthController::class, 'refreshToken']);
