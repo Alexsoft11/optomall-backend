@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\Products\OrderController;
 use App\Http\Controllers\Api\Products\ProductController;
 use App\Http\Controllers\Api\Products\ProductLocalController;
 use App\Http\Controllers\Api\Products\CachedProductController;
+use App\Http\Controllers\Api\Ai\AiController;
 
 Route::middleware('throttle:1200,60')->group(function () {
     // Auth & Registration
