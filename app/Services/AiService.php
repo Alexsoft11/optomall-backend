@@ -29,19 +29,27 @@ class AiService
         } catch (\Exception $e) {
             Log::channel('ai')->error("AI Service Error ($model): " . $e->getMessage());
             // Fallback: just return the prompt as a single keyword if AI fails
-            return [$prompt];
+            return [
+                'keywords' => [$prompt],
+                'usage' => [
+                    'input_tokens' => 0,
+                    'output_tokens' => 0,
+                    'total_tokens' => 0,
+                ]
+            ];
         }
     }
 
     protected function callOpenAi($systemPrompt, $userPrompt)
     {
         $response = Http::withToken($this->openaiKey)->post('https://api.openai.com/v1/chat/completions', [
-            'model' => 'gpt-3.5-turbo', // Or 'gpt-4o' if available/preferred
+            'model' => 'gpt-3.5-turbo',
             'messages' => [
                 ['role' => 'system', 'content' => $systemPrompt],
                 ['role' => 'user', 'content' => $userPrompt],
             ],
             'temperature' => 0.7,
+            'max_tokens' => 150, // Limit output tokens to prevent waste
         ]);
 
         if ($response->failed()) {
@@ -49,12 +57,20 @@ class AiService
         }
 
         $content = $response->json('choices.0.message.content');
-        return $this->parseJsonList($content);
+        $usage = $response->json('usage'); // {prompt_tokens, completion_tokens, total_tokens}
+
+        return [
+            'keywords' => $this->parseJsonList($content),
+            'usage' => [
+                'input_tokens' => $usage['prompt_tokens'] ?? 0,
+                'output_tokens' => $usage['completion_tokens'] ?? 0,
+                'total_tokens' => $usage['total_tokens'] ?? 0,
+            ]
+        ];
     }
 
     protected function callDeepseek($systemPrompt, $userPrompt)
     {
-        // Deepseek API structure is similar to OpenAI
         $response = Http::withToken($this->deepseekKey)->post('https://api.deepseek.com/chat/completions', [
             'model' => 'deepseek-chat',
             'messages' => [
@@ -62,6 +78,7 @@ class AiService
                 ['role' => 'user', 'content' => $userPrompt],
             ],
             'temperature' => 0.7,
+            'max_tokens' => 150, // Limit output tokens
         ]);
 
         if ($response->failed()) {
@@ -69,7 +86,16 @@ class AiService
         }
 
         $content = $response->json('choices.0.message.content');
-        return $this->parseJsonList($content);
+        $usage = $response->json('usage');
+
+        return [
+            'keywords' => $this->parseJsonList($content),
+            'usage' => [
+                'input_tokens' => $usage['prompt_tokens'] ?? 0,
+                'output_tokens' => $usage['completion_tokens'] ?? 0,
+                'total_tokens' => $usage['total_tokens'] ?? 0,
+            ]
+        ];
     }
 
     protected function parseJsonList($content)

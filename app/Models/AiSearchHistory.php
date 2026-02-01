@@ -17,6 +17,9 @@ class AiSearchHistory extends Model
         'ai_model',
         'feedback_like',
         'feedback_comment',
+        'input_tokens',
+        'output_tokens',
+        'total_tokens',
     ];
 
     protected $casts = [

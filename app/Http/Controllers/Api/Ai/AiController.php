@@ -51,14 +51,27 @@ class AiController extends Controller
 
         Log::channel('ai')->info("AI Init Request", ['user_id' => $request->user()?->id, 'prompt' => $request->prompt, 'model' => $request->model]);
 
-        $keywords = $this->aiService->generateSearchKeys($request->prompt, $request->model ?? 'openai');
+        $result = $this->aiService->generateSearchKeys($request->prompt, $request->model ?? 'openai');
+
+        // Handle unexpected structure or error array
+        $keywords = $result['keywords'] ?? [];
+        $usage = $result['usage'] ?? [];
+
+        // If fallback triggered, structure might be simple array if I missed something, but I standardized it.
+        // Ensure keywords is array
+        if (!is_array($keywords)) {
+            $keywords = [$keywords];
+        }
 
         $history = AiSearchHistory::create([
-            'user_id' => $request->user() ? $request->user()->id : null, // Support guest if needed, but model requires user_id. Assuming auth.
+            'user_id' => $request->user() ? $request->user()->id : null,
             'prompt' => $request->prompt,
             'generated_keywords' => $keywords,
             'items_provider' => $request->provider ?? '1688',
             'ai_model' => $request->model ?? 'openai',
+            'input_tokens' => $usage['input_tokens'] ?? null,
+            'output_tokens' => $usage['output_tokens'] ?? null,
+            'total_tokens' => $usage['total_tokens'] ?? null,
         ]);
 
         return response()->json(['id' => $history->id, 'keywords' => $keywords]);
