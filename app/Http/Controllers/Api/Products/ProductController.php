@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api\Products;
 
-use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\CategoryResource;
 use App\Http\Resources\ProductDetail;
@@ -12,7 +11,6 @@ use App\Http\Resources\ProductDetailOtapi;
 use App\Http\Resources\ProductDetailResource;
 use App\Http\Resources\ProductDetailTmapi;
 use App\Http\Resources\ProductDetailTokenResource;
-use OpenApi\Annotations as OA;
 use App\Http\Resources\ProductResource;
 use App\Http\Resources\ProductTokenResource;
 use App\Http\Resources\ScoreResource;
@@ -27,13 +25,18 @@ use App\Models\ProductLocal;
 use App\Models\TaobaoCategory;
 use App\Models\TaobaoSubcategory;
 use App\Models\TaobaoSubcategoryName;
+use App\Services\ProductCacheService;
 use App\Traits\ApiResponseHelpers;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Http;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
-use App\Services\ProductCacheService;
+use OpenApi\Annotations as OA;
 
 class ProductController extends Controller
 {
@@ -217,7 +220,7 @@ class ProductController extends Controller
             return response()->json(['message' => 'Invalid data', 'errors' => $validator->errors(), 'error' => true], 400);
         }
 
-        $userId = auth()->user()->id;
+        $userId = Auth::user()->id;
         $messages = [];
 
         foreach ($request->all() as $productData) {
@@ -297,7 +300,7 @@ class ProductController extends Controller
      */
     public function getLikedProducts(Request $request)
     {
-        $user = auth()->user();
+        $user = Auth::user();
 
         if (!$user) {
             return response()->json(['message' => 'Unauthenticated'], 401);
@@ -342,7 +345,7 @@ class ProductController extends Controller
      */
     public function getLikedProductsId(Request $request)
     {
-        $user = auth()->user();
+        $user = Auth::user();
 
         if (!$user) {
             return response()->json(['message' => 'Unauthenticated'], 401);
@@ -450,20 +453,50 @@ class ProductController extends Controller
      */
     public function productsFromTaoBao(Request $request)
     {
-        $subCategory = $request->subCategory;
-        $lang = $request->lang ?? 'en';
-        $page = $request->page ? $request->page : 1;
-        $productsCount = $request->productsCount ? $request->productsCount : 20;
-        $url = "https://api.kongcrdv.com/taobao/api_call.php?api_name=item_search&lang=$lang&q=$subCategory&page=$page&page_size=$productsCount&key=kingdev5809@gmail.com";
+        try {
+            $subCategory = $request->subCategory;
+            $lang = $request->lang ?? 'en';
+            $page = $request->page ? $request->page : 1;
+            $productsCount = $request->productsCount ? $request->productsCount : 20;
+            $url = "https://api.kongcrdv.com/taobao/api_call.php?api_name=item_search&lang=$lang&q=$subCategory&page=$page&page_size=$productsCount&key=kingdev5809@gmail.com";
 
-        $response = Http::get($url);
-        $products = $response->json();
+            $response = Http::timeout(5)->get($url); // Add timeout to prevent long hangs
 
-        return $this->respondWithSuccess([
-            'page' => $page,
-            'page_size' => $productsCount,
-            'products' => ProductResource::collection($products['items']['item'])
-        ]);
+            if ($response->successful()) {
+                $products = $response->json();
+
+                // Check if items exist in response structure
+                $items = $products['items']['item'] ?? [];
+
+                $transformed = collect($items)->map(function ($item) use ($lang) {
+                    return new ProductResource($item, 'taobao', $lang);
+                });
+
+                return $this->respondWithSuccess([
+                    'page' => $page,
+                    'page_size' => $productsCount,
+                    'products' => $transformed
+                ]);
+            }
+
+            throw new \Exception('External API failed');
+        } catch (\Exception $e) {
+            // Fallback to local products
+            Log::error('Taobao API failed: ' . $e->getMessage());
+
+            $limit = $request->productsCount ?? 20;
+            $products = Product::latest()->paginate($limit);
+
+            $transformed = $products->getCollection()->map(function ($item) use ($lang) {
+                return new ProductResource($item, 'local', $lang);
+            });
+
+            return $this->respondWithSuccess([
+                'page' => $products->currentPage(),
+                'page_size' => $products->perPage(),
+                'products' => $transformed
+            ]);
+        }
     }
 
     /**
@@ -584,29 +617,72 @@ class ProductController extends Controller
 
         // Prepare recommended products
         // $recommended = ProductTokenResource::collection(collect($randomProducts['data']['items']['item'])->take(5));
-        $productDatabase = Product::where('id', $productId)->first();
 
         if ($provider == 'local') {
+            $productDatabase = Product::where('id', $productId)->first();
+
+            if (!$productDatabase) {
+                return response()->json(['error' => 'product_not_found'], 404);
+            }
+
             $product = new ProductDetailDatabase($productDatabase, $lang);
-        } else {
+
+            return $this->respondWithSuccess([
+                'detail' => $product,
+                'score' => [
+                    'rating' => $productDatabase->seller_info['item_score'] ?? 4.6,
+                    'sold'   => $productDatabase->sales ?? 1000,
+                ],
+            ]);
+        }
+
+        try {
             // Try to get product details with the initial provider
             $productDetail = $getProductDetails($provider);
-            // return $productDetail;
-            // If product not found, switch the provider
+
+            // If product not found or API error, check if we have it locally
             if (!isset($productDetail['item'])) {
-                // If still not found, return 404 response
-                if (!isset($productDetail['item'])) {
+                // Try to find in local DB if external failed
+                $localProduct = Product::find($productId);
+                if ($localProduct) {
+                    $product = new ProductDetailDatabase($localProduct, $lang);
+                    return $this->respondWithSuccess([
+                        'detail' => $product,
+                        'score' => [
+                            'rating' => $localProduct->seller_info['item_score'] ?? 4.6,
+                            'sold'   => $localProduct->sales ?? 1000,
+                        ],
+                    ]);
+                } else {
                     return response()->json(['error' => 'product_not_found'], 404);
                 }
+            } else {
+                $product = new ProductDetail($productDetail['item'], $provider);
             }
-            $product = new ProductDetail($productDetail['item'], $provider);
+        } catch (\Exception $e) {
+            // Fallback to local if external API fails
+            Log::error('ProductDetail API failed: ' . $e->getMessage());
+
+            $localProduct = Product::find($productId);
+            if ($localProduct) {
+                $product = new ProductDetailDatabase($localProduct, $lang);
+                return $this->respondWithSuccess([
+                    'detail' => $product,
+                    'score' => [
+                        'rating' => $localProduct->seller_info['item_score'] ?? 4.6,
+                        'sold'   => $localProduct->sales ?? 1000,
+                    ],
+                ]);
+            } else {
+                return response()->json(['error' => 'product_not_found_external_failed'], 404);
+            }
         }
 
         return $this->respondWithSuccess([
             'detail' => $product,
             'score' => [
                 'rating' => $productDetail['item']['seller_info']['item_score'] ?? 4.6,
-                'sold' => $productDetail['item']['sales'] ?? 1000,
+                'sold'   => $productDetail['item']['sales'] ?? 1000,
             ],
             // 'recommended' => $recommended,
         ]);
@@ -777,7 +853,16 @@ class ProductController extends Controller
             ]);
         }
 
-        if ($productDetail['item']['format_check'] == 'fail') {
+        // Check if the API call was successful and returned item details
+        if (!isset($productDetail['item'])) {
+            return response()->json([
+                'error' => 'product_not_found_external',
+                'message' => 'The external API did not return product details.',
+                'raw_response' => $productDetail,
+            ], 404);
+        }
+
+        if (isset($productDetail['item']['format_check']) && $productDetail['item']['format_check'] == 'fail') {
             return response()->json(['error' => 'product_not_found', 'productDetail' => $productDetail], 404);
         }
 
@@ -1338,8 +1423,8 @@ class ProductController extends Controller
             $subcategory = TaobaoSubcategory::where('unique_id', $request->catId)
                 ->pluck('unique')
                 ->first() ?? TaobaoSubcategoryName::where('unique_id', $request->catId)
-                    ->pluck('unique')
-                    ->first();
+                ->pluck('unique')
+                ->first();
 
             // Check if we need to translate the value before the API call
             $translatedValue = $subcategory ? $subcategory : $this->translateText($value); // Translate to Chinese for search
@@ -1466,8 +1551,8 @@ class ProductController extends Controller
             $subcategory = TaobaoSubcategory::where('unique_id', $request->catId)
                 ->pluck('unique')
                 ->first() ?? TaobaoSubcategoryName::where('unique_id', $request->catId)
-                    ->pluck('unique')
-                    ->first();
+                ->pluck('unique')
+                ->first();
 
             // Check if we need to translate the value before the API call
             $translatedValue = $subcategory ? $subcategory : $this->translateText($value); // Translate to Chinese for search
@@ -1722,7 +1807,6 @@ class ProductController extends Controller
                 'url' => $responseData['data']['image_url'],
                 'urlOrg' => $imageFullPath
             ]);
-
         } catch (\Throwable $e) {
             Log::error('Image search connection failed: ' . $e->getMessage());
 
@@ -1805,7 +1889,8 @@ class ProductController extends Controller
     public function products(Request $request)
     {
         // Retrieve the query parameters
-        $query = $request->input('query');
+        $query = $request->input('query'); // Type: top, discount, etc.
+        $search = $request->input('q');    // Search keyword
         $lang = $request->input('lang') ?? 'en';
         $page = $request->input('page') ?? 1; // Default page number is 1
         $productsCount = $request->input('productsCount') ?? 60; // Default to 40 products per page
@@ -1813,15 +1898,32 @@ class ProductController extends Controller
         // Ensure productsCount is an integer and not less than 1
         $productsCount = max(1, (int) $productsCount);
 
-        // Retrieve the products based on the query type
-        $productsQuery = HomePageProduct::where('type', $query)->where('is_deleted', false)->where('provider', '1688')->inRandomOrder();
+        // Retrieve the products based on the query type or search term
+        $productsQuery = HomePageProduct::where('is_deleted', false)
+            ->whereIn('provider', ['1688', 'Alibaba1688', 'taobao']);
+
+        if ($search) {
+            // Local Search Logic
+            $productsQuery->where(function ($q) use ($search) {
+                $q->where('title_uz', 'like', "%{$search}%")
+                    ->orWhere('title_ru', 'like', "%{$search}%")
+                    ->orWhere('title_en', 'like', "%{$search}%");
+            });
+        } elseif ($query) {
+            $productsQuery->where('type', $query);
+        }
+
+        // Sort logic
+        $productsQuery->inRandomOrder();
 
         // Apply pagination
         $products = $productsQuery->paginate($productsCount, ['*'], 'page', $page);
 
         // Transform the products into the desired structure
         $transformedProducts = $products->getCollection()->map(function ($product) use ($lang) {
-            $isLiked = auth()->check() && auth()->user()->likedProducts()->where('product_id', $product->product_id)->exists();
+            /** @var \App\Models\User $user */
+            $user = Auth::user();
+            $isLiked = Auth::check() && $user->likedProducts()->where('product_id', $product->product_id)->exists();
             return [
                 'id' => $product->product_id,
                 'title' => $product['title_' . $lang],
@@ -2339,7 +2441,9 @@ class ProductController extends Controller
                     'image_mobile' => url('storage/' . $category->image_mobile),
                     'is_active' => $category->is_active,
                     'products' => $category->products->map(function ($product) {
-                        $isLiked = auth()->check() && auth()->user()->likedProducts()->where('product_id', $product->id)->exists();
+                        /** @var \App\Models\User $user */
+                        $user = Auth::user();
+                        $isLiked = Auth::check() && $user->likedProducts()->where('product_id', $product->id)->exists();
                         return [
                             'id' => $product->id,
                             'title' => [
@@ -2465,7 +2569,7 @@ class ProductController extends Controller
         });
 
         // Fetch Local Products
-        $localProducts = LocalProduct::select(
+        $localProducts = ProductLocal::select(
             'id',
             'category_id',
             'title',
@@ -2760,13 +2864,13 @@ class ProductController extends Controller
                     'x-rapidapi-host' => 'aibit-translator.p.rapidapi.com',
                     'x-rapidapi-key' => env('RAPIDAPI_KEY', '74e939e778mshea2f00b1b0170dap1cc6eajsnf05e5c9be03a'),
                 ])->post(
-                        'https://aibit-translator.p.rapidapi.com/api/v1/translator/json',
-                        [
-                            'from' => 'auto',
-                            'to' => $lang,
-                            'json' => $texts
-                        ]
-                    );
+                    'https://aibit-translator.p.rapidapi.com/api/v1/translator/json',
+                    [
+                        'from' => 'auto',
+                        'to' => $lang,
+                        'json' => $texts
+                    ]
+                );
 
                 if ($translateResponse->successful()) {
                     $translated = $translateResponse->json('trans', []);
@@ -2931,13 +3035,13 @@ class ProductController extends Controller
                         'x-rapidapi-host' => 'aibit-translator.p.rapidapi.com',
                         'x-rapidapi-key' => env('RAPIDAPI_KEY', '74e939e778mshea2f00b1b0170dap1cc6eajsnf05e5c9be03a'),
                     ])->post(
-                            'https://aibit-translator.p.rapidapi.com/api/v1/translator/json',
-                            [
-                                'from' => 'zh',
-                                'to' => $lang,
-                                'json' => $textsToTranslate
-                            ]
-                        );
+                        'https://aibit-translator.p.rapidapi.com/api/v1/translator/json',
+                        [
+                            'from' => 'zh',
+                            'to' => $lang,
+                            'json' => $textsToTranslate
+                        ]
+                    );
 
                     if ($translateResponse->successful()) {
                         $translated = $translateResponse->json('trans', []);
@@ -3120,13 +3224,13 @@ class ProductController extends Controller
                     'x-rapidapi-host' => 'aibit-translator.p.rapidapi.com',
                     'x-rapidapi-key' => env('RAPIDAPI_KEY', '74e939e778mshea2f00b1b0170dap1cc6eajsnf05e5c9be03a'),
                 ])->post(
-                        'https://aibit-translator.p.rapidapi.com/api/v1/translator/json',
-                        [
-                            'from' => 'zh',
-                            'to' => $lang,
-                            'json' => $titles
-                        ]
-                    );
+                    'https://aibit-translator.p.rapidapi.com/api/v1/translator/json',
+                    [
+                        'from' => 'zh',
+                        'to' => $lang,
+                        'json' => $titles
+                    ]
+                );
 
                 if ($translateResponse->successful()) {
                     $translated = $translateResponse->json('trans', []);
